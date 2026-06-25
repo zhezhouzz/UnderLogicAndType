@@ -48,13 +48,62 @@ Qed.
 Lemma formula_fv_open_arrow_value_body_obs
     gas (Σ : lty_env) τx τr f :
   formula_fv
+    (arrow_value_denote_gas_with ty_denote_gas gas Σ τx τr
+      (tret (vfvar f))) ⊆
+  lvars_fv (context_ty_lvars (CTArrow τx τr)) ∪ {[f]}.
+Proof.
+  unfold formula_fv, formula_lvars, arrow_value_denote_gas_with.
+  cbn [formula_lvars_at].
+  rewrite lvars_fv_union.
+  pose proof (ty_denote_gas_lvars_subset gas 1
+    (typed_lty_env_bind Σ (erase_ty τx))
+    (cty_shift 0 τx) (tret (vbvar 0))) as Harg.
+  pose proof (ty_denote_gas_lvars_subset gas 1
+    (typed_lty_env_bind Σ (erase_ty τx))
+    τr
+    (tapp_tm (tm_shift 0 (tret (vfvar f))) (vbvar 0))) as Hres.
+  apply lvars_fv_mono in Harg.
+  apply lvars_fv_mono in Hres.
+  rewrite !lvars_fv_union in Harg, Hres.
+  rewrite !tm_lvars_at_fv, !context_ty_lvars_fv_at in Harg, Hres.
+  rewrite fv_tapp_tm, tm_shift_fv in Hres.
+  cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at] in Harg, Hres |- *.
+  rewrite lvars_fv_union.
+  rewrite !context_ty_lvars_fv_at.
+  intros a Ha.
+  repeat rewrite elem_of_union in Ha.
+  repeat rewrite elem_of_union.
+  destruct Ha as [Ha_arg | Ha_res].
+  - specialize (Harg a Ha_arg).
+    repeat rewrite elem_of_union in Harg.
+    repeat rewrite elem_of_empty in Harg.
+    destruct Harg as [Hbad | Harg]; [contradiction|].
+    rewrite cty_shift_fv in Harg.
+    repeat rewrite elem_of_union. left. left. exact Harg.
+  - specialize (Hres a Ha_res).
+    repeat rewrite elem_of_union in Hres.
+    repeat rewrite elem_of_empty in Hres.
+    repeat rewrite elem_of_union.
+    destruct Hres as [[Hres | Hbad] | Hres].
+    + right. exact Hres.
+    + contradiction.
+    + left. right. exact Hres.
+Qed.
+
+Lemma formula_scoped_open_arrow_value_body_obs
+    gas (Σ : lty_env) τx τr f (m : WfWorldT) :
+  lvars_fv (context_ty_lvars (CTArrow τx τr)) ∪ {[f]} ⊆
+    world_dom (m : WorldT) ->
+  formula_scoped_in_world m
     (formula_open 0 f
       (arrow_value_denote_gas_with ty_denote_gas gas Σ
         (cty_shift 0 τx) (cty_shift 1 τr)
-        (tret (vbvar 0)))) ⊆
-  lvars_fv (context_ty_lvars (CTArrow τx τr)) ∪ {[f]}.
+        (tret (vbvar 0)))).
 Proof.
+  intros Hsub.
+  unfold formula_scoped_in_world.
   etransitivity; [apply formula_open_fv_subset|].
+  etransitivity; [|exact Hsub].
   unfold formula_fv, formula_lvars, arrow_value_denote_gas_with.
   cbn [formula_lvars_at].
   rewrite lvars_fv_union.
@@ -72,31 +121,14 @@ Proof.
   rewrite !cty_shift_fv in Harg, Hres.
   rewrite fv_tapp_tm, tm_shift_fv in Hres.
   cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at] in Harg, Hres |- *.
-  rewrite lvars_fv_union.
-  rewrite !context_ty_lvars_fv_at.
+  rewrite lvars_fv_union, !context_ty_lvars_fv_at.
   intros a Ha.
   repeat rewrite elem_of_union in Ha.
   repeat rewrite elem_of_union.
-  destruct Ha as [[Ha|Ha]|Ha].
-  - specialize (Harg a Ha). rewrite cty_shift_fv in Harg. set_solver.
-  - specialize (Hres a Ha). try rewrite cty_shift_fv in Hres. set_solver.
+  destruct Ha as [[Ha_arg | Ha_res] | Ha_f].
+  - specialize (Harg a Ha_arg). rewrite cty_shift_fv in Harg. set_solver.
+  - specialize (Hres a Ha_res). try rewrite cty_shift_fv in Hres. set_solver.
   - set_solver.
-Qed.
-
-Lemma formula_scoped_open_arrow_value_body_obs
-    gas (Σ : lty_env) τx τr f (m : WfWorldT) :
-  lvars_fv (context_ty_lvars (CTArrow τx τr)) ∪ {[f]} ⊆
-    world_dom (m : WorldT) ->
-  formula_scoped_in_world m
-    (formula_open 0 f
-      (arrow_value_denote_gas_with ty_denote_gas gas Σ
-        (cty_shift 0 τx) (cty_shift 1 τr)
-        (tret (vbvar 0)))).
-Proof.
-  intros Hsub.
-  unfold formula_scoped_in_world.
-  etransitivity; [apply formula_fv_open_arrow_value_body_obs|].
-  exact Hsub.
 Qed.
 
 Lemma result_first_result_body_relevant_subset τtop τr e f y :
@@ -142,13 +174,62 @@ Qed.
 Lemma formula_fv_open_wand_value_body_obs
     gas (Σ : lty_env) τx τr f :
   formula_fv
+    (wand_value_denote_gas_with ty_denote_gas gas Σ τx τr
+      (tret (vfvar f))) ⊆
+  lvars_fv (context_ty_lvars (CTWand τx τr)) ∪ {[f]}.
+Proof.
+  unfold formula_fv, formula_lvars, wand_value_denote_gas_with.
+  cbn [formula_lvars_at].
+  rewrite lvars_fv_union.
+  pose proof (ty_denote_gas_lvars_subset gas 1
+    (typed_lty_env_bind Σ (erase_ty τx))
+    (cty_shift 0 τx) (tret (vbvar 0))) as Harg.
+  pose proof (ty_denote_gas_lvars_subset gas 1
+    (typed_lty_env_bind Σ (erase_ty τx))
+    τr
+    (tapp_tm (tm_shift 0 (tret (vfvar f))) (vbvar 0))) as Hres.
+  apply lvars_fv_mono in Harg.
+  apply lvars_fv_mono in Hres.
+  rewrite !lvars_fv_union in Harg, Hres.
+  rewrite !tm_lvars_at_fv, !context_ty_lvars_fv_at in Harg, Hres.
+  rewrite fv_tapp_tm, tm_shift_fv in Hres.
+  cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at] in Harg, Hres |- *.
+  rewrite lvars_fv_union.
+  rewrite !context_ty_lvars_fv_at.
+  intros a Ha.
+  repeat rewrite elem_of_union in Ha.
+  repeat rewrite elem_of_union.
+  destruct Ha as [Ha_arg | Ha_res].
+  - specialize (Harg a Ha_arg).
+    repeat rewrite elem_of_union in Harg.
+    repeat rewrite elem_of_empty in Harg.
+    destruct Harg as [Hbad | Harg]; [contradiction|].
+    rewrite cty_shift_fv in Harg.
+    repeat rewrite elem_of_union. left. left. exact Harg.
+  - specialize (Hres a Ha_res).
+    repeat rewrite elem_of_union in Hres.
+    repeat rewrite elem_of_empty in Hres.
+    repeat rewrite elem_of_union.
+    destruct Hres as [[Hres | Hbad] | Hres].
+    + right. exact Hres.
+    + contradiction.
+    + left. right. exact Hres.
+Qed.
+
+Lemma formula_scoped_open_wand_value_body_obs
+    gas (Σ : lty_env) τx τr f (m : WfWorldT) :
+  lvars_fv (context_ty_lvars (CTWand τx τr)) ∪ {[f]} ⊆
+    world_dom (m : WorldT) ->
+  formula_scoped_in_world m
     (formula_open 0 f
       (wand_value_denote_gas_with ty_denote_gas gas Σ
         (cty_shift 0 τx) (cty_shift 1 τr)
-        (tret (vbvar 0)))) ⊆
-  lvars_fv (context_ty_lvars (CTWand τx τr)) ∪ {[f]}.
+        (tret (vbvar 0)))).
 Proof.
+  intros Hsub.
+  unfold formula_scoped_in_world.
   etransitivity; [apply formula_open_fv_subset|].
+  etransitivity; [|exact Hsub].
   unfold formula_fv, formula_lvars, wand_value_denote_gas_with.
   cbn [formula_lvars_at].
   rewrite lvars_fv_union.
@@ -166,31 +247,14 @@ Proof.
   rewrite !cty_shift_fv in Harg, Hres.
   rewrite fv_tapp_tm, tm_shift_fv in Hres.
   cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at] in Harg, Hres |- *.
-  rewrite lvars_fv_union.
-  rewrite !context_ty_lvars_fv_at.
+  rewrite lvars_fv_union, !context_ty_lvars_fv_at.
   intros a Ha.
   repeat rewrite elem_of_union in Ha.
   repeat rewrite elem_of_union.
-  destruct Ha as [[Ha|Ha]|Ha].
-  - specialize (Harg a Ha). rewrite cty_shift_fv in Harg. set_solver.
-  - specialize (Hres a Ha). try rewrite cty_shift_fv in Hres. set_solver.
+  destruct Ha as [[Ha_arg | Ha_res] | Ha_f].
+  - specialize (Harg a Ha_arg). rewrite cty_shift_fv in Harg. set_solver.
+  - specialize (Hres a Ha_res). try rewrite cty_shift_fv in Hres. set_solver.
   - set_solver.
-Qed.
-
-Lemma formula_scoped_open_wand_value_body_obs
-    gas (Σ : lty_env) τx τr f (m : WfWorldT) :
-  lvars_fv (context_ty_lvars (CTWand τx τr)) ∪ {[f]} ⊆
-    world_dom (m : WorldT) ->
-  formula_scoped_in_world m
-    (formula_open 0 f
-      (wand_value_denote_gas_with ty_denote_gas gas Σ
-        (cty_shift 0 τx) (cty_shift 1 τr)
-        (tret (vbvar 0)))).
-Proof.
-  intros Hsub.
-  unfold formula_scoped_in_world.
-  etransitivity; [apply formula_fv_open_wand_value_body_obs|].
-  exact Hsub.
 Qed.
 
 Lemma formula_fv_open_persist_value_body_obs
@@ -245,10 +309,8 @@ Lemma arrow_value_open_arg_to_regular_imp
   cty_lc_at 1 τr ->
   f ∉ fv_cty τx ∪ fv_cty τr ->
   y ∉ fv_cty τx ∪ fv_cty τr ->
-  my0 ⊨ formula_open 0 f
-    (arrow_value_denote_gas gas
-      (typed_lty_env_bind Σ Tf)
-      (cty_shift 0 τx) (cty_shift 1 τr) (tret (vbvar 0))) ->
+  my0 ⊨ arrow_value_denote_gas_with ty_denote_gas gas
+    (<[LVFree f := Tf]> Σ) τx τr (tret (vfvar f)) ->
   y ∉ world_dom (my0 : WorldT) ->
   world_dom (my : WorldT) = world_dom (my0 : WorldT) ∪ {[y]} ->
   res_restrict my (world_dom (my0 : WorldT)) = my0 ->
@@ -263,42 +325,32 @@ Lemma arrow_value_open_arg_to_regular_imp
 Proof.
   intros HΣclosed HfΣ Hfy HyΣ Hlcτx Hlcτr Hffresh Hyfresh
     Hvalue Hyfresh_world Hdom Hrestrict.
-  cbn [arrow_value_denote_gas arrow_value_denote_gas_with formula_open]
-    in Hvalue.
+  cbn [arrow_value_denote_gas arrow_value_denote_gas_with] in Hvalue.
   pose proof (res_models_forall_open_named_fresh
     my0 my y
     (FImpl
-      (formula_open 1 f
-        (ty_denote_gas gas
-          (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
-            (erase_ty (cty_shift 0 τx)))
-          (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0))))
-      (formula_open 1 f
-        (ty_denote_gas gas
-          (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
-            (erase_ty (cty_shift 0 τx)))
-          (cty_shift 1 τr)
-          (tapp_tm (tret (vbvar 1)) (vbvar 0)))))
+      (ty_denote_gas gas
+        (typed_lty_env_bind (<[LVFree f := Tf]> Σ) (erase_ty τx))
+        (cty_shift 0 τx) (tret (vbvar 0)))
+      (ty_denote_gas gas
+        (typed_lty_env_bind (<[LVFree f := Tf]> Σ) (erase_ty τx))
+        τr (tapp_tm (tm_shift 0 (tret (vfvar f))) (vbvar 0))))
     Hvalue Hyfresh_world Hdom Hrestrict) as Hinner.
   cbn [formula_open] in Hinner.
-  rewrite (formula_open_result_first_fun_arg_two gas Σ τx Tf f y)
-    in Hinner.
-  2: exact HΣclosed.
-  2: exact HfΣ.
-  2: congruence.
-  2: exact HyΣ.
-  2: exact Hlcτx.
-  2: set_solver.
-  2: set_solver.
-  rewrite (formula_open_result_first_fun_result_two gas Σ τx τr Tf f y)
-    in Hinner.
-  2: exact HΣclosed.
-  2: exact HfΣ.
-  2: congruence.
-  2: exact HyΣ.
-  2: exact Hlcτr.
-  2: exact Hffresh.
-  2: exact Hyfresh.
+  rewrite (formula_open_ty_denote_gas_bind_ret_bvar0
+    y gas (<[LVFree f := Tf]> Σ) τx) in Hinner.
+  2:{ apply lty_env_closed_insert_free. exact HΣclosed. }
+  2:{ exact HyΣ. }
+  2:{ clear -Hyfresh. set_solver. }
+  2:{ exact Hlcτx. }
+  rewrite (formula_open_ty_denote_gas_bind_tapp_shift_bvar0
+    y gas (<[LVFree f := Tf]> Σ) τr (erase_ty τx)
+    (tret (vfvar f))) in Hinner.
+  2:{ apply lty_env_closed_insert_free. exact HΣclosed. }
+  2:{ exact HyΣ. }
+  2:{ cbn [fv_tm fv_value]. clear -Hfy. set_solver. }
+  2:{ clear -Hyfresh. set_solver. }
+  2:{ constructor. constructor. }
   exact Hinner.
 Qed.
 

@@ -697,7 +697,43 @@ Proof.
   }
   eapply res_models_projection; [|exact Hvalue_tgt_src].
   eapply res_restrict_eq_subset; [|exact Hproj_obs].
-  apply formula_fv_open_arrow_value_body_obs.
+  etransitivity; [apply formula_open_fv_subset|].
+  unfold formula_fv, formula_lvars, arrow_value_denote_gas_with.
+  cbn [formula_lvars_at].
+  rewrite lvars_fv_union.
+  pose proof (ty_denote_gas_lvars_subset gas 1
+    (typed_lty_env_bind
+      (typed_lty_env_bind
+        (relevant_env Σ (CTArrow τx τr) e_tgt)
+        (erase_ty (CTArrow τx τr)))
+      (erase_ty (cty_shift 0 τx)))
+    (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0))) as Harg_fv.
+  pose proof (ty_denote_gas_lvars_subset gas 1
+    (typed_lty_env_bind
+      (typed_lty_env_bind
+        (relevant_env Σ (CTArrow τx τr) e_tgt)
+        (erase_ty (CTArrow τx τr)))
+      (erase_ty (cty_shift 0 τx)))
+    (cty_shift 1 τr)
+    (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0))) as Hres_fv.
+  apply lvars_fv_mono in Harg_fv.
+  apply lvars_fv_mono in Hres_fv.
+  rewrite !lvars_fv_union in Harg_fv, Hres_fv.
+  rewrite !tm_lvars_at_fv, !context_ty_lvars_fv_at in Harg_fv, Hres_fv.
+  rewrite !cty_shift_fv in Harg_fv, Hres_fv.
+  rewrite fv_tapp_tm, tm_shift_fv in Hres_fv.
+  cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at]
+    in Harg_fv, Hres_fv |- *.
+  rewrite lvars_fv_union, !context_ty_lvars_fv_at.
+  intros a Ha.
+  repeat rewrite elem_of_union in Ha.
+  repeat rewrite elem_of_union.
+  destruct Ha as [[Ha_arg | Ha_res] | Ha_f].
+  - specialize (Harg_fv a Ha_arg). rewrite cty_shift_fv in Harg_fv.
+    clear -Harg_fv. set_solver.
+  - specialize (Hres_fv a Ha_res). try rewrite cty_shift_fv in Hres_fv.
+    clear -Hres_fv. set_solver.
+  - clear -Ha_f. set_solver.
 Qed.
 
 Local Lemma tlet_wand_value_body_env
@@ -1100,7 +1136,43 @@ Proof.
   }
   eapply res_models_projection; [|exact Hvalue_tgt_src].
   eapply res_restrict_eq_subset; [|exact Hproj_obs].
-  apply formula_fv_open_wand_value_body_obs.
+  etransitivity; [apply formula_open_fv_subset|].
+  unfold formula_fv, formula_lvars, wand_value_denote_gas_with.
+  cbn [formula_lvars_at].
+  rewrite lvars_fv_union.
+  pose proof (ty_denote_gas_lvars_subset gas 1
+    (typed_lty_env_bind
+      (typed_lty_env_bind
+        (relevant_env Σ (CTWand τx τr) e_tgt)
+        (erase_ty (CTWand τx τr)))
+      (erase_ty (cty_shift 0 τx)))
+    (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0))) as Harg_fv.
+  pose proof (ty_denote_gas_lvars_subset gas 1
+    (typed_lty_env_bind
+      (typed_lty_env_bind
+        (relevant_env Σ (CTWand τx τr) e_tgt)
+        (erase_ty (CTWand τx τr)))
+      (erase_ty (cty_shift 0 τx)))
+    (cty_shift 1 τr)
+    (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0))) as Hres_fv.
+  apply lvars_fv_mono in Harg_fv.
+  apply lvars_fv_mono in Hres_fv.
+  rewrite !lvars_fv_union in Harg_fv, Hres_fv.
+  rewrite !tm_lvars_at_fv, !context_ty_lvars_fv_at in Harg_fv, Hres_fv.
+  rewrite !cty_shift_fv in Harg_fv, Hres_fv.
+  rewrite fv_tapp_tm, tm_shift_fv in Hres_fv.
+  cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at]
+    in Harg_fv, Hres_fv |- *.
+  rewrite lvars_fv_union, !context_ty_lvars_fv_at.
+  intros a Ha.
+  repeat rewrite elem_of_union in Ha.
+  repeat rewrite elem_of_union.
+  destruct Ha as [[Ha_arg | Ha_res] | Ha_f].
+  - specialize (Harg_fv a Ha_arg). rewrite cty_shift_fv in Harg_fv.
+    clear -Harg_fv. set_solver.
+  - specialize (Hres_fv a Ha_res). try rewrite cty_shift_fv in Hres_fv.
+    clear -Hres_fv. set_solver.
+  - clear -Ha_f. set_solver.
 Qed.
 
 Local Lemma tlet_intro_denotation_arrow_body

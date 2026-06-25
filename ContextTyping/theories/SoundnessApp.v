@@ -898,13 +898,28 @@ Proof.
   { clear -Hzfresh. better_set_solver. }
   assert (Hxτ : x ∉ fv_cty τx ∪ fv_cty τ).
   { clear -Hfresh. better_set_solver. }
+  assert (Hvalue_norm :
+      mz0 ⊨ arrow_value_denote_gas_with ty_denote_gas gas
+        (<[LVFree z := erase_ty (CTArrow τx τ)]> Σrel)
+        τx τ (tret (vfvar z))).
+  {
+    rewrite <- (formula_open_result_first_arrow_value_ret_bvar0
+      gas Σrel τx τ (erase_ty (CTArrow τx τ)) z).
+    - exact Hvalue.
+    - exact HΣrel_closed.
+    - exact HzΣrel.
+    - exact Hlcτx.
+    - exact Hlcτ.
+    - clear -Hzτ. set_solver.
+    - clear -Hzτ. set_solver.
+  }
   pose proof (arrow_value_open_arg_to_regular_imp
     gas Σrel τx τ (erase_ty (CTArrow τx τ)) z x mz0 mz
     HΣrel_closed HzΣrel Hzx
     ltac:(rewrite dom_insert_L; intros Hbad;
       apply elem_of_union in Hbad as [Hbad|Hbad];
       [apply elem_of_singleton in Hbad; congruence|exact (HxΣrel Hbad)])
-    Hlcτx Hlcτ Hzτ Hxτ Hvalue Hx_mz0 Hmz_dom_x
+    Hlcτx Hlcτ Hzτ Hxτ Hvalue_norm Hx_mz0 Hmz_dom_x
     Hmz_restrict_mz0) as Hinner.
   pose proof (res_models_impl_elim _ _ _ Hinner Harg_open)
     as Hres_norm.

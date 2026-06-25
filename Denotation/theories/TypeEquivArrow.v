@@ -437,9 +437,10 @@ Lemma basic_tm_has_ltype_arrow_inserted_result_target_fun
   typed_total_equiv_on Σ τtop m e1 e2 ->
   y ∉ fv_tm e1 ∪ fv_tm e2 ->
   basic_tm_has_ltype
-    (relevant_env
+    (lty_env_restrict_lvars
       (<[LVFree y := erase_ty τx]> Σ)
-      (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
+      (context_ty_lvars (cty_open 0 y τr) ∪
+       tm_lvars (tapp_tm e2 (vfvar y))))
     e2 (erase_ty τx →ₜ erase_ty τr).
 Proof.
   intros Herase Hequiv Hfresh.
