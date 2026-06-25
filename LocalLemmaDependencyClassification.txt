@@ -101,6 +101,22 @@ Completed Lowering Passes
      wrappers over those bottom-layer facts.
    - This removes duplicate proof bodies without deleting public lemma names.
 
+10. Zero-denotation projection facts were consolidated in
+    `TypeEquivFiberBaseCore`.
+
+   - `TypeEquivBody` no longer carries independent proof bodies for
+     `ty_denote_gas_zero_project_context`,
+     `ty_denote_gas_zero_inter_l/r`,
+     `ty_denote_gas_zero_union_l/r`,
+     `ty_denote_gas_zero_sum_l/r`, or
+     `ty_denote_gas_scope_from_zero_any`.
+   - The public names in `TypeEquivBody` remain compatibility wrappers using
+     qualified references to `TypeEquivFiberBaseCore`, avoiding import-name
+     shadowing.
+   - This is not a local-lemma count reduction, but it is a bottom-up fact
+     consolidation: zero-denotation projection belongs to the shared fiber base
+     layer, not to the term-equivalence body layer.
+
 Classification Table
 --------------------
 
@@ -261,6 +277,7 @@ Next Candidate Passes
    second caller appears.
 3. Const over/under local helpers are symmetric and should be generalized in a
    focused Const pass rather than moved as store/resource facts.
-4. The next concrete lowering target is the zero-denotation projection family
-   duplicated between `TypeEquivBody` and `TypeEquivFiberBaseCore`; do this in
-   a focused pass because it touches public imports.
+4. After pass 10, the next concrete duplicate target is the Const
+   over/under local helper pair. That should be a focused Const pass because
+   it likely needs a polarity abstraction rather than a pure store/resource
+   lowering.

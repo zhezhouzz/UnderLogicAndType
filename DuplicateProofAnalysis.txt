@@ -106,17 +106,39 @@ Current Remaining Exact Duplicates After Round 4
 
 - `ctx_erasure_under_bind/comma/star`: small definitional `reflexivity`
   wrappers; leave for now.
-- `ty_denote_gas_zero_{inter,union,sum}_{l,r}` duplicated between
-  `TypeEquivBody` and `TypeEquivFiberBaseCore`: promising but requires careful
-  import-boundary handling because both files expose the same public names.
+- Const `over/under` pairs: likely can be generalized over the polarity of
+  refinement, but should be done in a focused Const pass.
+
+Round 5: zero-denotation projection family.
+
+- `TypeEquivFiberBaseCore` is now the canonical home for:
+  - `ty_denote_gas_zero_project_context`
+  - `ty_denote_gas_zero_inter_l/r`
+  - `ty_denote_gas_zero_union_l/r`
+  - `ty_denote_gas_zero_sum_l/r`
+  - `ty_denote_gas_scope_from_zero_any`
+- `TypeEquivBody` keeps the same public lemma names, but each is now a short
+  compatibility wrapper over the `TypeEquivFiberBaseCore` theorem.
+- Import boundary choice: `TypeEquivBody.v` uses `From Denotation Require
+  TypeEquivFiberBaseCore.` and qualified references, so the local public names
+  are not shadowed by imported unqualified names.
+- Verified:
+  `timeout 20s make TIMED=1 Denotation/theories/TypeEquivBody.vo
+  Denotation/theories/TypeEquivArrowResultFirst.vo
+  Denotation/theories/TypeEquivWandResultFirst.vo
+  Denotation/theories/TypeEquivTLet.vo`.
+
+Current Remaining Exact Duplicates After Round 5
+------------------------------------------------
+
+- `ctx_erasure_under_bind/comma/star`: small definitional `reflexivity`
+  wrappers; leave for now.
 - Const `over/under` pairs: likely can be generalized over the polarity of
   refinement, but should be done in a focused Const pass.
 
 Deferred Candidates
 -------------------
 
-- Move or merge zero-denotation projections only after checking whether both
-  files still need separate import boundaries.
 - Result-first `formula_scoped_in_world` assertions should be extracted only
   together with the open-normalization boundary; otherwise the helper
   statements become harder to read.

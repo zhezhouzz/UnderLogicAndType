@@ -4,6 +4,7 @@
 
 From Denotation Require Import Notation TypeDenote.
 From Denotation Require Import TypeEquivCore TypeEquivTerm TypeEquivFiberBody.
+From Denotation Require TypeEquivFiberBaseCore.
 
 Section TypeDenote.
 
@@ -75,67 +76,7 @@ Lemma ty_denote_gas_zero_project_context
   m ⊨ ty_denote_gas 0 Σ τbig e ->
   m ⊨ ty_denote_gas 0 Σ τsmall e.
 Proof.
-  intros Hτ Herase Hshape_small Hzero.
-  apply ty_denote_gas_zero_of_guard.
-  apply ty_denote_gas_guard_of_zero in Hzero.
-  repeat rewrite res_models_and_iff in Hzero |- *.
-  destruct Hzero as [Hwf [Hworld [Hbasic Htotal]]].
-  pose proof (relevant_env_dom_mono_context
-    Σ τsmall τbig e Hτ) as Hdom_small_big.
-  assert (Hrel_small_big :
-      relevant_lvars τsmall e ⊆ relevant_lvars τbig e).
-  { unfold relevant_lvars. set_solver. }
-  split.
-  - apply context_ty_wf_formula_models_iff in Hwf
-      as [Hlc_big [Hscope_big Hbasic_big]].
-    apply context_ty_wf_formula_models_iff.
-    assert (HbasicΣ_small :
-        basic_context_ty_lvars (dom Σ) τsmall).
-    {
-      destruct Hbasic_big as [Hvars_big _].
-      split; [|exact Hshape_small].
-      intros v Hv.
-      eapply relevant_env_dom_subset_direct.
-      apply Hvars_big. exact (Hτ _ Hv).
-    }
-    split.
-    + intros v Hv. apply Hlc_big. exact (Hdom_small_big _ Hv).
-    + split.
-      * intros a Ha.
-        apply Hscope_big.
-        apply lvars_fv_elem in Ha.
-        apply lvars_fv_elem. exact (Hdom_small_big _ Ha).
-      * apply basic_context_ty_lvars_relevant_env.
-        exact HbasicΣ_small.
-  - split.
-    + eapply basic_world_relevant_mono_context; eauto.
-    + split.
-      * apply expr_basic_typing_formula_models_iff in Hbasic
-          as [Hlc_big [Hscope_big Hty_big]].
-        apply expr_basic_typing_formula_models_iff.
-        split.
-        -- intros v Hv. apply Hlc_big. exact (Hdom_small_big _ Hv).
-        -- split.
-           ++ intros a Ha.
-              apply Hscope_big.
-              apply lvars_fv_elem in Ha.
-              apply lvars_fv_elem. exact (Hdom_small_big _ Ha).
-           ++ rewrite Herase.
-              replace (relevant_env Σ τsmall e) with
-                (storeA_restrict
-                  (relevant_env Σ τbig e)
-                  (relevant_lvars τsmall e)).
-              2:{
-                unfold relevant_env.
-                rewrite <- (relevant_env_restrict_subset
-                  Σ τbig e (relevant_lvars τsmall e) Hrel_small_big).
-                reflexivity.
-              }
-              eapply basic_tm_has_ltype_restrict_lvars_lc.
-              ** exact Hty_big.
-              ** eapply basic_tm_has_ltype_lc; eauto.
-              ** unfold relevant_lvars. set_solver.
-      * exact Htotal.
+  apply TypeEquivFiberBaseCore.ty_denote_gas_zero_project_context.
 Qed.
 
 Lemma ty_denote_gas_zero_inter_l
@@ -143,15 +84,7 @@ Lemma ty_denote_gas_zero_inter_l
   m ⊨ ty_denote_gas 0 Σ (CTInter τ1 τ2) e ->
   m ⊨ ty_denote_gas 0 Σ τ1 e.
 Proof.
-  intros Hzero.
-  eapply (ty_denote_gas_zero_project_context
-    Σ τ1 (CTInter τ1 τ2) e m); [|reflexivity| |exact Hzero].
-  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
-  - apply ty_denote_gas_guard_of_zero in Hzero.
-    repeat rewrite res_models_and_iff in Hzero.
-    destruct Hzero as [Hwf _].
-    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
-    cbn [context_ty_shape_ok] in Hshape. tauto.
+  apply TypeEquivFiberBaseCore.ty_denote_gas_zero_inter_l.
 Qed.
 
 Lemma ty_denote_gas_zero_inter_r
@@ -159,21 +92,7 @@ Lemma ty_denote_gas_zero_inter_r
   m ⊨ ty_denote_gas 0 Σ (CTInter τ1 τ2) e ->
   m ⊨ ty_denote_gas 0 Σ τ2 e.
 Proof.
-  intros Hzero.
-  assert (Hshape_big : context_ty_shape_ok (CTInter τ1 τ2)).
-  {
-    apply ty_denote_gas_guard_of_zero in Hzero as Hguard.
-    repeat rewrite res_models_and_iff in Hguard.
-    destruct Hguard as [Hwf _].
-    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
-    exact Hshape.
-  }
-  cbn [context_ty_shape_ok] in Hshape_big.
-  destruct Hshape_big as [_ [Hshape2 Herase]].
-  eapply (ty_denote_gas_zero_project_context
-    Σ τ2 (CTInter τ1 τ2) e m); [| |exact Hshape2|exact Hzero].
-  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
-  - cbn [erase_ty]. symmetry. exact Herase.
+  apply TypeEquivFiberBaseCore.ty_denote_gas_zero_inter_r.
 Qed.
 
 Lemma typed_total_equiv_inter_l
@@ -231,15 +150,7 @@ Lemma ty_denote_gas_zero_union_l
   m ⊨ ty_denote_gas 0 Σ (CTUnion τ1 τ2) e ->
   m ⊨ ty_denote_gas 0 Σ τ1 e.
 Proof.
-  intros Hzero.
-  eapply (ty_denote_gas_zero_project_context
-    Σ τ1 (CTUnion τ1 τ2) e m); [|reflexivity| |exact Hzero].
-  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
-  - apply ty_denote_gas_guard_of_zero in Hzero.
-    repeat rewrite res_models_and_iff in Hzero.
-    destruct Hzero as [Hwf _].
-    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
-    cbn [context_ty_shape_ok] in Hshape. tauto.
+  apply TypeEquivFiberBaseCore.ty_denote_gas_zero_union_l.
 Qed.
 
 Lemma ty_denote_gas_zero_union_r
@@ -247,21 +158,7 @@ Lemma ty_denote_gas_zero_union_r
   m ⊨ ty_denote_gas 0 Σ (CTUnion τ1 τ2) e ->
   m ⊨ ty_denote_gas 0 Σ τ2 e.
 Proof.
-  intros Hzero.
-  assert (Hshape_big : context_ty_shape_ok (CTUnion τ1 τ2)).
-  {
-    apply ty_denote_gas_guard_of_zero in Hzero as Hguard.
-    repeat rewrite res_models_and_iff in Hguard.
-    destruct Hguard as [Hwf _].
-    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
-    exact Hshape.
-  }
-  cbn [context_ty_shape_ok] in Hshape_big.
-  destruct Hshape_big as [_ [Hshape2 Herase]].
-  eapply (ty_denote_gas_zero_project_context
-    Σ τ2 (CTUnion τ1 τ2) e m); [| |exact Hshape2|exact Hzero].
-  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
-  - cbn [erase_ty]. symmetry. exact Herase.
+  apply TypeEquivFiberBaseCore.ty_denote_gas_zero_union_r.
 Qed.
 
 Lemma typed_total_equiv_union_l
@@ -299,10 +196,7 @@ Lemma ty_denote_gas_scope_from_zero_any
   m ⊨ ty_denote_gas 0 Σ τ e ->
   formula_scoped_in_world m (ty_denote_gas gas Σ τ e).
 Proof.
-  intros Hzero.
-  eapply ty_denote_gas_scope_of_guard.
-  - reflexivity.
-  - apply ty_denote_gas_guard_of_zero. exact Hzero.
+  apply TypeEquivFiberBaseCore.ty_denote_gas_scope_from_zero_any.
 Qed.
 
 Lemma ty_denote_gas_tm_equiv_union_body
@@ -372,15 +266,7 @@ Lemma ty_denote_gas_zero_sum_l
   m ⊨ ty_denote_gas 0 Σ (CTSum τ1 τ2) e ->
   m ⊨ ty_denote_gas 0 Σ τ1 e.
 Proof.
-  intros Hzero.
-  eapply (ty_denote_gas_zero_project_context
-    Σ τ1 (CTSum τ1 τ2) e m); [|reflexivity| |exact Hzero].
-  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
-  - apply ty_denote_gas_guard_of_zero in Hzero.
-    repeat rewrite res_models_and_iff in Hzero.
-    destruct Hzero as [Hwf _].
-    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
-    cbn [context_ty_shape_ok] in Hshape. tauto.
+  apply TypeEquivFiberBaseCore.ty_denote_gas_zero_sum_l.
 Qed.
 
 Lemma ty_denote_gas_zero_sum_r
@@ -388,21 +274,7 @@ Lemma ty_denote_gas_zero_sum_r
   m ⊨ ty_denote_gas 0 Σ (CTSum τ1 τ2) e ->
   m ⊨ ty_denote_gas 0 Σ τ2 e.
 Proof.
-  intros Hzero.
-  assert (Hshape_big : context_ty_shape_ok (CTSum τ1 τ2)).
-  {
-    apply ty_denote_gas_guard_of_zero in Hzero as Hguard.
-    repeat rewrite res_models_and_iff in Hguard.
-    destruct Hguard as [Hwf _].
-    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
-    exact Hshape.
-  }
-  cbn [context_ty_shape_ok] in Hshape_big.
-  destruct Hshape_big as [_ [Hshape2 Herase]].
-  eapply (ty_denote_gas_zero_project_context
-    Σ τ2 (CTSum τ1 τ2) e m); [| |exact Hshape2|exact Hzero].
-  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
-  - cbn [erase_ty]. symmetry. exact Herase.
+  apply TypeEquivFiberBaseCore.ty_denote_gas_zero_sum_r.
 Qed.
 
 Lemma typed_total_equiv_sum_l_pullback

@@ -119,14 +119,27 @@ Round 2:
   `timeout 20s make TIMED=1 Denotation/theories/TypeDenote.vo
   Denotation/theories/ResultFirstOpen.vo` passed.
 
+Round 3:
+
+- Consolidated the zero-denotation projection family in
+  `TypeEquivFiberBaseCore`.
+- `TypeEquivBody` now keeps public compatibility wrapper names but delegates
+  the proof bodies for `ty_denote_gas_zero_project_context`,
+  `ty_denote_gas_zero_inter_l/r`, `ty_denote_gas_zero_union_l/r`,
+  `ty_denote_gas_zero_sum_l/r`, and `ty_denote_gas_scope_from_zero_any`.
+- This removes a repeated proof idiom from the term-equivalence body layer and
+  makes `TypeEquivBody.vo` a thinner file. Local check:
+  `timeout 20s make TIMED=1 Denotation/theories/TypeEquivBody.vo
+  Denotation/theories/TypeEquivArrowResultFirst.vo
+  Denotation/theories/TypeEquivWandResultFirst.vo
+  Denotation/theories/TypeEquivTLet.vo`.
+
 Next Measurable Large-Proof Target
 ----------------------------------
 
-- The next high-value large-proof reduction remains the duplicated
-  zero-denotation projection family between `TypeEquivBody` and
-  `TypeEquivFiberBaseCore`. It is a better target than the Fix induction
-  proofs because it is a repeated proof idiom rather than a semantic induction
-  spine.
+- The next high-value duplicate reduction target is the Const over/under local
+  helper pair. It probably wants a small polarity abstraction rather than a
+  store/resource lowering.
 
 Deferred
 --------
