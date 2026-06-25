@@ -441,13 +441,7 @@ Local Lemma basic_value_has_ltype_wand_inserted_result_target_arg
       (cty_open 0 y τr) (tapp_tm e (vfvar y)))
     (vfvar y) (erase_ty τx).
 Proof.
-  eapply BVT_FVar.
-  unfold relevant_env, lty_env_restrict_lvars.
-  apply storeA_restrict_lookup_some_2.
-  - rewrite lookup_insert_eq. reflexivity.
-  - unfold relevant_lvars, tapp_tm.
-    cbn [context_ty_lvars tm_lvars tm_lvars_at value_lvars_at].
-    set_solver.
+  apply basic_value_has_ltype_arrow_inserted_result_target_arg.
 Qed.
 
 Local Lemma basic_tm_has_ltype_wand_inserted_result_target_fun
@@ -462,45 +456,7 @@ Local Lemma basic_tm_has_ltype_wand_inserted_result_target_fun
       (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
     e2 (erase_ty τx →ₜ erase_ty τr).
 Proof.
-  intros Herase Hequiv Hfresh.
-  destruct Hequiv as [_ [_ [_ Hzero_tgt]]].
-  pose proof (ty_denote_gas_guard_of_zero Σ τtop e2 m Hzero_tgt)
-    as Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  destruct Hguard as [_ [Hworld [Hbasic _]]].
-  apply expr_basic_typing_formula_models_iff in Hbasic
-    as [HlcΣ [_ Hty]].
-  rewrite Herase in Hty.
-  pose proof (basic_tm_has_ltype_lc _ e2
-    (erase_ty τx →ₜ erase_ty τr) HlcΣ Hty) as Hlc_e2.
-  eapply basic_tm_has_ltype_env_agree_lc; [exact Hty|exact Hlc_e2|].
-  apply storeA_map_eq. intros v.
-  unfold relevant_env, lty_env_restrict_lvars.
-  rewrite !storeA_restrict_lookup.
-  destruct (decide (v ∈ tm_lvars e2)) as [Hv|Hv]; [|reflexivity].
-  assert (Hv_source : v ∈ relevant_lvars τtop e2).
-  {
-    unfold relevant_lvars. set_solver.
-  }
-  assert (Hv_target :
-      v ∈ relevant_lvars (cty_open 0 y τr)
-        (tapp_tm e2 (vfvar y))).
-  {
-    unfold relevant_lvars, tapp_tm.
-    cbn [tm_lvars tm_lvars_at value_lvars_at].
-    set_solver.
-  }
-  rewrite decide_True by exact Hv_source.
-  rewrite decide_True by exact Hv_target.
-  destruct v as [k|a].
-  - exfalso. exact ((tm_lvars_lc e2 Hlc_e2) (LVBound k) Hv).
-  - assert (Hay : a <> y).
-    {
-      intros ->. apply Hfresh. apply elem_of_union_r.
-      rewrite <- tm_lvars_fv. apply lvars_fv_elem. exact Hv.
-    }
-    rewrite lookup_insert_ne by (intros Heq; inversion Heq; subst; auto).
-    reflexivity.
+  apply basic_tm_has_ltype_arrow_inserted_result_target_fun.
 Qed.
 
 Lemma wand_result_target_typing

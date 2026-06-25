@@ -413,7 +413,7 @@ Proof.
   - exact Hyτr.
 Qed.
 
-Local Lemma basic_value_has_ltype_arrow_inserted_result_target_arg
+Lemma basic_value_has_ltype_arrow_inserted_result_target_arg
     (Σ : lty_env) τx τr e y :
   basic_value_has_ltype
     (relevant_env
@@ -430,7 +430,7 @@ Proof.
     set_solver.
 Qed.
 
-Local Lemma basic_tm_has_ltype_arrow_inserted_result_target_fun
+Lemma basic_tm_has_ltype_arrow_inserted_result_target_fun
     (Σ : lty_env) τtop τx τr e1 e2
     (m : WfWorldT) y :
   erase_ty τtop = erase_ty τx →ₜ erase_ty τr ->

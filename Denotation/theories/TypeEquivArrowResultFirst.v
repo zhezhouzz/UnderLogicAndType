@@ -231,37 +231,10 @@ Local Lemma arrow_result_body_relevant_subset τx τr e f y :
     (tapp_tm (tret (vfvar f)) (vfvar y)) ∖ {[LVFree y]} ∖ {[LVFree f]} ⊆
   relevant_lvars (CTArrow τx τr) e.
 Proof.
-  intros Hlcτr Hffresh Hyfresh v Hv.
-  apply elem_of_difference in Hv as [Hv Hvf].
-  apply elem_of_difference in Hv as [Hv Hvy].
-  unfold relevant_lvars in Hv |- *.
-  apply elem_of_union in Hv as [Hvτ | Hve].
-  - apply elem_of_union_l.
-    cbn [context_ty_lvars context_ty_lvars_at].
-    apply elem_of_union_r.
-    assert (HlcD : lc_lvars (context_ty_lvars_at 1 τr)).
-    {
-      apply lc_lvars_no_bv.
-      apply cty_lc_at_lvars_bv_empty. exact Hlcτr.
-    }
-    assert (HyD : LVFree y ∉ context_ty_lvars_at 1 τr).
-    {
-      intros HyD.
-      apply Hyfresh. apply elem_of_union_r.
-      rewrite <- (context_ty_lvars_fv_at 1 τr).
-      apply lvars_fv_elem. exact HyD.
-    }
-    pose proof (cty_lvars_open_body_closed_no_fresh
-      (context_ty_lvars_at 1 τr) τr y HlcD HyD
-      ltac:(set_solver) v) as Hsubset.
-    apply Hsubset.
-    apply elem_of_difference. split; [exact Hvτ|exact Hvy].
-  - cbn [tm_lvars tm_lvars_at value_lvars_at bvar_lvars_at
-          lvar_value_keys] in Hve.
-    rewrite tm_lvars_tapp_tm_fvar in Hve.
-    cbn [tm_lvars tm_lvars_at value_lvars_at bvar_lvars_at
-          lvar_value_keys] in Hve.
-    better_set_solver.
+  intros Hlcτr Hffresh Hyfresh.
+  eapply result_first_result_body_relevant_subset; [exact Hlcτr| |].
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+  - intros Hy. apply Hyfresh. apply elem_of_union_r. exact Hy.
 Qed.
 
 Lemma arrow_result_first_result_env_agree
@@ -352,31 +325,14 @@ Local Lemma arrow_lc_lvars_shift_from k D :
   lc_lvars D ->
   lc_lvars (lvars_shift_from k D).
 Proof.
-  intros Hlc v Hv.
-  unfold lvars_shift_from in Hv.
-  apply elem_of_map in Hv as [u [-> Hu]].
-  destruct u as [n|x]; cbn [logic_var_shift_from].
-  - destruct (decide (k <= n)); exfalso; exact (Hlc (LVBound n) Hu).
-  - exact I.
+  apply result_first_lc_lvars_shift_from.
 Qed.
 
 Local Lemma arrow_lvars_shift_from_lc_eq k D :
   lc_lvars D ->
   lvars_shift_from k D = D.
 Proof.
-  intros Hlc.
-  apply set_eq. intros v. split.
-  - unfold lvars_shift_from.
-    intros Hv.
-    apply elem_of_map in Hv as [u [-> Hu]].
-    destruct u as [n|x]; cbn [logic_var_shift_from].
-    + destruct (decide (k <= n)); exfalso; exact (Hlc (LVBound n) Hu).
-    + exact Hu.
-  - intros Hv.
-    unfold lvars_shift_from.
-    destruct v as [n|x].
-    + exfalso. exact (Hlc (LVBound n) Hv).
-    + apply elem_of_map. exists (LVFree x). split; [reflexivity|exact Hv].
+  apply result_first_lvars_shift_from_lc_eq.
 Qed.
 
 Local Ltac arrow_expr_result_shift0_side :=

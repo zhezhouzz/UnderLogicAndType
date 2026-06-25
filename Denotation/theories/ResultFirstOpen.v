@@ -18,6 +18,25 @@ Proof.
   - exact I.
 Qed.
 
+Lemma result_first_lvars_shift_from_lc_eq k D :
+  lc_lvars D ->
+  lvars_shift_from k D = D.
+Proof.
+  intros Hlc.
+  apply set_eq. intros v. split.
+  - unfold lvars_shift_from.
+    intros Hv.
+    apply elem_of_map in Hv as [u [-> Hu]].
+    destruct u as [n|x]; cbn [logic_var_shift_from].
+    + destruct (decide (k <= n)); exfalso; exact (Hlc (LVBound n) Hu).
+    + exact Hu.
+  - intros Hv.
+    unfold lvars_shift_from.
+    destruct v as [n|x].
+    + exfalso. exact (Hlc (LVBound n) Hv).
+    + apply elem_of_map. exists (LVFree x). split; [reflexivity|exact Hv].
+Qed.
+
 Lemma result_first_lvars_lc_at_zero_of_lc D :
   lc_lvars D ->
   lvars_lc_at 0 D.
@@ -95,6 +114,46 @@ Proof.
   unfold formula_scoped_in_world.
   etransitivity; [apply formula_fv_open_arrow_value_body_obs|].
   exact Hsub.
+Qed.
+
+Lemma result_first_result_body_relevant_subset τtop τr e f y :
+  cty_lc_at 1 τr ->
+  context_ty_lvars_at 1 τr ⊆ context_ty_lvars τtop ->
+  y ∉ fv_cty τr ->
+  relevant_lvars (cty_open 0 y τr)
+    (tapp_tm (tret (vfvar f)) (vfvar y)) ∖ {[LVFree y]} ∖ {[LVFree f]} ⊆
+  relevant_lvars τtop e.
+Proof.
+  intros Hlcτr Hτr_top Hyfresh v Hv.
+  apply elem_of_difference in Hv as [Hv Hvf].
+  apply elem_of_difference in Hv as [Hv Hvy].
+  unfold relevant_lvars in Hv |- *.
+  apply elem_of_union in Hv as [Hvτ | Hve].
+  - apply elem_of_union_l.
+    apply Hτr_top.
+    assert (HlcD : lc_lvars (context_ty_lvars_at 1 τr)).
+    {
+      apply lc_lvars_no_bv.
+      apply cty_lc_at_lvars_bv_empty. exact Hlcτr.
+    }
+    assert (HyD : LVFree y ∉ context_ty_lvars_at 1 τr).
+    {
+      intros HyD.
+      apply Hyfresh.
+      rewrite <- (context_ty_lvars_fv_at 1 τr).
+      apply lvars_fv_elem. exact HyD.
+    }
+    pose proof (cty_lvars_open_body_closed_no_fresh
+      (context_ty_lvars_at 1 τr) τr y HlcD HyD
+      ltac:(set_solver) v) as Hsubset.
+    apply Hsubset.
+    apply elem_of_difference. split; [exact Hvτ|exact Hvy].
+  - cbn [tm_lvars tm_lvars_at value_lvars_at bvar_lvars_at
+          lvar_value_keys] in Hve.
+    rewrite tm_lvars_tapp_tm_fvar in Hve.
+    cbn [tm_lvars tm_lvars_at value_lvars_at bvar_lvars_at
+          lvar_value_keys] in Hve.
+    set_solver.
 Qed.
 
 Lemma formula_fv_open_wand_value_body_obs
