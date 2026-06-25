@@ -89,6 +89,19 @@ Proof.
            ++ apply relevant_env_agree_on_tm_lvars.
 Qed.
 
+Lemma ty_denote_gas_zero_shape_ok
+    (Σ : lty_env) τ e (m : WfWorldT) :
+  m ⊨ ty_denote_gas 0 Σ τ e ->
+  context_ty_shape_ok τ.
+Proof.
+  intros Hzero.
+  apply ty_denote_gas_guard_of_zero in Hzero.
+  repeat rewrite res_models_and_iff in Hzero.
+  destruct Hzero as [Hwf _].
+  apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
+  exact Hshape.
+Qed.
+
 Lemma ty_denote_gas_zero_inter_l
     (Σ : lty_env) τ1 τ2 e (m : WfWorldT) :
   m ⊨ ty_denote_gas 0 Σ (CTInter τ1 τ2) e ->
@@ -98,10 +111,8 @@ Proof.
   eapply (ty_denote_gas_zero_project_context
     Σ τ1 (CTInter τ1 τ2) e m); [|reflexivity| |exact Hzero].
   - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
-  - apply ty_denote_gas_guard_of_zero in Hzero.
-    repeat rewrite res_models_and_iff in Hzero.
-    destruct Hzero as [Hwf _].
-    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
+  - pose proof (ty_denote_gas_zero_shape_ok
+      Σ (CTInter τ1 τ2) e m Hzero) as Hshape.
     cbn [context_ty_shape_ok] in Hshape. tauto.
 Qed.
 
@@ -113,11 +124,7 @@ Proof.
   intros Hzero.
   assert (Hshape_big : context_ty_shape_ok (CTInter τ1 τ2)).
   {
-    apply ty_denote_gas_guard_of_zero in Hzero as Hguard.
-    repeat rewrite res_models_and_iff in Hguard.
-    destruct Hguard as [Hwf _].
-    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
-    exact Hshape.
+    eapply ty_denote_gas_zero_shape_ok. exact Hzero.
   }
   cbn [context_ty_shape_ok] in Hshape_big.
   destruct Hshape_big as [_ [Hshape2 Herase]].
@@ -136,10 +143,8 @@ Proof.
   eapply (ty_denote_gas_zero_project_context
     Σ τ1 (CTUnion τ1 τ2) e m); [|reflexivity| |exact Hzero].
   - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
-  - apply ty_denote_gas_guard_of_zero in Hzero.
-    repeat rewrite res_models_and_iff in Hzero.
-    destruct Hzero as [Hwf _].
-    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
+  - pose proof (ty_denote_gas_zero_shape_ok
+      Σ (CTUnion τ1 τ2) e m Hzero) as Hshape.
     cbn [context_ty_shape_ok] in Hshape. tauto.
 Qed.
 
@@ -151,11 +156,7 @@ Proof.
   intros Hzero.
   assert (Hshape_big : context_ty_shape_ok (CTUnion τ1 τ2)).
   {
-    apply ty_denote_gas_guard_of_zero in Hzero as Hguard.
-    repeat rewrite res_models_and_iff in Hguard.
-    destruct Hguard as [Hwf _].
-    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
-    exact Hshape.
+    eapply ty_denote_gas_zero_shape_ok. exact Hzero.
   }
   cbn [context_ty_shape_ok] in Hshape_big.
   destruct Hshape_big as [_ [Hshape2 Herase]].
@@ -303,10 +304,8 @@ Proof.
   eapply (ty_denote_gas_zero_project_context
     Σ τ1 (CTSum τ1 τ2) e m); [|reflexivity| |exact Hzero].
   - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
-  - apply ty_denote_gas_guard_of_zero in Hzero.
-    repeat rewrite res_models_and_iff in Hzero.
-    destruct Hzero as [Hwf _].
-    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
+  - pose proof (ty_denote_gas_zero_shape_ok
+      Σ (CTSum τ1 τ2) e m Hzero) as Hshape.
     cbn [context_ty_shape_ok] in Hshape. tauto.
 Qed.
 
@@ -318,11 +317,7 @@ Proof.
   intros Hzero.
   assert (Hshape_big : context_ty_shape_ok (CTSum τ1 τ2)).
   {
-    apply ty_denote_gas_guard_of_zero in Hzero as Hguard.
-    repeat rewrite res_models_and_iff in Hguard.
-    destruct Hguard as [Hwf _].
-    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
-    exact Hshape.
+    eapply ty_denote_gas_zero_shape_ok. exact Hzero.
   }
   cbn [context_ty_shape_ok] in Hshape_big.
   destruct Hshape_big as [_ [Hshape2 Herase]].

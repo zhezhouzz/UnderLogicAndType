@@ -31,9 +31,8 @@ Proof.
   intros Hequiv Hsrc.
   eapply (ty_denote_gas_tm_fiber_equiv_over_body
     gas Σ b φ e1 e2 m); [|exact Hsrc].
-  apply typed_fiber_equiv_intro.
-  - apply tm_equiv_on_to_fiber_equiv.
-    eapply typed_total_equiv_tm_equiv. exact Hequiv.
+  apply typed_fiber_equiv_of_tm_equiv.
+  - eapply typed_total_equiv_tm_equiv. exact Hequiv.
   - eapply typed_total_equiv_source_zero. exact Hequiv.
   - eapply typed_total_equiv_target_zero. exact Hequiv.
 Qed.
@@ -61,9 +60,8 @@ Proof.
   intros Hequiv Hsrc.
   eapply (ty_denote_gas_tm_fiber_equiv_under_body
     gas Σ b φ e1 e2 m); [|exact Hsrc].
-  apply typed_fiber_equiv_intro.
-  - apply tm_equiv_on_to_fiber_equiv.
-    eapply typed_total_equiv_tm_equiv. exact Hequiv.
+  apply typed_fiber_equiv_of_tm_equiv.
+  - eapply typed_total_equiv_tm_equiv. exact Hequiv.
   - eapply typed_total_equiv_source_zero. exact Hequiv.
   - eapply typed_total_equiv_target_zero. exact Hequiv.
 Qed.
@@ -95,19 +93,51 @@ Proof.
   apply TypeEquivFiberBaseCore.ty_denote_gas_zero_inter_r.
 Qed.
 
+Lemma typed_total_equiv_project_context
+    (Σ : lty_env) τsmall τbig m e1 e2 :
+  context_ty_lvars τsmall ⊆ context_ty_lvars τbig ->
+  erase_ty τsmall = erase_ty τbig ->
+  context_ty_shape_ok τsmall ->
+  typed_total_equiv_on Σ τbig m e1 e2 ->
+  typed_total_equiv_on Σ τsmall m e1 e2.
+Proof.
+  intros Hlv Herase Hshape Hequiv.
+  split; [eapply typed_total_equiv_tm_equiv; exact Hequiv|].
+  split; [eapply typed_total_equiv_total_equiv; exact Hequiv|].
+  split.
+  - eapply ty_denote_gas_zero_project_context; eauto.
+    eapply typed_total_equiv_source_zero. exact Hequiv.
+  - eapply ty_denote_gas_zero_project_context; eauto.
+    eapply typed_total_equiv_target_zero. exact Hequiv.
+Qed.
+
+Lemma typed_total_equiv_shape_ok
+    (Σ : lty_env) τ m e1 e2 :
+  typed_total_equiv_on Σ τ m e1 e2 ->
+  context_ty_shape_ok τ.
+Proof.
+  intros Hequiv.
+  pose proof (typed_total_equiv_source_zero _ _ _ _ _ Hequiv) as Hzero.
+  apply ty_denote_gas_guard_of_zero in Hzero.
+  repeat rewrite res_models_and_iff in Hzero.
+  destruct Hzero as [Hwf _].
+  apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
+  exact Hshape.
+Qed.
+
 Lemma typed_total_equiv_inter_l
     (Σ : lty_env) τ1 τ2 m e1 e2 :
   typed_total_equiv_on Σ (CTInter τ1 τ2) m e1 e2 ->
   typed_total_equiv_on Σ τ1 m e1 e2.
 Proof.
   intros Hequiv.
-  split; [eapply typed_total_equiv_tm_equiv; exact Hequiv|].
-  split; [eapply typed_total_equiv_total_equiv; exact Hequiv|].
-  split.
-  - eapply ty_denote_gas_zero_inter_l.
-    eapply typed_total_equiv_source_zero. exact Hequiv.
-  - eapply ty_denote_gas_zero_inter_l.
-    eapply typed_total_equiv_target_zero. exact Hequiv.
+  eapply (typed_total_equiv_project_context
+    Σ τ1 (CTInter τ1 τ2) m e1 e2);
+    [|reflexivity| |exact Hequiv].
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+  - pose proof (typed_total_equiv_shape_ok
+      Σ (CTInter τ1 τ2) m e1 e2 Hequiv) as Hshape.
+    cbn [context_ty_shape_ok] in Hshape. tauto.
 Qed.
 
 Lemma typed_total_equiv_inter_r
@@ -116,13 +146,17 @@ Lemma typed_total_equiv_inter_r
   typed_total_equiv_on Σ τ2 m e1 e2.
 Proof.
   intros Hequiv.
-  split; [eapply typed_total_equiv_tm_equiv; exact Hequiv|].
-  split; [eapply typed_total_equiv_total_equiv; exact Hequiv|].
-  split.
-  - eapply ty_denote_gas_zero_inter_r.
-    eapply typed_total_equiv_source_zero. exact Hequiv.
-  - eapply ty_denote_gas_zero_inter_r.
-    eapply typed_total_equiv_target_zero. exact Hequiv.
+  assert (Hshape_big : context_ty_shape_ok (CTInter τ1 τ2)).
+  {
+    eapply typed_total_equiv_shape_ok. exact Hequiv.
+  }
+  cbn [context_ty_shape_ok] in Hshape_big.
+  destruct Hshape_big as [_ [Hshape2 Herase]].
+  eapply (typed_total_equiv_project_context
+    Σ τ2 (CTInter τ1 τ2) m e1 e2);
+    [| |exact Hshape2|exact Hequiv].
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+  - cbn [erase_ty]. symmetry. exact Herase.
 Qed.
 
 Lemma ty_denote_gas_tm_equiv_inter_body
@@ -167,13 +201,13 @@ Lemma typed_total_equiv_union_l
   typed_total_equiv_on Σ τ1 m e1 e2.
 Proof.
   intros Hequiv.
-  split; [eapply typed_total_equiv_tm_equiv; exact Hequiv|].
-  split; [eapply typed_total_equiv_total_equiv; exact Hequiv|].
-  split.
-  - eapply ty_denote_gas_zero_union_l.
-    eapply typed_total_equiv_source_zero. exact Hequiv.
-  - eapply ty_denote_gas_zero_union_l.
-    eapply typed_total_equiv_target_zero. exact Hequiv.
+  eapply (typed_total_equiv_project_context
+    Σ τ1 (CTUnion τ1 τ2) m e1 e2);
+    [|reflexivity| |exact Hequiv].
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+  - pose proof (typed_total_equiv_shape_ok
+      Σ (CTUnion τ1 τ2) m e1 e2 Hequiv) as Hshape.
+    cbn [context_ty_shape_ok] in Hshape. tauto.
 Qed.
 
 Lemma typed_total_equiv_union_r
@@ -182,13 +216,17 @@ Lemma typed_total_equiv_union_r
   typed_total_equiv_on Σ τ2 m e1 e2.
 Proof.
   intros Hequiv.
-  split; [eapply typed_total_equiv_tm_equiv; exact Hequiv|].
-  split; [eapply typed_total_equiv_total_equiv; exact Hequiv|].
-  split.
-  - eapply ty_denote_gas_zero_union_r.
-    eapply typed_total_equiv_source_zero. exact Hequiv.
-  - eapply ty_denote_gas_zero_union_r.
-    eapply typed_total_equiv_target_zero. exact Hequiv.
+  assert (Hshape_big : context_ty_shape_ok (CTUnion τ1 τ2)).
+  {
+    eapply typed_total_equiv_shape_ok. exact Hequiv.
+  }
+  cbn [context_ty_shape_ok] in Hshape_big.
+  destruct Hshape_big as [_ [Hshape2 Herase]].
+  eapply (typed_total_equiv_project_context
+    Σ τ2 (CTUnion τ1 τ2) m e1 e2);
+    [| |exact Hshape2|exact Hequiv].
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+  - cbn [erase_ty]. symmetry. exact Herase.
 Qed.
 
 Lemma ty_denote_gas_scope_from_zero_any
@@ -366,11 +404,10 @@ Proof.
   intros Hequiv Hbody.
   eapply (ty_denote_gas_tm_fiber_equiv_sum_body
     gas Σ τ1 τ2 e1 e2 m); [|exact Hbody].
-  apply typed_fiber_equiv_intro.
-    + apply tm_equiv_on_to_fiber_equiv.
-      eapply typed_total_equiv_tm_equiv. exact Hequiv.
-    + eapply typed_total_equiv_source_zero. exact Hequiv.
-    + eapply typed_total_equiv_target_zero. exact Hequiv.
+  apply typed_fiber_equiv_of_tm_equiv.
+  - eapply typed_total_equiv_tm_equiv. exact Hequiv.
+  - eapply typed_total_equiv_source_zero. exact Hequiv.
+  - eapply typed_total_equiv_target_zero. exact Hequiv.
 Qed.
 
 End TypeDenote.

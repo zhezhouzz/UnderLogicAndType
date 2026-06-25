@@ -52,24 +52,36 @@ Proof.
   - rewrite cty_shift_fv. exact Hτ.
 Qed.
 
+Lemma formula_fv_open_fibvars_qual_body_obs
+    (φ : type_qualifier) y (B : FormulaT) :
+  formula_fv B ⊆ qual_dom φ ->
+  formula_fv
+    (formula_open 0 y
+      (FFibVars (qual_vars φ ∖ {[LVBound 0]}) B)) ⊆
+  qual_dom φ ∪ {[y]}.
+Proof.
+  intros HB.
+  etransitivity; [apply formula_open_fv_subset|].
+  rewrite formula_fv_fibvars.
+  assert (HD : lvars_fv (qual_vars φ ∖ {[LVBound 0]}) ⊆ qual_dom φ).
+  {
+    intros a Ha. unfold qual_dom.
+    rewrite lvars_fv_elem in Ha |- *.
+    apply elem_of_difference in Ha as [Ha _]. exact Ha.
+  }
+  set_solver.
+Qed.
+
 Lemma formula_fv_open_over_body_obs b φ y :
   formula_fv
     (formula_open 0 y
       (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FOver (FAtom φ)))) ⊆
   lvars_fv (context_ty_lvars (CTOver b φ)) ∪ {[y]}.
 Proof.
-  etransitivity; [apply formula_open_fv_subset|].
-  rewrite formula_fv_fibvars, formula_fv_over, formula_fv_atom.
-  rewrite context_ty_lvars_over_fv.
-  intros a Ha.
-		    apply elem_of_union in Ha as [Ha|Ha].
-  - rewrite elem_of_union in Ha.
-    destruct Ha as [Ha|Ha].
-    + apply elem_of_union_l. unfold qual_dom.
-      rewrite lvars_fv_elem in Ha |- *.
-      apply elem_of_difference in Ha as [Ha _]. exact Ha.
-    + apply elem_of_union_l. unfold qual_dom. exact Ha.
-  - apply elem_of_union_r. exact Ha.
+  etransitivity.
+  - apply formula_fv_open_fibvars_qual_body_obs.
+    rewrite formula_fv_over, formula_fv_atom. set_solver.
+  - rewrite context_ty_lvars_over_fv. set_solver.
 Qed.
 
 Lemma formula_fv_open_under_body_obs b φ y :
@@ -78,19 +90,10 @@ Lemma formula_fv_open_under_body_obs b φ y :
       (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FUnder (FAtom φ)))) ⊆
   lvars_fv (context_ty_lvars (CTUnder b φ)) ∪ {[y]}.
 Proof.
-  etransitivity; [apply formula_open_fv_subset|].
-  rewrite formula_fv_fibvars, formula_fv_under, formula_fv_atom.
-  rewrite context_ty_lvars_under_fv.
-  intros a Ha.
-  rewrite elem_of_union in Ha.
-  destruct Ha as [Ha|Ha].
-  - rewrite elem_of_union in Ha.
-    destruct Ha as [Ha|Ha].
-    + apply elem_of_union_l. unfold qual_dom.
-      rewrite lvars_fv_elem in Ha |- *.
-      apply elem_of_difference in Ha as [Ha _]. exact Ha.
-    + apply elem_of_union_l. unfold qual_dom. exact Ha.
-  - apply elem_of_union_r. exact Ha.
+  etransitivity.
+  - apply formula_fv_open_fibvars_qual_body_obs.
+    rewrite formula_fv_under, formula_fv_atom. set_solver.
+  - rewrite context_ty_lvars_under_fv. set_solver.
 Qed.
 
 Lemma formula_fv_open_sum_body_obs gas Σ τ1 τ2 y :
