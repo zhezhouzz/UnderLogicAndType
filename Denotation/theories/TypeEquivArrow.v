@@ -281,22 +281,6 @@ Proof.
   eapply res_models_kripke; [exact Hle|exact Hworld_top_tgt].
 Qed.
 
-Lemma basic_world_formula_opened_arg_world
-    (Ty : ty) (my : WfWorldT) y :
-  my ⊨ formula_open 0 y
-    (basic_world_formula (<[LVBound 0 := Ty]> ∅)) ->
-  my ⊨ basic_world_formula
-    ((<[LVFree y := Ty]> (∅ : gmap logic_var ty)) : lty_env).
-Proof.
-  intros Hworld.
-  change (<[LVBound 0 := Ty]> (∅ : gmap logic_var ty))
-    with (typed_lty_env_bind (∅ : lty_env) Ty) in Hworld.
-  rewrite formula_open_basic_world_bind0 in Hworld.
-  - exact Hworld.
-  - set_solver.
-  - intros v Hv. set_solver.
-Qed.
-
 Lemma basic_world_formula_arrow_open_result_big
     (Σ : lty_env) τx τr e1 e2 (m my : WfWorldT) y :
   typed_total_equiv_on Σ (CTArrow τx τr) m e1 e2 ->
