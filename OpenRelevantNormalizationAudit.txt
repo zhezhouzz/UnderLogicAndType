@@ -309,3 +309,35 @@ Leak check:
   `lty_env_open_one 0 ... typed_lty_env_bind` occurrences.
 
 Status: completed.
+
+## Current Raw-Open Scan After Iteration 10
+
+Command:
+
+```sh
+rg -n "formula_open 0 .*ty_denote_gas|formula_open 0 .*arrow_value|formula_open 0 .*wand_value|lty_env_open_one 0 .*typed_lty_env_bind|cty_open 0 .*cty_shift 0" Denotation ContextTyping -g '*.v'
+```
+
+Remaining buckets:
+
+- `Denotation/theories/TypeEquivFiberTransport.v`: 14
+- `Denotation/theories/TypeEquivTLet.v`: 10
+- `Denotation/theories/TypeEquivFiberBody.v`: 5
+- `Denotation/theories/TypeDenote.v`: 3, all in normalizer support.
+- `Denotation/theories/TypePersistArrow.v`: 2, normalizer proof internals.
+- `Denotation/theories/Context.v`: 1
+
+Notes:
+
+- `ContextTyping/theories/SoundnessApp.v` and
+  `ContextTyping/theories/SoundnessMatch.v` are now clean for these raw-open
+  patterns.
+- `TypeEquivTLet.v` public open-arg lemma statements are already normalized;
+  remaining hits are internal bridge asserts that route through old
+  `lty_env_open_one (typed_lty_env_bind ...)` env-agree lemmas. The next
+  source-level fix should add direct inserted-env agreement facts, then remove
+  those raw intermediate asserts.
+- `TypeEquivFiberTransport.v` has the same issue at a lower level and also
+  contains duplicate transport names compared with `TypeEquivArrow.v` and
+  `TypeEquivWand.v`; cleanup should first classify which module owns the
+  canonical normalized facts.
