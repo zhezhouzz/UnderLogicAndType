@@ -240,10 +240,10 @@ Proof.
     Σ (CTWand τx τr) e1 m Hzero1) as Hguard1.
   pose proof (ty_denote_gas_guard_of_zero
     Σ (CTWand τx τr) e2 m Hzero2) as Hguard2.
-  repeat rewrite res_models_and_iff in Hguard1.
-  repeat rewrite res_models_and_iff in Hguard2.
-  destruct Hguard1 as [_ [Hworld1 [Hbasic1 _]]].
-  destruct Hguard2 as [_ [Hworld2 [Hbasic2 _]]].
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard1) as Hworld1.
+  pose proof (ty_guard_formula_basic_typing _ _ _ _ Hguard1) as Hbasic1.
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard2) as Hworld2.
+  pose proof (ty_guard_formula_basic_typing _ _ _ _ Hguard2) as Hbasic2.
   assert (Hle : m ⊑ my).
   {
     change (m ⊑ my).
@@ -320,8 +320,8 @@ Proof.
     Σ (CTWand τx τr) m e1 e2 Hequiv) as Hzero_top_tgt.
   pose proof (ty_denote_gas_guard_of_zero
     Σ (CTWand τx τr) e2 m Hzero_top_tgt) as Hguard_top_tgt.
-  repeat rewrite res_models_and_iff in Hguard_top_tgt.
-  destruct Hguard_top_tgt as [_ [Hworld_top_tgt _]].
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard_top_tgt)
+    as Hworld_top_tgt.
   assert (Hle : m ⊑ my).
   { rewrite <- Hrestrict. apply res_restrict_le. }
   eapply res_models_kripke; [exact Hle|exact Hworld_top_tgt].
@@ -349,8 +349,8 @@ Proof.
     Σ (CTWand τx τr) m e1 e2 Hequiv) as Hzero_top_tgt.
   pose proof (ty_denote_gas_guard_of_zero
     Σ (CTWand τx τr) e2 m Hzero_top_tgt) as Hguard_top_tgt.
-  repeat rewrite res_models_and_iff in Hguard_top_tgt.
-  destruct Hguard_top_tgt as [Hwf_top_tgt _].
+  pose proof (ty_guard_formula_context_wf _ _ _ _ Hguard_top_tgt)
+    as Hwf_top_tgt.
   apply context_ty_wf_formula_models_iff in Hwf_top_tgt
     as [_ [_ Hbasic_wand]].
   eapply wand_body_world_from_source_arg.
@@ -442,8 +442,8 @@ Proof.
     Σ (CTWand τx τr) m e1 e2 Hequiv) as Hzero_top_tgt.
   pose proof (ty_denote_gas_guard_of_zero
     Σ (CTWand τx τr) e2 m Hzero_top_tgt) as Hguard_top_tgt.
-  repeat rewrite res_models_and_iff in Hguard_top_tgt.
-  destruct Hguard_top_tgt as [Hwf_top_tgt _].
+  pose proof (ty_guard_formula_context_wf _ _ _ _ Hguard_top_tgt)
+    as Hwf_top_tgt.
   apply context_ty_wf_formula_models_iff in Hwf_top_tgt
     as [Hlc_rel [_ Hbasic_wand]].
   pose proof (basic_context_ty_lvars_lc
@@ -708,8 +708,8 @@ Proof.
     Σ (CTWand τx τr) m e1 e2 Hequiv) as Hzero_top_src.
   pose proof (ty_denote_gas_guard_of_zero
     Σ (CTWand τx τr) e1 m Hzero_top_src) as Hguard_top_src.
-  repeat rewrite res_models_and_iff in Hguard_top_src.
-  destruct Hguard_top_src as [Hwf_top_src _].
+  pose proof (ty_guard_formula_context_wf _ _ _ _ Hguard_top_src)
+    as Hwf_top_src.
   apply context_ty_wf_formula_models_iff in Hwf_top_src
     as [HΣclosed [_ Hbasic_wand]].
   pose proof (basic_context_ty_lvars_lc
@@ -808,10 +808,10 @@ Proof.
     Σ (CTWand τx τr) e1 m Hzero1) as Hguard1.
   pose proof (ty_denote_gas_guard_of_zero
     Σ (CTWand τx τr) e2 m Hzero2) as Hguard2.
-  repeat rewrite res_models_and_iff in Hguard1.
-  repeat rewrite res_models_and_iff in Hguard2.
-  destruct Hguard1 as [_ [Hworld1 [Hbasic1 _]]].
-  destruct Hguard2 as [_ [Hworld2 [Hbasic2 _]]].
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard1) as Hworld1.
+  pose proof (ty_guard_formula_basic_typing _ _ _ _ Hguard1) as Hbasic1.
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard2) as Hworld2.
+  pose proof (ty_guard_formula_basic_typing _ _ _ _ Hguard2) as Hbasic2.
   pose proof (typed_total_equiv_term_scope
     Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
   assert (Hclosed1 : wfworld_closed_on (fv_tm e1) m).
@@ -891,8 +891,8 @@ Proof.
     Σ (CTWand τx τr) m e1 e2 Hequiv) as Hzero_top_tgt.
   pose proof (ty_denote_gas_guard_of_zero
     Σ (CTWand τx τr) e2 m Hzero_top_tgt) as Hguard_top_tgt.
-  repeat rewrite res_models_and_iff in Hguard_top_tgt.
-  destruct Hguard_top_tgt as [_ [Hworld_top_tgt _]].
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard_top_tgt)
+    as Hworld_top_tgt.
   assert (Hworld_src_prod :
       res_product n m Hc ⊨
         basic_world_formula (relevant_env Σ (CTWand τx τr) e2)).
@@ -917,8 +917,8 @@ Proof.
     Σ (CTWand τx τr) m e1 e2 Hequiv) as Hzero_top_tgt'.
   pose proof (ty_denote_gas_guard_of_zero
     Σ (CTWand τx τr) e2 m Hzero_top_tgt') as Hguard_top_tgt'.
-  repeat rewrite res_models_and_iff in Hguard_top_tgt'.
-  destruct Hguard_top_tgt' as [Hwf_top_tgt' _].
+  pose proof (ty_guard_formula_context_wf _ _ _ _ Hguard_top_tgt')
+    as Hwf_top_tgt'.
   apply context_ty_wf_formula_models_iff in Hwf_top_tgt'
     as [Hlc_rel' [_ Hbasic_wand']].
   pose proof (basic_context_ty_lvars_lc
@@ -959,12 +959,22 @@ Proof.
     Σ (CTWand τx τr) m e1 e2 Hequiv) as Hzero_top_tgt.
   pose proof (ty_denote_gas_guard_of_zero
     Σ (CTWand τx τr) e2 m Hzero_top_tgt) as Hguard_top_tgt.
-  repeat rewrite res_models_and_iff in Hguard_res_src.
-  repeat rewrite res_models_and_iff in Hguard_top_tgt.
-  destruct Hguard_res_src as [Hwf_res_src [Hworld_res_src
-    [Hbasic_res_src Htotal_res_src]]].
-  destruct Hguard_top_tgt as [Hwf_top_tgt [Hworld_top_tgt
-    [Hbasic_top_tgt Htotal_top_tgt]]].
+  pose proof (ty_guard_formula_context_wf _ _ _ _ Hguard_res_src)
+    as Hwf_res_src.
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard_res_src)
+    as Hworld_res_src.
+  pose proof (ty_guard_formula_basic_typing _ _ _ _ Hguard_res_src)
+    as Hbasic_res_src.
+  pose proof (ty_guard_formula_total _ _ _ _ Hguard_res_src)
+    as Htotal_res_src.
+  pose proof (ty_guard_formula_context_wf _ _ _ _ Hguard_top_tgt)
+    as Hwf_top_tgt.
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard_top_tgt)
+    as Hworld_top_tgt.
+  pose proof (ty_guard_formula_basic_typing _ _ _ _ Hguard_top_tgt)
+    as Hbasic_top_tgt.
+  pose proof (ty_guard_formula_total _ _ _ _ Hguard_top_tgt)
+    as Htotal_top_tgt.
   pose proof (typed_total_equiv_term_lc
     Σ (CTWand τx τr) m e1 e2 Hequiv) as [Hlc1 Hlc2].
   assert (Hclosed_apps :

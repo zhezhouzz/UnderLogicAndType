@@ -549,3 +549,22 @@ Follow-up Batch O: term-lvars relevant-env regular fact.
   - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivCore.vo`
   - `timeout 20s make TIMED=1 Denotation/theories/TypePersistBase.vo`
     completed in about 4.46s after warmed dependencies.
+
+Follow-up Batch P: Arrow/Wand guard regular cleanup.
+
+- Replaced remaining manual `ty_denote_gas_guard_of_zero` destructs in
+  `TypeEquivArrow` / `TypeEquivWand` with the regular accessors introduced in
+  Batch L:
+  - `ty_guard_formula_basic_world`;
+  - `ty_guard_formula_basic_typing`;
+  - `ty_guard_formula_context_wf`;
+  - `ty_guard_formula_total`.
+- Covered both ordinary open-result helper chains and the Wand product branch.
+  The remaining `Hworld_tgt` / `Hwf_tgt` / `Hbasic_tgt` assertions are semantic
+  checkpoints that build target guards, not merely decompositions of an
+  existing guard.
+- Validation:
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivArrow.vo`
+    completed in about 1.81s after the final edit.
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivWand.vo`
+    completed in about 1.27s after the final edit.
