@@ -1,0 +1,99 @@
+# Formula / Context Type / Qualifier Open Audit
+
+## Purpose
+
+Track proof-facing residual opens after the relevant-env normalization pass.
+This audit is intentionally broader than `OpenRelevantNormalizationAudit.txt`:
+it includes `formula_open`, `cty_open`, `qual_open`, and env/context open
+forms.  Not every occurrence is bad.  Dependent type results such as
+`cty_open 0 x τ` are semantically meaningful and should remain; raw opens
+that are only boundary-normalization artifacts should be removed at their
+source.
+
+## Classification
+
+- **Must normalize at source**
+  - Helper statements in `Denotation` / `ContextTyping` with raw
+    `formula_open ... ty_denote_gas`, result-first value-body opens, or
+    `lty_env_open_one ... typed_lty_env_bind`.
+  - Proof-local asserts that recreate raw opened denotations only to rewrite
+    them immediately.
+
+- **Usually legitimate dependent open**
+  - `cty_open 0 x τ` when `x` is a real program argument / binder and the
+    result type is dependent on it.
+  - `qual_open_atom ...` in normalized body abbreviations such as
+    `over_open_body` / `under_open_body`.
+
+- **Support / normalizer internals**
+  - Files defining syntax/open lemmas, e.g. `TypeDenote.v`,
+    `RelevantEnv.v`, `BasicTypingOpen.v`, `TermOpen.v`, `Qualifier.v`.
+  - These may contain raw opens, but public helper statements should still
+    expose normalized forms whenever possible.
+
+## Initial Count Snapshot
+
+Command:
+
+```sh
+rg -n "formula_open|cty_open|qual_open|lty_env_open_one" \
+  ContextTyping Denotation ContextBasicDenotation -g '*.v' \
+| awk -F: '{count[$1]++} END {for (f in count) print count[f], f}' \
+| sort -nr
+```
+
+Top buckets:
+
+- `Denotation/theories/TypeDenote.v`: 131, mostly support/normalizer.
+- `ContextBasicDenotation/theories/RelevantEnv.v`: 81, mostly support.
+- `Denotation/theories/TypePersistArrow.v`: 79, mixed result-first support
+  and proof-local opens.
+- `ContextBasicDenotation/theories/BasicTypingOpen.v`: 69, support.
+- `ContextTyping/theories/SoundnessAppD.v`: 59, upper proof-facing bucket.
+- `Denotation/theories/TypePersistWandReverse.v`: 54, mixed.
+- `ContextTyping/theories/SoundnessApp.v`: 51, mostly legitimate dependent
+  `cty_open 0 x τ` plus some normalized formula-open proof internals.
+- `Denotation/theories/TypeEquivFiberTransport.v`: 50, old transport support.
+- `Denotation/theories/TypeEquivTLet.v`: 48, mostly legitimate / support after
+  Iteration 11.
+- `ContextTyping/theories/SoundnessLamArrow.v`: 46, upper proof-facing bucket.
+
+## Iteration Queue
+
+1. **SoundnessAppD formula-open statements**
+   - Inspect raw `formula_open 0 x` / double-open helper statements.
+   - Normalize at source if they are just opened argument/result boundary
+     facts.
+   - Preserve `cty_open 0 x τ` where it is the actual dependent result type.
+
+2. **SoundnessLamArrow / SoundnessLamWand result-first opens**
+   - Same approach as `SoundnessApp`: normalize outer function-result value
+     formula at the helper that first opens it.
+
+3. **TypeEquivFiberTransport**
+   - Classify duplicate old transport helpers against `TypeEquivArrow.v` and
+     `TypeEquivWand.v`.
+   - Normalize canonical helpers or remove unused duplicate wrappers.
+
+4. **TypePersistArrow / TypePersistWandReverse**
+   - Replace proof-local raw result-first value opens with normalized
+     `arrow_value_denote_gas_with` / `wand_value_denote_gas_with` statements.
+
+5. **Support internals**
+   - Leave raw opens inside normalizer proofs unless a public statement leaks
+     them.
+
+## Status
+
+- Created audit and initial classification.
+- `SoundnessAppD.v` iteration completed:
+  - `appd_arg_singleton_env_to_wand_arg` now returns inserted-env
+    `ty_denote_gas` directly.
+  - `appd_wand_outer_value_open` now returns normalized
+    `wand_value_denote_gas_with ... (<[z := funTy]> Σrel) ... (ret z)`.
+  - The main AppD proof keeps normalized semantic checkpoints; the only
+    remaining raw `formula_open` is a local bridge used immediately to call
+    the primitive `res_models_fbwand_open_one_named_fresh`.
+  - `SoundnessAppD.vo` and `Soundness.vo` compile.
+- Next active item: `SoundnessLamArrow.v`, then `SoundnessLamWand.v` and
+  `SoundnessFixApply.v`.
