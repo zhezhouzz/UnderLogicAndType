@@ -132,34 +132,21 @@ Proof.
   - apply elem_of_union_r. exact Ha.
 Qed.
 
-Lemma formula_fv_open_sum_body_obs_relevant gas Σ τ1 τ2 y :
+Lemma formula_fv_sum_body_obs_relevant gas Σ τ1 τ2 y :
   formula_fv
-    (formula_open 0 y
-      (FPlus
-        (ty_denote_gas gas (typed_lty_env_bind Σ (erase_ty τ1))
-          (cty_shift 0 τ1) (tret (vbvar 0)))
-        (ty_denote_gas gas (typed_lty_env_bind Σ (erase_ty τ1))
-          (cty_shift 0 τ2) (tret (vbvar 0))))) ⊆
+    (FPlus
+      (ty_denote_gas gas (<[LVFree y := erase_ty τ1]> Σ)
+        τ1 (tret (vfvar y)))
+      (ty_denote_gas gas (<[LVFree y := erase_ty τ1]> Σ)
+        τ2 (tret (vfvar y)))) ⊆
   lvars_fv (context_ty_lvars (CTSum τ1 τ2)) ∪ {[y]}.
 Proof.
-  etransitivity; [apply formula_open_fv_subset|].
   rewrite formula_fv_plus.
   intros a Ha.
-  destruct (decide (a = y)) as [->|Hneq].
-  { set_solver. }
-  assert (Hcase :
-    a ∈ formula_fv
-      (ty_denote_gas gas (typed_lty_env_bind Σ (erase_ty τ1))
-        (cty_shift 0 τ1) (tret (vbvar 0))) \/
-    a ∈ formula_fv
-      (ty_denote_gas gas (typed_lty_env_bind Σ (erase_ty τ1))
-        (cty_shift 0 τ2) (tret (vbvar 0)))).
-  { set_solver. }
-  destruct Hcase as [Ha_left|Ha_right].
+  apply elem_of_union in Ha as [Ha_left|Ha_right].
   - pose proof (ty_denote_gas_fv_subset gas
-      (typed_lty_env_bind Σ (erase_ty τ1))
-      (cty_shift 0 τ1) (tret (vbvar 0)) a Ha_left) as HaΣ.
-    rewrite cty_shift_fv in HaΣ.
+      (<[LVFree y := erase_ty τ1]> Σ)
+      τ1 (tret (vfvar y)) a Ha_left) as HaΣ.
     cbn [fv_tm fv_value] in HaΣ.
     cbn [context_ty_lvars context_ty_lvars_at].
     rewrite lvars_fv_union.
@@ -167,9 +154,8 @@ Proof.
     change (lvars_fv (context_ty_lvars_at 0 τ2)) with (fv_cty τ2).
     set_solver.
   - pose proof (ty_denote_gas_fv_subset gas
-      (typed_lty_env_bind Σ (erase_ty τ1))
-      (cty_shift 0 τ2) (tret (vbvar 0)) a Ha_right) as HaΣ.
-    rewrite cty_shift_fv in HaΣ.
+      (<[LVFree y := erase_ty τ1]> Σ)
+      τ2 (tret (vfvar y)) a Ha_right) as HaΣ.
     cbn [fv_tm fv_value] in HaΣ.
     cbn [context_ty_lvars context_ty_lvars_at].
     rewrite lvars_fv_union.
@@ -178,89 +164,85 @@ Proof.
     set_solver.
 Qed.
 
+Local Lemma sum_branch_relevant_env_agree_inserted_core
+    (Σsrc : lty_env) Ty y τbranch τsum e_src :
+  context_ty_lvars τbranch ⊆ context_ty_lvars τsum ->
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]> (relevant_env Σsrc τsum e_src))
+    (relevant_lvars τbranch (tret (vfvar y))) =
+  lty_env_restrict_lvars (<[LVFree y := Ty]> Σsrc)
+    (relevant_lvars τbranch (tret (vfvar y))).
+Proof.
+  intros Hτsub.
+  apply lty_restrict_insert_relevant_eq.
+  unfold relevant_lvars.
+  cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+  intros v Hv.
+  set_solver.
+Qed.
+
 Local Lemma sum_open_body_env_transport
     gas (Σ : lty_env) τ1 τ2 e_src e_tgt (m : WfWorldT) y :
   context_ty_lvars τ1 ⊆ context_ty_lvars (CTSum τ1 τ2) ->
   context_ty_lvars τ2 ⊆ context_ty_lvars (CTSum τ1 τ2) ->
-  y ∉ lvars_fv (dom (relevant_env Σ (CTSum τ1 τ2) e_src)) ->
-  y ∉ lvars_fv (dom (relevant_env Σ (CTSum τ1 τ2) e_tgt)) ->
-  y ∉ fv_cty τ1 ->
-  y ∉ fv_cty τ2 ->
-  m ⊨ formula_open 0 y
-    (FPlus
+  m ⊨ FPlus
       (ty_denote_gas gas
-        (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e_src)
-          (erase_ty τ1))
-        (cty_shift 0 τ1) (tret (vbvar 0)))
+        (<[LVFree y := erase_ty τ1]>
+          (relevant_env Σ (CTSum τ1 τ2) e_src))
+        τ1 (tret (vfvar y)))
       (ty_denote_gas gas
-        (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e_src)
-          (erase_ty τ1))
-        (cty_shift 0 τ2) (tret (vbvar 0)))) ->
-  m ⊨ formula_open 0 y
-    (FPlus
+        (<[LVFree y := erase_ty τ1]>
+          (relevant_env Σ (CTSum τ1 τ2) e_src))
+        τ2 (tret (vfvar y))) ->
+  m ⊨ FPlus
       (ty_denote_gas gas
-        (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e_tgt)
-          (erase_ty τ1))
-        (cty_shift 0 τ1) (tret (vbvar 0)))
+        (<[LVFree y := erase_ty τ1]>
+          (relevant_env Σ (CTSum τ1 τ2) e_tgt))
+        τ1 (tret (vfvar y)))
       (ty_denote_gas gas
-        (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e_tgt)
-          (erase_ty τ1))
-        (cty_shift 0 τ2) (tret (vbvar 0)))).
+        (<[LVFree y := erase_ty τ1]>
+          (relevant_env Σ (CTSum τ1 τ2) e_tgt))
+        τ2 (tret (vfvar y))).
 Proof.
-  intros Hτ1sub Hτ2sub Hysrc Hytgt Hyτ1 Hyτ2 Hbody.
-  replace (formula_open 0 y
-      (FPlus
-        (ty_denote_gas gas
-          (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e_tgt)
-            (erase_ty τ1))
-          (cty_shift 0 τ1) (tret (vbvar 0)))
-        (ty_denote_gas gas
-          (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e_tgt)
-            (erase_ty τ1))
-          (cty_shift 0 τ2) (tret (vbvar 0)))))
-    with (formula_open 0 y
-      (FPlus
-        (ty_denote_gas gas
-          (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e_src)
-            (erase_ty τ1))
-          (cty_shift 0 τ1) (tret (vbvar 0)))
-        (ty_denote_gas gas
-          (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e_src)
-            (erase_ty τ1))
-          (cty_shift 0 τ2) (tret (vbvar 0))))).
+  intros Hτ1sub Hτ2sub Hbody.
+  replace (FPlus
+      (ty_denote_gas gas
+        (<[LVFree y := erase_ty τ1]>
+          (relevant_env Σ (CTSum τ1 τ2) e_tgt))
+        τ1 (tret (vfvar y)))
+      (ty_denote_gas gas
+        (<[LVFree y := erase_ty τ1]>
+          (relevant_env Σ (CTSum τ1 τ2) e_tgt))
+        τ2 (tret (vfvar y))))
+    with (FPlus
+      (ty_denote_gas gas
+        (<[LVFree y := erase_ty τ1]>
+          (relevant_env Σ (CTSum τ1 τ2) e_src))
+        τ1 (tret (vfvar y)))
+      (ty_denote_gas gas
+        (<[LVFree y := erase_ty τ1]>
+          (relevant_env Σ (CTSum τ1 τ2) e_src))
+        τ2 (tret (vfvar y)))).
   - exact Hbody.
-  - rewrite !formula_open_plus.
-    f_equal.
-    + rewrite !formula_open_shifted_ret_bound0_ty_denote_gas
-        by (first [rewrite typed_lty_env_bind_lvars_fv_dom; assumption
-                  |sum_open_side]).
-      eapply ty_denote_gas_env_agree_on.
+  - f_equal.
+    + eapply ty_denote_gas_env_agree_on.
       * reflexivity.
       * transitivity (lty_env_restrict_lvars
-          (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τ1)))
-          (relevant_lvars (cty_open 0 y (cty_shift 0 τ1))
-            (tret (vfvar y)))).
-        -- apply sum_branch_relevant_env_agree_open_one_core.
-           ++ exact Hτ1sub.
-           ++ exact Hyτ1.
-        -- symmetry. apply sum_branch_relevant_env_agree_open_one_core.
-           ++ exact Hτ1sub.
-           ++ exact Hyτ1.
-    + rewrite !formula_open_shifted_ret_bound0_ty_denote_gas
-        by (first [rewrite typed_lty_env_bind_lvars_fv_dom; assumption
-                  |sum_open_side]).
-      eapply ty_denote_gas_env_agree_on.
+          (<[LVFree y := erase_ty τ1]> Σ)
+          (relevant_lvars τ1 (tret (vfvar y)))).
+        -- apply sum_branch_relevant_env_agree_inserted_core.
+           exact Hτ1sub.
+        -- symmetry. apply sum_branch_relevant_env_agree_inserted_core.
+           exact Hτ1sub.
+    + eapply ty_denote_gas_env_agree_on.
       * reflexivity.
       * transitivity (lty_env_restrict_lvars
-          (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τ1)))
-          (relevant_lvars (cty_open 0 y (cty_shift 0 τ2))
-            (tret (vfvar y)))).
-        -- apply sum_branch_relevant_env_agree_open_one_core.
-           ++ exact Hτ2sub.
-           ++ exact Hyτ2.
-        -- symmetry. apply sum_branch_relevant_env_agree_open_one_core.
-           ++ exact Hτ2sub.
-           ++ exact Hyτ2.
+          (<[LVFree y := erase_ty τ1]> Σ)
+          (relevant_lvars τ2 (tret (vfvar y)))).
+        -- apply sum_branch_relevant_env_agree_inserted_core.
+           exact Hτ2sub.
+        -- symmetry. apply sum_branch_relevant_env_agree_inserted_core.
+           exact Hτ2sub.
 Qed.
 
 Lemma ty_denote_gas_tm_fiber_equiv_over_body
@@ -524,13 +506,21 @@ Proof.
   pose proof (ty_denote_gas_guard_of_zero Σ (CTSum τ1 τ2) e1 m Hzero_src)
     as Hguard_src.
   repeat rewrite res_models_and_iff in Hguard_src.
-  destruct Hguard_src as [_ [Hworld_src _]].
+  destruct Hguard_src as [Hwf_src [Hworld_src _]].
   apply basic_world_formula_models_iff in Hworld_src as [HlcΣ_src _].
   pose proof (ty_denote_gas_guard_of_zero Σ (CTSum τ1 τ2) e2 m Hzero_tgt)
     as Hguard_tgt.
   repeat rewrite res_models_and_iff in Hguard_tgt.
   destruct Hguard_tgt as [_ [Hworld_tgt _]].
   apply basic_world_formula_models_iff in Hworld_tgt as [HlcΣ_tgt _].
+  pose proof (context_ty_wf_formula_models_iff
+    (relevant_env Σ (CTSum τ1 τ2) e1) (CTSum τ1 τ2) m) as Hwf_src_iff.
+  apply Hwf_src_iff in Hwf_src as [_ [_ Hbasic_sum_src]].
+  pose proof (basic_context_ty_lvars_lc
+    (dom (relevant_env Σ (CTSum τ1 τ2) e1))
+    (CTSum τ1 τ2) HlcΣ_src Hbasic_sum_src) as Hlc_sum.
+  cbn [lc_context_ty cty_lc_at] in Hlc_sum.
+  destruct Hlc_sum as [Hlcτ1 Hlcτ2].
   pose proof (typed_fiber_equiv_term_lc _ _ _ _ _ Hequiv)
     as [Hlc1 Hlc2].
   pose proof (ty_denote_gas_scope_from_zero_any (S gas) Σ (CTSum τ1 τ2) e2
@@ -628,33 +618,72 @@ Proof.
     Σ (CTSum τ1 τ2) e1 m Hzero_src) in Hopened_src.
   pose proof (res_models_impl_elim _ _ _ Hopened_src Hres_src)
     as Hbody_src.
-	  assert (Hbody_src_tgt :
-	      my_src ⊨ formula_open 0 y
-	        (FPlus
-          (ty_denote_gas gas
-            (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e2)
-              (erase_ty τ1))
-            (cty_shift 0 τ1) (tret (vbvar 0)))
-	          (ty_denote_gas gas
-	            (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e2)
-	              (erase_ty τ1))
-	            (cty_shift 0 τ2) (tret (vbvar 0))))).
-	  {
-	    eapply sum_open_body_env_transport.
+  rewrite formula_open_plus in Hbody_src.
+  rewrite !formula_open_shifted_ret_bound0_ty_denote_gas in Hbody_src
+    by (first [rewrite typed_lty_env_bind_lvars_fv_dom; assumption
+              |sum_open_side]).
+  rewrite (cty_open_shift_from_lc_fresh 0 y τ1 Hlcτ1 Hyτ1) in Hbody_src.
+  rewrite (cty_open_shift_from_lc_fresh 0 y τ2 Hlcτ2 Hyτ2) in Hbody_src.
+  rewrite (typed_lty_env_bind_open_current y
+    (relevant_env Σ (CTSum τ1 τ2) e1) (erase_ty τ1)) in Hbody_src.
+  2:{
+    intros Hbad. apply Hy_dom1. apply lvars_fv_elem. exact Hbad.
+  }
+  2:{ exact HlcΣ_src. }
+  assert (Hbody_src_tgt :
+      my_src ⊨ FPlus
+        (ty_denote_gas gas
+          (<[LVFree y := erase_ty τ1]>
+            (relevant_env Σ (CTSum τ1 τ2) e2))
+          τ1 (tret (vfvar y)))
+        (ty_denote_gas gas
+          (<[LVFree y := erase_ty τ1]>
+            (relevant_env Σ (CTSum τ1 τ2) e2))
+          τ2 (tret (vfvar y)))).
+  {
+    eapply sum_open_body_env_transport.
 	    - cbn [context_ty_lvars context_ty_lvars_at].
 	      intros v Hv. apply elem_of_union_l. exact Hv.
 	    - cbn [context_ty_lvars context_ty_lvars_at].
 	      intros v Hv. apply elem_of_union_r. exact Hv.
-	    - exact Hy_dom1.
-	    - exact Hy_dom2.
-	    - exact Hyτ1.
-	    - exact Hyτ2.
 	    - exact Hbody_src.
 	  }
+  replace (formula_open 0 y
+      (FPlus
+        (ty_denote_gas gas
+          (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e2)
+            (erase_ty τ1))
+          (cty_shift 0 τ1) (tret (vbvar 0)))
+        (ty_denote_gas gas
+          (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e2)
+            (erase_ty τ1))
+          (cty_shift 0 τ2) (tret (vbvar 0)))))
+    with (FPlus
+      (ty_denote_gas gas
+        (<[LVFree y := erase_ty τ1]>
+          (relevant_env Σ (CTSum τ1 τ2) e2))
+        τ1 (tret (vfvar y)))
+      (ty_denote_gas gas
+        (<[LVFree y := erase_ty τ1]>
+          (relevant_env Σ (CTSum τ1 τ2) e2))
+        τ2 (tret (vfvar y)))).
+  2:{
+    rewrite formula_open_plus.
+    rewrite !formula_open_shifted_ret_bound0_ty_denote_gas
+      by (first [rewrite typed_lty_env_bind_lvars_fv_dom; assumption
+                |sum_open_side]).
+    rewrite (cty_open_shift_from_lc_fresh 0 y τ1 Hlcτ1 Hyτ1).
+    rewrite (cty_open_shift_from_lc_fresh 0 y τ2 Hlcτ2 Hyτ2).
+    rewrite (typed_lty_env_bind_open_current y
+      (relevant_env Σ (CTSum τ1 τ2) e2) (erase_ty τ1)).
+    - reflexivity.
+    - intros Hbad. apply Hy_dom2. apply lvars_fv_elem. exact Hbad.
+    - exact HlcΣ_tgt.
+  }
   eapply res_models_projection; [|exact Hbody_src_tgt].
   eapply (res_restrict_eq_subset my_src my
     (lvars_fv (context_ty_lvars (CTSum τ1 τ2)) ∪ {[y]})).
-  - apply formula_fv_open_sum_body_obs_relevant.
+  - apply formula_fv_sum_body_obs_relevant.
   - eapply res_restrict_eq_subset; [|exact Hproj_obs].
     intros a Ha. exact Ha.
 Qed.

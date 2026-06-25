@@ -208,3 +208,30 @@ Remaining buckets:
   - The file now only contains alias/application result facts used by
     `TypeEquiv.v`.
   - Residual raw-open scan for `TypeEquivFiberTransport.v` is empty.
+
+## Latest Validation
+
+- `timeout 180s make TIMED=1` succeeds.
+- `rg -n "Admitted\\.|admit\\." -g '*.v' .` returns no matches.
+- Current residual raw-open scan is limited to:
+  - normalizer/support internals in `TypeDenote.v`, `Context.v`, and
+    `TypePersistArrow.v`;
+  - the local syntax-normalization lemma
+    `formula_open_shifted_ret_bound0_ty_denote_gas` in
+    `TypeEquivFiberBody.v`.
+
+## Sum Body Cleanup
+
+- `TypeEquivFiberBody.v` no longer passes raw opened Sum bodies through
+  `sum_open_body_env_transport`.
+- The Sum transport call site now immediately normalizes the opened `FPlus`
+  into inserted-env facts over `τ1` and `τ2`, and the local FV projection lemma
+  is stated over that normalized body.
+- Validation:
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivFiberBody.vo`
+    succeeds in about 1.6s.
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquiv.vo` succeeds in
+    about 4.8s after dependency rebuild.
+  - `timeout 20s make TIMED=1 ContextTyping/theories/Soundness.vo` succeeds
+    once the dependency chain is warm; the earlier 20s interruptions were
+    dependency rebuilds, not proof failures.
