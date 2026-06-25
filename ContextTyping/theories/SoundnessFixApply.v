@@ -273,35 +273,25 @@ Proof.
   split; [exact Hmz_restrict|].
   split; [exact Hextz|].
   split; [exact Hres_plain|].
-  assert (Hvalue_open_eq :
-      formula_open 0 z
-        (arrow_value_denote_gas
-          (Nat.max (cty_depth τself) (cty_depth τres))
-          (typed_lty_env_bind Σrel (erase_ty (CTArrow τself τres)))
-          (cty_shift 0 τself) (cty_shift 1 τres)
-          (tret (vbvar 0))) =
-      arrow_value_denote_gas
-        (Nat.max (cty_depth τself) (cty_depth τres))
-        (<[LVFree z := erase_ty (CTArrow τself τres)]> Σrel)
-        τself τres (tret (vfvar z))).
-  {
-    apply formula_open_result_first_arrow_value_ret_bvar0.
-    - subst Σrel. apply relevant_env_closed.
-      subst Δy. apply lty_env_closed_insert_free.
-      apply atom_store_to_lvar_store_closed.
-    - exact HzΣrel_free.
-    - exact Hτself_lc.
-    - exact Hτres_lc1.
-    - exact Hzτself.
-    - exact Hzτres.
-  }
   change (mz ⊨ formula_open 0 z
-    (arrow_value_denote_gas
+    (arrow_value_denote_gas_with ty_denote_gas
       (Nat.max (cty_depth τself) (cty_depth τres))
       (typed_lty_env_bind Σrel (erase_ty (CTArrow τself τres)))
       (cty_shift 0 τself) (cty_shift 1 τres)
       (tret (vbvar 0)))) in Hvalue.
-  rewrite Hvalue_open_eq in Hvalue.
+  rewrite (formula_open_result_first_arrow_value_ret_bvar0
+      (Nat.max (cty_depth τself) (cty_depth τres)) Σrel
+      τself τres (erase_ty (CTArrow τself τres)) z) in Hvalue.
+  2:{
+    subst Σrel. apply relevant_env_closed.
+    subst Δy. apply lty_env_closed_insert_free.
+    apply atom_store_to_lvar_store_closed.
+  }
+  2:{ exact HzΣrel_free. }
+  2:{ exact Hτself_lc. }
+  2:{ exact Hτres_lc1. }
+  2:{ exact Hzτself. }
+  2:{ exact Hzτres. }
   subst τself τres body Σrel Δy.
   exact Hvalue.
 Qed.

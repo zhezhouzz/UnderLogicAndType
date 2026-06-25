@@ -153,3 +153,25 @@ Remaining buckets:
     exposes the raw opened Sum body, so the next semantic cleanup would be a
     true normalized Sum-body API rather than moving this helper downward.
   - `TypeEquivFiberBody.vo`, `TypeEquiv.vo`, and `Soundness.vo` compile.
+- `ContextTyping/theories/SoundnessFixApply.v` internal proof cleanup:
+  - Removed a one-use equality assertion for opening
+    `arrow_value_denote_gas_with`; the proof now changes to the primitive
+    open shape and immediately rewrites with
+    `formula_open_result_first_arrow_value_ret_bvar0`.
+  - Kept the two local `change (formula_open ...)` bridges because they are
+    the direct source-level call sites for the existing result-first
+    normalizers, not reusable lower-layer facts.
+  - `SoundnessFixApply.vo` compiles in 2.42s.
+- `ContextTyping/theories/SoundnessFix.v` internal proof cleanup:
+  - Inlined two one-use open-normalization equality assertions for argument
+    and result `ty_denote_gas` openings.
+  - The remaining raw open is the local target bridge to
+    `formula_open_result_first_arrow_value_ret_bvar0`.
+  - `SoundnessFix.vo` compiles in 2.47s.
+- `ContextTyping/theories/SoundnessLamWand.v` / `SoundnessFixSelf.v` review:
+  - Remaining raw `formula_open` occurrences are direct primitive bridges for
+    already-normalized statements (`formula_open_ty_denote_gas_bind_*` or
+    two-slot result-first normalizers).
+  - No reusable equality-assert pattern was found there in this pass; do not
+    move these bridges downward unless introducing a real normalized
+    implication/wand eliminator.

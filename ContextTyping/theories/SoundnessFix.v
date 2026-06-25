@@ -337,37 +337,27 @@ Proof.
           (erase_ty τx))
         (cty_shift 0 τx) (tret (vbvar 0))))
       in Harg_raw.
-    assert (Harg_open_eq :
-        formula_open 0 y
-          (ty_denote_gas gas
-            (typed_lty_env_bind
-              (<[LVFree z := erase_ty (CTArrow τx τ)]> Σrel)
-              (erase_ty τx))
-            (cty_shift 0 τx) (tret (vbvar 0))) =
-        ty_denote_gas gas
-          (<[LVFree y := erase_ty τx]>
-            (<[LVFree z := erase_ty (CTArrow τx τ)]> Σrel))
-          τx (tret (vfvar y))).
-    {
-      apply formula_open_ty_denote_gas_bind_ret_bvar0.
-      - apply lty_env_closed_insert_free.
-        subst Σrel Δ. apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
-      - rewrite dom_insert_L. intros Hin.
-        apply elem_of_union in Hin as [Hin|Hin].
-        + apply elem_of_singleton in Hin. inversion Hin. subst.
-          clear -Hy_fresh. set_solver.
-        + exfalso.
-          subst Σrel Δ efix τx.
-          pose proof (soundness_relevant_env_arrow_value_fresh
-            (atom_env_to_lty_env (erase_ctx Γ)) (over_ty b φx) τ
-            (vfix (TBase b →ₜ t) vf) y
-            ltac:(cbn [fv_value]; clear -Hy_fresh; better_set_solver))
-            as Hnot.
-          exact (Hnot Hin).
-      - clear -Hy_fresh. better_set_solver.
-      - exact Hτx_lc.
+    rewrite (formula_open_ty_denote_gas_bind_ret_bvar0
+      y gas (<[LVFree z := erase_ty (CTArrow τx τ)]> Σrel)
+      τx) in Harg_raw.
+    2:{ apply lty_env_closed_insert_free.
+        subst Σrel Δ. apply relevant_env_closed. apply atom_store_to_lvar_store_closed. }
+    2:{
+      rewrite dom_insert_L. intros Hin.
+      apply elem_of_union in Hin as [Hin|Hin].
+      - apply elem_of_singleton in Hin. inversion Hin. subst.
+        clear -Hy_fresh. set_solver.
+      - exfalso.
+        subst Σrel Δ efix τx.
+        pose proof (soundness_relevant_env_arrow_value_fresh
+          (atom_env_to_lty_env (erase_ctx Γ)) (over_ty b φx) τ
+          (vfix (TBase b →ₜ t) vf) y
+          ltac:(cbn [fv_value]; clear -Hy_fresh; better_set_solver))
+          as Hnot.
+        exact (Hnot Hin).
     }
-    rewrite Harg_open_eq in Harg_raw.
+    2:{ clear -Hy_fresh. better_set_solver. }
+    2:{ exact Hτx_lc. }
     exact Harg_raw.
   }
   assert (Harg_old :
@@ -533,40 +523,28 @@ Proof.
         (erase_ty τx))
       τ
       (tapp_tm (tm_shift 0 (tret (vfvar z))) (vbvar 0)))).
-  assert (Hresult_open_eq :
-      formula_open 0 y
-        (ty_denote_gas gas
-          (typed_lty_env_bind
-            (<[LVFree z := erase_ty (CTArrow τx τ)]> Σrel)
-            (erase_ty τx))
-          τ
-          (tapp_tm (tm_shift 0 (tret (vfvar z))) (vbvar 0))) =
-      ty_denote_gas gas
-        (<[LVFree y := erase_ty τx]>
-          (<[LVFree z := erase_ty (CTArrow τx τ)]> Σrel))
-        (cty_open 0 y τ)
-        (tapp_tm (tret (vfvar z)) (vfvar y))).
-  {
-    apply formula_open_ty_denote_gas_bind_tapp_shift_bvar0.
-    - apply lty_env_closed_insert_free.
-      subst Σrel. apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
-    - rewrite dom_insert_L. intros Hin.
-      apply elem_of_union in Hin as [Hin|Hin].
-      + apply elem_of_singleton in Hin. inversion Hin. subst.
-        clear -Hy_fresh. set_solver.
-      + exfalso.
-        subst Σrel efix τx Δ.
-        pose proof (soundness_relevant_env_arrow_value_fresh
-          (atom_env_to_lty_env (erase_ctx Γ)) (over_ty b φx) τ
-          (vfix (TBase b →ₜ t) vf) y
-          ltac:(cbn [fv_value]; clear -Hy_fresh; better_set_solver))
-          as Hnot.
-        exact (Hnot Hin).
-    - cbn [fv_tm fv_value]. clear -Hy_fresh. set_solver.
-    - clear -Hy_fresh. better_set_solver.
-    - apply lc_ret_iff_value. constructor.
+  rewrite (formula_open_ty_denote_gas_bind_tapp_shift_bvar0
+      y gas (<[LVFree z := erase_ty (CTArrow τx τ)]> Σrel)
+      τ (erase_ty τx) (tret (vfvar z))).
+  2:{ apply lty_env_closed_insert_free.
+      subst Σrel. apply relevant_env_closed. apply atom_store_to_lvar_store_closed. }
+  2:{
+    rewrite dom_insert_L. intros Hin.
+    apply elem_of_union in Hin as [Hin|Hin].
+    - apply elem_of_singleton in Hin. inversion Hin. subst.
+      clear -Hy_fresh. set_solver.
+    - exfalso.
+      subst Σrel efix τx Δ.
+      pose proof (soundness_relevant_env_arrow_value_fresh
+        (atom_env_to_lty_env (erase_ctx Γ)) (over_ty b φx) τ
+        (vfix (TBase b →ₜ t) vf) y
+        ltac:(cbn [fv_value]; clear -Hy_fresh; better_set_solver))
+        as Hnot.
+      exact (Hnot Hin).
   }
-  rewrite Hresult_open_eq.
+  2:{ cbn [fv_tm fv_value]. clear -Hy_fresh. set_solver. }
+  2:{ clear -Hy_fresh. better_set_solver. }
+  2:{ apply lc_ret_iff_value. constructor. }
   eapply res_models_ty_denote_gas_env_agree_on
     with (Σ1 := <[LVFree z := erase_ty τx →ₜ erase_ty (cty_open 0 y τ)]>
         (<[LVFree y := erase_ty τx]> Δ))
