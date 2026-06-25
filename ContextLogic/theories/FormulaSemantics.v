@@ -22,32 +22,42 @@ Definition formula_scoped_in_world
     (m : WfWorldT) (φ : FormulaT) : Prop :=
   formula_fv φ ⊆ world_dom (m : WorldT).
 
+Arguments formula_scoped_in_world _ _ /.
+
 Lemma formula_scoped_true_iff (m : WfWorldT) :
   formula_scoped_in_world m FTrue ↔ True.
 Proof.
-  unfold formula_scoped_in_world. rewrite formula_fv_true.
-  split; [trivial | intros _ z Hz; set_solver].
+  cbn [formula_scoped_in_world].
+  rewrite formula_fv_true.
+  split; [done|].
+  intros _. intros x Hx.
+  rewrite elem_of_empty in Hx. contradiction.
 Qed.
 
 Lemma formula_scoped_false_iff (m : WfWorldT) :
   formula_scoped_in_world m FFalse ↔ True.
 Proof.
-  unfold formula_scoped_in_world. rewrite formula_fv_false.
-  split; [trivial | intros _ z Hz; set_solver].
+  cbn [formula_scoped_in_world].
+  rewrite formula_fv_false.
+  split; [done|].
+  intros _. intros x Hx.
+  rewrite elem_of_empty in Hx. contradiction.
 Qed.
 
 Lemma formula_scoped_atom_iff (m : WfWorldT) q :
   formula_scoped_in_world m (FAtom q) ↔ qual_dom q ⊆ world_dom (m : WorldT).
 Proof.
-  unfold formula_scoped_in_world, qual_dom.
-  rewrite formula_fv_atom. reflexivity.
+  cbn [formula_scoped_in_world].
+  rewrite formula_fv_atom.
+  reflexivity.
 Qed.
 
 Lemma formula_scoped_and_iff (m : WfWorldT) φ ψ :
   formula_scoped_in_world m (FAnd φ ψ) ↔
   formula_scoped_in_world m φ ∧ formula_scoped_in_world m ψ.
 Proof.
-  unfold formula_scoped_in_world. rewrite formula_fv_and. set_solver.
+  cbn [formula_scoped_in_world].
+  rewrite formula_fv_and. set_solver.
 Qed.
 
 Lemma formula_scoped_and_l (m : WfWorldT) φ ψ :
@@ -64,7 +74,8 @@ Lemma formula_scoped_or_iff (m : WfWorldT) φ ψ :
   formula_scoped_in_world m (FOr φ ψ) ↔
   formula_scoped_in_world m φ ∧ formula_scoped_in_world m ψ.
 Proof.
-  unfold formula_scoped_in_world. rewrite formula_fv_or. set_solver.
+  cbn [formula_scoped_in_world].
+  rewrite formula_fv_or. set_solver.
 Qed.
 
 Lemma formula_scoped_or_l (m : WfWorldT) φ ψ :
@@ -81,7 +92,8 @@ Lemma formula_scoped_impl_iff (m : WfWorldT) φ ψ :
   formula_scoped_in_world m (FImpl φ ψ) ↔
   formula_scoped_in_world m φ ∧ formula_scoped_in_world m ψ.
 Proof.
-  unfold formula_scoped_in_world. rewrite formula_fv_impl. set_solver.
+  cbn [formula_scoped_in_world].
+  rewrite formula_fv_impl. set_solver.
 Qed.
 
 Lemma formula_scoped_impl_l (m : WfWorldT) φ ψ :
@@ -98,7 +110,8 @@ Lemma formula_scoped_star_iff (m : WfWorldT) φ ψ :
   formula_scoped_in_world m (FStar φ ψ) ↔
   formula_scoped_in_world m φ ∧ formula_scoped_in_world m ψ.
 Proof.
-  unfold formula_scoped_in_world. rewrite formula_fv_star. set_solver.
+  cbn [formula_scoped_in_world].
+  rewrite formula_fv_star. set_solver.
 Qed.
 
 Lemma formula_scoped_star_l (m : WfWorldT) φ ψ :
@@ -115,7 +128,7 @@ Lemma formula_scoped_fbwand_iff (m : WfWorldT) d φ ψ :
   formula_scoped_in_world m (FBWand d φ ψ) ↔
   formula_scoped_in_world m φ ∧ formula_scoped_in_world m ψ.
 Proof.
-  unfold formula_scoped_in_world.
+  cbn [formula_scoped_in_world].
   rewrite formula_fv_fbwand.
   rewrite (formula_lvars_at_fv d φ), (formula_lvars_at_fv d ψ).
   set_solver.
@@ -135,7 +148,8 @@ Lemma formula_scoped_plus_iff (m : WfWorldT) φ ψ :
   formula_scoped_in_world m (FPlus φ ψ) ↔
   formula_scoped_in_world m φ ∧ formula_scoped_in_world m ψ.
 Proof.
-  unfold formula_scoped_in_world. rewrite formula_fv_plus. set_solver.
+  cbn [formula_scoped_in_world].
+  rewrite formula_fv_plus. set_solver.
 Qed.
 
 Lemma formula_scoped_plus_l (m : WfWorldT) φ ψ :
@@ -152,7 +166,7 @@ Lemma formula_scoped_forall_iff (m : WfWorldT) φ :
   formula_scoped_in_world m (FForall φ) ↔
   formula_scoped_in_world m φ.
 Proof.
-  unfold formula_scoped_in_world.
+  cbn [formula_scoped_in_world].
   rewrite formula_fv_forall, formula_lvars_at_fv. reflexivity.
 Qed.
 
@@ -164,7 +178,10 @@ Proof. intros Hscope. exact (proj1 (formula_scoped_forall_iff m φ) Hscope). Qed
 Lemma formula_scoped_over_iff (m : WfWorldT) φ :
   formula_scoped_in_world m (FOver φ) ↔
   formula_scoped_in_world m φ.
-Proof. reflexivity. Qed.
+Proof.
+  cbn [formula_scoped_in_world].
+  rewrite formula_fv_over. reflexivity.
+Qed.
 
 Lemma formula_scoped_over_body (m : WfWorldT) φ :
   formula_scoped_in_world m (FOver φ) ->
@@ -174,7 +191,10 @@ Proof. intros Hscope. exact (proj1 (formula_scoped_over_iff m φ) Hscope). Qed.
 Lemma formula_scoped_under_iff (m : WfWorldT) φ :
   formula_scoped_in_world m (FUnder φ) ↔
   formula_scoped_in_world m φ.
-Proof. reflexivity. Qed.
+Proof.
+  cbn [formula_scoped_in_world].
+  rewrite formula_fv_under. reflexivity.
+Qed.
 
 Lemma formula_scoped_under_body (m : WfWorldT) φ :
   formula_scoped_in_world m (FUnder φ) ->
@@ -184,7 +204,10 @@ Proof. intros Hscope. exact (proj1 (formula_scoped_under_iff m φ) Hscope). Qed.
 Lemma formula_scoped_persist_iff (m : WfWorldT) φ :
   formula_scoped_in_world m (FPersist φ) ↔
   formula_scoped_in_world m φ.
-Proof. reflexivity. Qed.
+Proof.
+  cbn [formula_scoped_in_world].
+  rewrite formula_fv_persist. reflexivity.
+Qed.
 
 Lemma formula_scoped_persist_body (m : WfWorldT) φ :
   formula_scoped_in_world m (FPersist φ) ->
@@ -195,7 +218,8 @@ Lemma formula_scoped_fibvars_iff (m : WfWorldT) D φ :
   formula_scoped_in_world m (FFibVars D φ) ↔
   lvars_fv D ⊆ world_dom (m : WorldT) ∧ formula_scoped_in_world m φ.
 Proof.
-  unfold formula_scoped_in_world. rewrite formula_fv_fibvars. set_solver.
+  cbn [formula_scoped_in_world].
+  rewrite formula_fv_fibvars. set_solver.
 Qed.
 
 Lemma formula_scoped_fibvars_r (m : WfWorldT) D φ :
@@ -208,7 +232,6 @@ Lemma formula_scoped_open_from_fv
   formula_fv φ ∪ {[x]} ⊆ world_dom (m : WorldT) →
   formula_scoped_in_world m (formula_open k x φ).
 Proof.
-  unfold formula_scoped_in_world.
   intros Hscope.
   pose proof (formula_open_fv_subset k x φ) as Hopen.
   set_solver.
@@ -221,7 +244,6 @@ Lemma formula_scoped_open_res_le
   x ∈ world_dom (n : WorldT) →
   formula_scoped_in_world n (formula_open k x φ).
 Proof.
-  unfold formula_scoped_in_world.
   intros Hscope Hle Hx.
   pose proof (raw_le_dom _ _ Hle) as Hdom.
   pose proof (formula_open_fv_subset k x φ) as Hopen.
@@ -278,7 +300,7 @@ Fixpoint res_models_fuel
   match gas with
   | 0 => False
   | S gas' =>
-      formula_scoped_in_world m φ ∧
+      formula_fv φ ⊆ world_dom (m : WorldT) ∧
       match φ with
       | FTrue => True
       | FFalse => False
@@ -461,7 +483,6 @@ Lemma formula_scoped_projection_on
   formula_scoped_in_world m φ →
   formula_scoped_in_world n φ.
 Proof.
-  unfold formula_scoped_in_world.
   intros HfvX Hproj Hscope.
   pose proof (f_equal (fun w : WfWorldT => world_dom (w : WorldT)) Hproj)
     as Hdom.
@@ -833,7 +854,6 @@ Proof.
     { subst X. exact Hproj. }
     assert (HDm : lvars_fv D ⊆ world_dom (m : WorldT)).
     {
-      unfold formula_scoped_in_world in Hscope.
       rewrite formula_fv_fibvars in Hscope.
       set_solver.
     }
@@ -880,7 +900,7 @@ Lemma res_models_true (m : WfWorldT) :
 Proof.
   unfold res_models. cbn.
   split.
-  - unfold formula_scoped_in_world. rewrite formula_fv_true. set_solver.
+  - rewrite formula_fv_true. set_solver.
   - trivial.
 Qed.
 
@@ -996,6 +1016,7 @@ Ltac models_fuel_irrel_auto :=
   eapply res_models_fuel_irrel; [| | eassumption]; models_fuel_finish.
 
 Ltac formula_scope_syntax_norm :=
+  cbn [formula_scoped_in_world] in *;
   rewrite ?formula_scoped_true_iff, ?formula_scoped_false_iff;
   rewrite ?formula_scoped_atom_iff;
   rewrite ?formula_scoped_and_iff, ?formula_scoped_or_iff;
@@ -1004,9 +1025,11 @@ Ltac formula_scope_syntax_norm :=
   rewrite ?formula_scoped_plus_iff;
   rewrite ?formula_scoped_forall_iff;
   rewrite ?formula_scoped_over_iff, ?formula_scoped_under_iff;
+  rewrite ?formula_scoped_persist_iff;
   rewrite ?formula_scoped_fibvars_iff.
 
 Ltac formula_scope_syntax_norm_in H :=
+  cbn [formula_scoped_in_world] in H;
   rewrite ?formula_scoped_true_iff in H;
   rewrite ?formula_scoped_false_iff in H;
   rewrite ?formula_scoped_atom_iff in H;
@@ -1019,6 +1042,7 @@ Ltac formula_scope_syntax_norm_in H :=
   rewrite ?formula_scoped_forall_iff in H;
   rewrite ?formula_scoped_over_iff in H;
   rewrite ?formula_scoped_under_iff in H;
+  rewrite ?formula_scoped_persist_iff in H;
   rewrite ?formula_scoped_fibvars_iff in H.
 
 Ltac formula_semantics_norm :=
