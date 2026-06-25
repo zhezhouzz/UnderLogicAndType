@@ -359,14 +359,12 @@ Lemma fix_unfolded_result_to_opened_goal
       (atom_env_to_lty_env (erase_ctx Γ))))
     (cty_open 0 y τ)
     (tapp_tm (tret (vfix (TBase b →ₜ t) vf)) (vfvar y)) ->
-  my ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTArrow τx τ) (tret (vfix (TBase b →ₜ t) vf)))
-        (erase_ty τx))
-      τ
-      (tapp_tm (tm_shift 0 (tret (vfix (TBase b →ₜ t) vf))) (vbvar 0))).
+  my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+    (<[LVFree y := erase_ty τx]>
+      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+        (CTArrow τx τ) (tret (vfix (TBase b →ₜ t) vf))))
+    (cty_open 0 y τ)
+    (tapp_tm (tret (vfix (TBase b →ₜ t) vf)) (vfvar y)).
 Proof.
   intros Hwf Hy Hunfolded Hstatic.
   set (efix := tret (vfix (TBase b →ₜ t) vf)).
@@ -391,37 +389,6 @@ Proof.
     cbn [wf_context_ty_at] in Hτwf.
     eapply wf_context_ty_at_lc. exact (proj2 Hτwf).
   }
-  assert (HΣfresh :
-      y ∉ lvars_fv
-        (dom (typed_lty_env_bind
-          (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-            (CTArrow τx τ) efix)
-          (erase_ty τx)))).
-  { subst efix. eapply fix_open_fresh_arrow_relevant_bind_lvars. exact Hy. }
-  assert (Htmfresh :
-      y ∉ fv_tm (tapp_tm (tm_shift 0 efix) (vbvar 0))).
-  {
-    subst efix.
-    rewrite fv_tapp_tm, tm_shift_fv.
-    cbn [fv_tm fv_value]. better_set_solver.
-  }
-	  rewrite (formula_open_ty_denote_gas_singleton 0 y
-	    (Nat.max (cty_depth τx) (cty_depth τ))
-	    (typed_lty_env_bind
-	      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-	        (CTArrow τx τ) efix)
-	      (erase_ty τx))
-	    τ (tapp_tm (tm_shift 0 efix) (vbvar 0)))
-	    by (exact HΣfresh || exact Htmfresh || better_set_solver).
-	  rewrite open_tapp_tm_shift_bvar0_lc by exact Hlc_efix.
-  rewrite typed_lty_env_bind_open_current.
-  2:{
-    apply relevant_env_arrow_fresh_free.
-    - clear -Hy. better_set_solver.
-    - clear -Hy. better_set_solver.
-    - subst efix. cbn [fv_tm fv_value]. clear -Hy. better_set_solver.
-  }
-  2:{ apply relevant_env_closed. apply atom_store_to_lvar_store_closed. }
   assert (Hzero_unfolded :
       my ⊨ ty_denote_gas 0
         (<[LVFree y := erase_ty τx]>

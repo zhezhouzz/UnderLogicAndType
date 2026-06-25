@@ -185,14 +185,12 @@ Lemma fix_opened_arrow_result Σ Γ φx τ vf b t (L : aset)
       ((<[LVFree y := erase_ty (over_ty b φx)]>
         (atom_env_to_lty_env (erase_ctx Γ))))
       (over_ty b φx) (tret (vfvar y)) ->
-  my ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth (over_ty b φx)) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTArrow (over_ty b φx) τ) (tret (vfix (TBase b →ₜ t) vf)))
-        (erase_ty (over_ty b φx)))
-      τ
-      (tapp_tm (tm_shift 0 (tret (vfix (TBase b →ₜ t) vf))) (vbvar 0))).
+  my ⊨ ty_denote_gas (Nat.max (cty_depth (over_ty b φx)) (cty_depth τ))
+    (<[LVFree y := erase_ty (over_ty b φx)]>
+      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+        (CTArrow (over_ty b φx) τ) (tret (vfix (TBase b →ₜ t) vf))))
+    (cty_open 0 y τ)
+    (tapp_tm (tret (vfix (TBase b →ₜ t) vf)) (vfvar y)).
 Proof.
   change (over_ty b φx) with (CTOver b φx) in *.
   intros Hτ Hwf Hbody_wf IH Hctx Hdom Hrestrict Hy Harg.
@@ -504,33 +502,7 @@ Proof.
           (cty_open 0 y τ)
           (tapp_tm efix (vfvar y))).
     {
-      change (my ⊨ formula_open 0 y
-        (ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Δ (CTArrow τx τ) efix)
-            (erase_ty τx))
-          τ (tapp_tm (tm_shift 0 efix) (vbvar 0)))) in Happ_src.
-      rewrite (formula_open_ty_denote_gas_singleton 0 y gas
-        (typed_lty_env_bind
-          (relevant_env Δ (CTArrow τx τ) efix)
-          (erase_ty τx))
-        τ (tapp_tm (tm_shift 0 efix) (vbvar 0))) in Happ_src.
-      - rewrite open_tapp_tm_shift_bvar0_lc in Happ_src by exact Hlc_efix.
-        rewrite typed_lty_env_bind_open_current in Happ_src.
-        exact Happ_src.
-        + eapply relevant_env_arrow_fresh_free.
-          * clear -Hy_fresh. better_set_solver.
-          * clear -Hy_fresh. better_set_solver.
-          * subst efix. cbn [fv_tm fv_value].
-            clear -Hy_fresh. better_set_solver.
-        + apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
-      - apply soundness_typed_bind_arrow_value_fresh.
-        subst efix τx.
-        cbn [fv_value]. clear -Hy_fresh. better_set_solver.
-      - rewrite fv_tapp_tm, tm_shift_fv.
-        subst efix. cbn [fv_tm fv_value].
-        clear -Hy_fresh. better_set_solver.
-      - clear -Hy_fresh. better_set_solver.
+      exact Happ_src.
     }
     pose proof (ty_equiv_arrow_result_src_mid_inserted
       gas Δ τx τ efix my y

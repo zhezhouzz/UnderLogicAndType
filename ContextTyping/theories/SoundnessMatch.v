@@ -558,21 +558,14 @@ Lemma lvars_lc_at_zero_of_lc D :
   lc_lvars D ->
   lvars_lc_at 0 D.
 Proof.
-  intros Hlc k Hk.
-  exfalso.
-  exact (Hlc (LVBound k) ltac:(apply lvars_bv_elem; exact Hk)).
+  exact (soundness_lam_lvars_lc_at_zero_of_lc D).
 Qed.
 
 Lemma lc_lvars_shift_from k D :
   lc_lvars D ->
   lc_lvars (lvars_shift_from k D).
 Proof.
-  intros Hlc v Hv.
-  unfold lvars_shift_from in Hv.
-  apply elem_of_map in Hv as [u [-> Hu]].
-  destruct u as [n|x]; cbn [logic_var_shift_from].
-  - destruct (decide (k <= n)); exfalso; exact (Hlc (LVBound n) Hu).
-  - exact I.
+  exact (soundness_lam_lc_lvars_shift_from k D).
 Qed.
 
 Lemma ty_denote_gas_lc_context_ty

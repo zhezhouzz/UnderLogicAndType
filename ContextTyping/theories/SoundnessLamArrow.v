@@ -432,14 +432,12 @@ Lemma lam_arrow_result_mid_to_opened_goal
       (atom_env_to_lty_env (erase_ctx Γ))))
 	    (cty_open 0 y τ)
 	    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)) ->
-	  my ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      τ
-	      (tapp_tm (tm_shift 0 (tret (vlam (erase_ty τx) e))) (vbvar 0))).
+  my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+    (<[LVFree y := erase_ty τx]>
+      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+        (CTArrow τx τ) (tret (vlam (erase_ty τx) e))))
+    (cty_open 0 y τ)
+    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)).
 Proof.
 		  intros Hwf Hy Hmid Hstatic.
   set (elam := tret (vlam (erase_ty τx) e)).
@@ -459,40 +457,7 @@ Proof.
     cbn [wf_context_ty_at] in Hτwf.
     eapply wf_context_ty_at_lc. exact (proj2 Hτwf).
   }
-  assert (HΣfresh :
-      y ∉ lvars_fv
-        (dom (typed_lty_env_bind
-          (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-            (CTArrow τx τ) elam)
-          (erase_ty τx)))).
-  {
-    subst elam.
-    apply soundness_typed_bind_arrow_value_fresh.
-    cbn [fv_value]. clear -Hy. better_set_solver.
-  }
-  assert (Htmfresh :
-      y ∉ fv_tm (tapp_tm (tm_shift 0 elam) (vbvar 0))).
-  {
-    subst elam.
-    rewrite fv_tapp_tm, tm_shift_fv.
-    cbn [fv_tm fv_value]. set_solver.
-  }
-	  rewrite (formula_open_ty_denote_gas_singleton 0 y
-	    (Nat.max (cty_depth τx) (cty_depth τ))
-	    (typed_lty_env_bind
-	      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-	        (CTArrow τx τ) elam)
-	      (erase_ty τx))
-	    τ (tapp_tm (tm_shift 0 elam) (vbvar 0)))
-	    by (exact HΣfresh || exact Htmfresh || set_solver).
-	  rewrite open_tapp_tm_shift_bvar0_lc by exact Hlc_elam.
-	  subst elam.
-  rewrite typed_lty_env_bind_open_current.
-  2:{
-    apply soundness_relevant_env_arrow_value_fresh.
-    cbn [fv_value]. clear -Hy. better_set_solver.
-  }
-  2:{ apply relevant_env_closed. apply atom_store_to_lvar_store_closed. }
+  subst elam.
 	  eapply ty_equiv_arrow_result_tgt_goal.
   - exact Hlc_elam.
   - set_solver.
@@ -513,14 +478,12 @@ Lemma lam_body_to_opened_arrow_result
       (atom_env_to_lty_env (erase_ctx Γ))))
 	    (cty_open 0 y τ)
 	    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)) ->
-	  my ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      τ
-      (tapp_tm (tm_shift 0 (tret (vlam (erase_ty τx) e))) (vbvar 0))).
+	  my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+    (<[LVFree y := erase_ty τx]>
+      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+        (CTArrow τx τ) (tret (vlam (erase_ty τx) e))))
+    (cty_open 0 y τ)
+    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)).
 Proof.
 		  intros Hwf Hy Hbody Hstatic.
 		  pose proof (lam_body_to_arrow_result_mid
@@ -545,14 +508,12 @@ Lemma lam_opened_arrow_result
 			      ((<[LVFree y := erase_ty τx]>
 	            (atom_env_to_lty_env (erase_ctx Γ))))
 		      τx (tret (vfvar y)) ->
-		  my ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
+		  my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+      (<[LVFree y := erase_ty τx]>
         (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-	      τ
-	      (tapp_tm (tm_shift 0 (tret (vlam (erase_ty τx) e))) (vbvar 0))).
+          (CTArrow τx τ) (tret (vlam (erase_ty τx) e))))
+      (cty_open 0 y τ)
+      (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)).
 Proof.
   intros Hwf IH Hctx Hdom Hrestrict Hy Harg.
   assert (Hy_rest :

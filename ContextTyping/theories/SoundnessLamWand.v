@@ -377,14 +377,12 @@ Lemma lamd_wand_result_mid_to_opened_goal
       (atom_env_to_lty_env (erase_ctx Γ))))
     (cty_open 0 y τ)
     (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)) ->
-  my ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      τ
-      (tapp_tm (tm_shift 0 (tret (vlam (erase_ty τx) e))) (vbvar 0))).
+  my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+    (<[LVFree y := erase_ty τx]>
+      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+        (CTWand τx τ) (tret (vlam (erase_ty τx) e))))
+    (cty_open 0 y τ)
+    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)).
 Proof.
   intros Hwf Hy Happ_mid.
   set (elam := tret (vlam (erase_ty τx) e)).
@@ -402,27 +400,18 @@ Proof.
     eapply wf_context_ty_at_lc. exact (proj2 Hτ_wf).
   }
   subst elam.
-  rewrite formula_open_ty_denote_gas_bind_tapp_shift_bvar0.
-  - eapply ty_equiv_wand_result_tgt_goal_inserted.
-    + exact Hlc_elam.
-    + better_set_solver.
-    + eapply cty_lvars_open_body_closed_no_fresh.
-      * apply soundness_lam_lc_lvars_context_ty_lvars_at_of_lc.
-        exact Hτ_body_lc1.
-      * intros HyD.
-        apply lvars_fv_elem in HyD.
-        rewrite context_ty_lvars_fv_at in HyD.
-        clear -Hy HyD. better_set_solver.
-      * reflexivity.
-    + exact Happ_mid.
-  - apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
-  - apply relevant_env_wand_fresh_free.
-    + clear -Hy. better_set_solver.
-    + clear -Hy. better_set_solver.
-    + cbn [fv_tm fv_value]. clear -Hy. better_set_solver.
-  - cbn [fv_tm fv_value]. clear -Hy. better_set_solver.
-  - clear -Hy. better_set_solver.
+  eapply ty_equiv_wand_result_tgt_goal_inserted.
   - exact Hlc_elam.
+  - better_set_solver.
+  - eapply cty_lvars_open_body_closed_no_fresh.
+    + apply soundness_lam_lc_lvars_context_ty_lvars_at_of_lc.
+      exact Hτ_body_lc1.
+    + intros HyD.
+      apply lvars_fv_elem in HyD.
+      rewrite context_ty_lvars_fv_at in HyD.
+      clear -Hy HyD. better_set_solver.
+    + reflexivity.
+  - exact Happ_mid.
 Qed.
 
 Lemma lamd_opened_wand_result
@@ -442,14 +431,12 @@ Lemma lamd_opened_wand_result
 	      ((<[LVFree y := erase_ty τx]>
 	        (atom_env_to_lty_env (erase_ctx Γ))))
 	      τx (tret (vfvar y)) ->
-  res_product n m Hc ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      τ
-      (tapp_tm (tm_shift 0 (tret (vlam (erase_ty τx) e))) (vbvar 0))).
+  res_product n m Hc ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+    (<[LVFree y := erase_ty τx]>
+      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+        (CTWand τx τ) (tret (vlam (erase_ty τx) e))))
+    (cty_open 0 y τ)
+    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)).
 Proof.
   intros Hwf IH Hctx Hdom Hy Harg.
   assert (Hy_rest :
@@ -643,63 +630,7 @@ Proof.
         (tapp_tm (tret vf) (vfvar y))).
   {
     subst gas Σrel vf.
-    set (elam := tret (vlam (erase_ty τx) e)).
-    assert (Hlc_elam : lc_tm elam).
-    {
-      subst elam.
-      exact (context_typing_wf_lc_tm
-        Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).
-    }
-    assert (HΣfresh :
-        y ∉ lvars_fv
-          (dom (typed_lty_env_bind
-            (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-              (CTWand τx τ) elam)
-            (erase_ty τx)))).
-    {
-      subst elam.
-      rewrite typed_lty_env_bind_lvars_fv_dom.
-      pose proof (relevant_env_dom_subset_direct
-        (atom_env_to_lty_env (erase_ctx Γ))
-        (CTWand τx τ) (tret (vlam (erase_ty τx) e))) as Hrel.
-      intros Hyfv.
-      apply lvars_fv_elem in Hyfv.
-	      pose proof (Hrel _ Hyfv) as Hatom.
-	      rewrite atom_store_to_lvar_store_dom in Hatom.
-	      rewrite <- lvars_fv_elem in Hatom.
-	      rewrite lvars_fv_of_atoms in Hatom.
-	      exact (Hy_eraseΓ Hatom).
-    }
-    assert (Htmfresh : y ∉ fv_tm elam).
-    {
-      subst elam.
-      cbn [fv_tm fv_value].
-      clear -Hy_rest. better_set_solver.
-    }
-	    change (res_product n mz Hc ⊨ formula_open 0 y
-	      (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-	        (typed_lty_env_bind
-	          (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-	            (CTWand τx τ) elam)
-	          (erase_ty τx))
-	        τ (tapp_tm (tm_shift 0 elam) (vbvar 0)))) in Hopened_src.
-    rewrite (formula_open_ty_denote_gas_bind_tapp_shift_bvar0
-      y (Nat.max (cty_depth τx) (cty_depth τ))
-      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-        (CTWand τx τ) elam)
-      τ (erase_ty τx) elam) in Hopened_src.
-    - exact Hopened_src.
-    - apply relevant_env_closed.
-      apply atom_store_to_lvar_store_closed.
-    - subst elam.
-      intros Hrel.
-      pose proof (relevant_env_dom_subset_direct
-        Δ (CTWand τx τ) (tret (vlam (erase_ty τx) e))
-        (LVFree y) Hrel) as HΔbad.
-      exact (HyΔ HΔbad).
-    - exact Htmfresh.
-    - eapply lam_wand_fresh_result_ty. exact Hy_rest.
-    - exact Hlc_elam.
+    exact Hopened_src.
   }
 	  assert (Hsrc :
 	      res_product n mz Hc ⊨ ty_denote_gas gas

@@ -29,22 +29,14 @@ Lemma soundness_lam_lc_lvars_shift_from k D :
   lc_lvars D ->
   lc_lvars (lvars_shift_from k D).
 Proof.
-  intros Hlc v Hv.
-  unfold lvars_shift_from in Hv.
-  apply elem_of_map in Hv as [u [-> Hu]].
-  destruct u as [n|x]; cbn [logic_var_shift_from].
-  - destruct (decide (k <= n)); exfalso; exact (Hlc (LVBound n) Hu).
-  - exact I.
+  exact (denotation_open_lvars_shift_from_lc k D).
 Qed.
 
 Lemma soundness_lam_lvars_lc_at_zero_of_lc D :
   lc_lvars D ->
   lvars_lc_at 0 D.
 Proof.
-  intros Hlc k Hk.
-  exfalso.
-  apply (Hlc (LVBound k)).
-  apply lvars_bv_elem. exact Hk.
+  exact (denotation_open_lvars_lc_at_zero_of_lc D).
 Qed.
 
 Lemma soundness_lam_lc_lvars_context_ty_lvars_at_of_lc d τ :
