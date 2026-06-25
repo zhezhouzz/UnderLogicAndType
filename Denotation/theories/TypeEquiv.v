@@ -564,6 +564,17 @@ Proof.
   tauto.
 Qed.
 
+Lemma ty_static_guard_basic_typing
+    (Σ : lty_env) τ e (m : WfWorldT) :
+  m ⊨ ty_static_guard_formula Σ τ e ->
+  m ⊨ expr_basic_typing_formula Σ e (erase_ty τ).
+Proof.
+  intros Hstatic.
+  unfold ty_static_guard_formula in Hstatic.
+  repeat rewrite res_models_and_iff in Hstatic.
+  tauto.
+Qed.
+
 Lemma ty_static_guard_insert_irrelevant
     (Σ : lty_env) τ e x T (m : WfWorldT) :
   LVFree x ∉ dom Σ ->

@@ -983,10 +983,8 @@ Proof.
     subst Σrel Δ1 gas.
     eapply appd_wand_mid_static_guard; eauto.
   }
-  pose proof Hstatic_pz as Hstatic_parts.
-  unfold ty_static_guard_formula in Hstatic_parts.
-  repeat rewrite res_models_and_iff in Hstatic_parts.
-  destruct Hstatic_parts as [_ [Hworld_insert _]].
+  pose proof (ty_static_guard_basic_world _ _ _ _ Hstatic_pz)
+    as Hworld_insert.
   pose proof (appd_wand_fun_basic_insert_env
     Γ1 τx τ v1 x pz Hfresh Hworld_insert Hfun_pz)
     as Hbasic_fun_pz.

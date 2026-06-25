@@ -479,3 +479,27 @@ Follow-up Batch K: inserted-erasure bind regular lemma.
   - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessFixOpen.vo`
   - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessFixSelf.vo`
   - `timeout 20s make TIMED=1 ContextTyping/theories/Soundness.vo`
+
+Follow-up Batch L: static/full guard regular accessors.
+
+- Added reusable guard accessors:
+  - `ty_static_guard_basic_typing` in `Denotation/theories/TypeEquiv.v`;
+  - `ty_guard_formula_context_wf`;
+  - `ty_guard_formula_basic_world`;
+  - `ty_guard_formula_basic_typing`;
+  - `ty_guard_formula_total`
+    in `Denotation/theories/TypeEquivCore.v`.
+- Replaced repeated proof-local destructs of `ty_static_guard_formula` in:
+  - `ContextTyping/theories/SoundnessFixApply.v`;
+  - `ContextTyping/theories/SoundnessApp.v`;
+  - `ContextTyping/theories/SoundnessAppD.v`.
+- Simplified the Arrow/Wand open-result zero-target proofs by replacing
+  manual `ty_guard_formula` destructs with the new regular accessors and by
+  removing unused top-level/argument guard decompositions.
+- Validation:
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivCore.vo`
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivArrow.vo`
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivWand.vo`
+  - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessApp.vo`
+  - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessAppD.vo`
+  - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessFixApply.vo`

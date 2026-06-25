@@ -535,23 +535,10 @@ Proof.
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y)) my Hres_mid)
     as Hguard_res_src.
-  pose proof (ty_denote_gas_guard gas
-    (<[LVFree y := erase_ty τx]>
-      (relevant_env Σ (CTArrow τx τr) e2))
-    τx (tret (vfvar y)) my Harg)
-    as Hguard_arg.
-  pose proof (typed_total_equiv_target_zero
-    Σ (CTArrow τx τr) m e1 e2 Hequiv) as Hzero_top_tgt.
-  pose proof (ty_denote_gas_guard_of_zero
-    Σ (CTArrow τx τr) e2 m Hzero_top_tgt) as Hguard_top_tgt.
-  repeat rewrite res_models_and_iff in Hguard_res_src.
-  repeat rewrite res_models_and_iff in Hguard_arg.
-  repeat rewrite res_models_and_iff in Hguard_top_tgt.
-  destruct Hguard_res_src as [Hwf_res_src [Hworld_res_src
-    [Hbasic_res_src Htotal_res_src]]].
-  destruct Hguard_arg as [Hwf_arg [Hworld_arg [Hbasic_arg Htotal_arg]]].
-  destruct Hguard_top_tgt as [Hwf_top_tgt [Hworld_top_tgt
-    [Hbasic_top_tgt Htotal_top_tgt]]].
+  pose proof (ty_guard_formula_context_wf _ _ _ _ Hguard_res_src)
+    as Hwf_res_src.
+  pose proof (ty_guard_formula_total _ _ _ _ Hguard_res_src)
+    as Htotal_res_src.
   pose proof (ty_denote_gas_ret_fvar_basic_world_singleton
     gas
     (<[LVFree y := erase_ty τx]>

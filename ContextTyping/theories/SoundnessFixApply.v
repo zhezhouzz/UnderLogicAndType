@@ -649,11 +649,7 @@ Proof.
     assert (Hbasic_body :
         mw ⊨ expr_basic_typing_formula Δy (tret body)
           (erase_ty (CTArrow τself τres))).
-    {
-      unfold ty_static_guard_formula in Hstatic_body_mw.
-      repeat rewrite res_models_and_iff in Hstatic_body_mw.
-      tauto.
-    }
+    { exact (ty_static_guard_basic_typing _ _ _ _ Hstatic_body_mw). }
     assert (Hres_body_z_mw :
         mw ⊨ expr_result_formula (tret body) (LVFree z)).
     { eapply res_models_kripke; [exact Hle_mz_mw|exact Hres_body_z]. }

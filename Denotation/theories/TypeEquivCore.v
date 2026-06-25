@@ -264,6 +264,50 @@ Proof.
   exact Htotal.
 Qed.
 
+Lemma ty_guard_formula_context_wf
+    (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
+  m ⊨ ty_guard_formula Σ τ e ->
+  m ⊨ context_ty_wf_formula Σ τ.
+Proof.
+  intros Hguard.
+  unfold ty_guard_formula in Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  tauto.
+Qed.
+
+Lemma ty_guard_formula_basic_world
+    (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
+  m ⊨ ty_guard_formula Σ τ e ->
+  m ⊨ basic_world_formula Σ.
+Proof.
+  intros Hguard.
+  unfold ty_guard_formula in Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  tauto.
+Qed.
+
+Lemma ty_guard_formula_basic_typing
+    (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
+  m ⊨ ty_guard_formula Σ τ e ->
+  m ⊨ expr_basic_typing_formula Σ e (erase_ty τ).
+Proof.
+  intros Hguard.
+  unfold ty_guard_formula in Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  tauto.
+Qed.
+
+Lemma ty_guard_formula_total
+    (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
+  m ⊨ ty_guard_formula Σ τ e ->
+  m ⊨ expr_total_formula e.
+Proof.
+  intros Hguard.
+  unfold ty_guard_formula in Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  tauto.
+Qed.
+
 Lemma ty_denote_gas_ret_fvar_relevant_lookup
     gas Σ τ x (m : WfWorldT) :
   m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)) ->

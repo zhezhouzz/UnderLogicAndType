@@ -197,6 +197,16 @@ Round 9: inserted-erasure bind construction.
   removing duplicated `atom_store_to_lvar_store_insert` / inserted-world
   proof blocks from Soundness files.
 
+Round 10: static/full guard accessors.
+
+- Added regular accessors for `ty_guard_formula` and the missing
+  `ty_static_guard_basic_typing` accessor.
+- Replaced repeated `unfold ty_static_guard_formula; repeat rewrite
+  res_models_and_iff` blocks in App/AppD/FixApply with direct accessor calls.
+- Simplified Arrow/Wand open-result zero-target proofs so they no longer
+  destruct unused source/target/argument guards; they now keep only the
+  context-wf and total facts actually used by the proof.
+
 Deferred Candidates
 -------------------
 

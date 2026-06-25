@@ -874,10 +874,8 @@ Proof.
   pose proof (app_arrow_mid_static_guard
     Σ Γ τx τ v1 x mz Hwf_fun Hwf_app Hfresh Hfun_mz Harg_mz)
     as Hstatic_mz.
-  pose proof Hstatic_mz as Hstatic_parts.
-  unfold ty_static_guard_formula in Hstatic_parts.
-  repeat rewrite res_models_and_iff in Hstatic_parts.
-  destruct Hstatic_parts as [_ [Hworld_insert _]].
+  pose proof (ty_static_guard_basic_world _ _ _ _ Hstatic_mz)
+    as Hworld_insert.
   pose proof (app_arrow_fun_basic_insert_env
     Γ τx τ v1 x mz Hfresh Hworld_insert Hfun_mz)
     as Hbasic_fun_mz.
