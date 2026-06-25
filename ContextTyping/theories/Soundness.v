@@ -15,7 +15,7 @@ From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceInterface ResourceExtension.
 From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier
-  BasicTypingFormula RelevantEnv.
+  BasicTypingFormula RelevantEnv TermSyntax.
 From Denotation Require Import Context
   TypeEquivCore
   TypeEquivFiberBase
@@ -31,26 +31,6 @@ Local Notation WorldT := (World (V := value)) (only parsing).
 Local Notation WfWorldT := (WfWorld (V := value)) (only parsing).
 Local Notation FiberExtensionT := (fiber_extension (V := value)) (only parsing).
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
-
-Local Lemma soundness_notin_cty_lvars_of_fv x τ :
-  x ∉ fv_cty τ ->
-  LVFree x ∉ context_ty_lvars τ.
-Proof.
-  intros Hx Hbad.
-  apply lvars_fv_elem in Hbad.
-  rewrite context_ty_lvars_fv in Hbad.
-  exact (Hx Hbad).
-Qed.
-
-Local Lemma soundness_notin_fv_tlete x e1 e2 :
-  x ∉ fv_tm e1 ->
-  x ∉ fv_tm e2 ->
-  x ∉ fv_tm (tlete e1 e2).
-Proof.
-  intros Hx1 Hx2 Hx.
-  cbn [fv_tm] in Hx.
-  apply elem_of_union in Hx as [Hx | Hx]; auto.
-Qed.
 
 (** Totality extraction is intentionally a named review point.  The denotation
     guard contains [expr_total_formula], but future proofs around recursive
@@ -497,9 +477,9 @@ Proof.
     (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env (erase_ctx Γ)))
     τ2 (e2 ^^ x) mx Hbody_guard) as Hbody_zero.
   assert (Hxτ2 : LVFree x ∉ context_ty_lvars τ2).
-  { apply soundness_notin_cty_lvars_of_fv. exact Hxτ2_fv. }
+  { apply context_ty_lvars_free_notin_of_fv. exact Hxτ2_fv. }
   assert (Hxtlet : x ∉ fv_tm (tlete e1 e2)).
-  { apply soundness_notin_fv_tlete; assumption. }
+  { apply notin_fv_tm_tlete; assumption. }
   assert (Hmx_zero_tlet :
       mx ⊨ ty_denote_gas 0
         (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env (erase_ctx Γ)))
@@ -753,9 +733,9 @@ Proof.
     exact Hden1.
   }
   assert (Hxτ2 : LVFree x ∉ context_ty_lvars τ2).
-  { apply soundness_notin_cty_lvars_of_fv. exact Hxτ2_fv. }
+  { apply context_ty_lvars_free_notin_of_fv. exact Hxτ2_fv. }
   assert (Hxtlet : x ∉ fv_tm (tlete e1 e2)).
-  { apply soundness_notin_fv_tlete; assumption. }
+  { apply notin_fv_tm_tlete; assumption. }
   assert (Hmx_zero_tlet :
       res_product m2 m1x Hc2x ⊨ ty_denote_gas 0
         (<[LVFree x := erase_ty τ1]>

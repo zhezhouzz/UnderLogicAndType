@@ -160,6 +160,15 @@ Round 5:
 - This does not target a large semantic proof directly, but removes four local
   syntax proofs from a denotation transport file.
 
+Round 6:
+
+- Removed two pure syntax/freshness local lemmas from `Soundness.v`.
+- `context_ty_lvars_free_notin_of_fv` now lives in
+  `ContextTypeLanguage.Syntax`.
+- `notin_fv_tlete` is reused from `ContextBasicDenotation.TermSyntax`.
+- This keeps Soundness focused on the Fundamental proof orchestration rather
+  than local stdpp/FV conversions.
+
 Next Measurable Large-Proof Target
 ----------------------------------
 

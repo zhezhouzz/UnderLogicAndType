@@ -292,6 +292,22 @@ Const Pass Update
 - `const_open_fib_under_swapped_scoped`: logic/formula + const qualifier facts.
   The stdpp/FV body has been lowered to `ConstDenoteBase`.
 
+Soundness Entry Pass Update
+---------------------------
+
+### ContextTypeLanguage/theories/Syntax.v
+
+- `context_ty_lvars_free_notin_of_fv`: type syntax + lvar FV. This is now the
+  canonical lower fact for turning `x ∉ fv_cty τ` into
+  `LVFree x ∉ context_ty_lvars τ`.
+
+### ContextTyping/theories/Soundness.v
+
+- Removed local `soundness_notin_cty_lvars_of_fv`; callers now use
+  `context_ty_lvars_free_notin_of_fv`.
+- Removed local `soundness_notin_fv_tlete`; callers now use the lowered
+  `ContextBasicDenotation.TermSyntax.notin_fv_tm_tlete`.
+
 Next Candidate Passes
 ---------------------
 

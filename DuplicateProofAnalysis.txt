@@ -173,6 +173,14 @@ Round 7: TLet FV syntax facts.
   general term-syntax lemmas and should not live in a denotation transport
   file.
 
+Round 8: Soundness entry syntax freshness.
+
+- Added `context_ty_lvars_free_notin_of_fv` to `ContextTypeLanguage.Syntax`.
+- Removed two local Soundness wrappers:
+  `soundness_notin_cty_lvars_of_fv` and `soundness_notin_fv_tlete`.
+- Soundness now uses lower syntax facts directly:
+  `context_ty_lvars_free_notin_of_fv` and `notin_fv_tm_tlete`.
+
 Deferred Candidates
 -------------------
 
