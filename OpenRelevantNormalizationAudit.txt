@@ -97,6 +97,37 @@ Validation:
 
 Status: completed.
 
+## Iteration 12: Open-Result Singleton World From Ret-Fvar Regularity
+
+Problem:
+
+- Arrow/Wand open-result helper statements still exposed a manually supplied
+  singleton `basic_world_formula` for the fresh argument slot.
+- In the actual proof shape this fact is already implied by the regular
+  argument denotation:
+  `my ⊨ ty_denote_gas gas (<[y := erase_ty τx]> ...) τx (ret y)`.
+
+Action:
+
+- Moved the ret-fvar regular lemmas to `TypeEquivCore.v` so Arrow/Wand helpers
+  can use them without importing the top-level `TypeEquiv.v`.
+- Reworked the Arrow open-result target/mid helpers to derive the singleton
+  world from `Harg` via `ty_denote_gas_ret_fvar_basic_world_singleton`.
+- Reworked the ordinary Wand target/mid helpers similarly; the derived
+  singleton world lives on the argument resource `n` and is lifted to the
+  product world with `res_product_le_l`.
+
+Validation:
+
+- `timeout 20s make TIMED=1 Denotation/theories/TypeEquivArrow.vo`
+- `timeout 20s make TIMED=1 Denotation/theories/TypeEquivWand.vo`
+- `timeout 20s make TIMED=1 Denotation/theories/TypeEquiv.vo`
+- `timeout 20s make TIMED=1 ContextTyping/theories/Soundness.vo` after warmed
+  dependency rebuild
+- `timeout 180s make TIMED=1`
+
+Status: completed.
+
 ## Iteration 12: Result-First Outer Value Open Normalizers
 
 Problem:

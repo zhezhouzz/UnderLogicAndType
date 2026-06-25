@@ -423,3 +423,32 @@ Final Validation For This Pass
 - `timeout 180s make TIMED=1` passed.
 - `rg -n "Admitted\\.|admit\\." -g '*.v' .` produced no matches.
 - `git status --short` after validation only showed this tracker update.
+
+Follow-up Batch J: ret-fvar regular extraction for open-result target worlds.
+
+- Moved the ret-fvar regular facts from `TypeEquiv.v` to
+  `TypeEquivCore.v`, making them available to Arrow/Wand transport helpers:
+  - `ty_denote_gas_ret_fvar_relevant_lookup`
+  - `ty_denote_gas_ret_fvar_lookup`
+  - `ty_denote_gas_ret_fvar_world_dom`
+  - `ty_denote_gas_ret_fvar_basic_world_singleton`
+- Removed the explicit singleton `basic_world_formula`
+  parameter from the proof-facing Arrow open-result target/mid helpers:
+  - `basic_world_formula_arrow_open_result_target`
+  - `arrow_result_target_typing`
+  - `ty_denote_gas_zero_arrow_open_result_target`
+  - `typed_total_equiv_arrow_open_result_mid`
+  - `ty_denote_gas_tm_equiv_arrow_open_result`
+- Removed the same explicit premise from the corresponding ordinary Wand
+  target/mid helpers.  For Wand the singleton world is derived from the
+  argument resource and lifted through `res_product_le_l`, which better matches
+  the separating function semantics.
+- Validation:
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivCore.vo`
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivArrow.vo`
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivWand.vo`
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquiv.vo`
+  - `timeout 20s make TIMED=1 ContextTyping/theories/Soundness.vo` after
+    warmed dependency rebuild
+  - `timeout 180s make TIMED=1`
+  - `rg -n "Admitted\\.|admit\\." -g '*.v' .` produced no matches.

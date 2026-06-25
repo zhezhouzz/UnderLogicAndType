@@ -224,7 +224,7 @@ Lemma wfworld_closed_on_wand_open_result_apps
   typed_total_equiv_on Σ (CTWand τx τr) m e1 e2 ->
   world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
   res_restrict my (world_dom (m : WorldT)) = m ->
-  my ⊨ basic_world_formula
+  n ⊨ basic_world_formula
     ((<[LVFree y := erase_ty τx]> (∅ : gmap logic_var ty)) : lty_env) ->
   wfworld_closed_on
     (fv_tm (tapp_tm e1 (vfvar y)) ∪
@@ -270,25 +270,43 @@ Proof.
       + exact Hworld2.
       + exact Hbasic2.
   }
-	  assert (Hclosed_y : wfworld_closed_on ({[y]} : aset) my).
-	  { eapply basic_world_formula_singleton_free_closed_on. exact Hworld. }
-  assert (Hclosed_my :
+  assert (Hclosed_base :
       wfworld_closed_on
-        (fv_tm (tapp_tm e1 (vfvar y)) ∪
-         fv_tm (tapp_tm e2 (vfvar y))) my).
+        (fv_tm e1 ∪ fv_tm e2) my).
   {
-    eapply (wfworld_closed_on_mono _
-      ((fv_tm e1 ∪ fv_tm e2) ∪ ({[y]} : aset)) my).
-    - apply wand_tapp_apps_fv_subset.
-    - apply (wfworld_closed_on_union (fv_tm e1 ∪ fv_tm e2) ({[y]} : aset)).
-      + apply (wfworld_closed_on_union (fv_tm e1) (fv_tm e2));
-          [exact Hclosed1|exact Hclosed2].
-      + exact Hclosed_y.
+    apply (wfworld_closed_on_union (fv_tm e1) (fv_tm e2));
+      [exact Hclosed1|exact Hclosed2].
   }
-  eapply wfworld_closed_on_le.
-  - eapply wand_open_world_tapp_apps_scope; eauto.
-  - apply res_product_le_r.
-  - exact Hclosed_my.
+  assert (Hclosed_base_prod :
+      wfworld_closed_on (fv_tm e1 ∪ fv_tm e2) (res_product n my Hc)).
+  {
+    eapply wfworld_closed_on_le.
+    - intros a Ha. rewrite Hdom. set_solver.
+    - apply res_product_le_r.
+    - exact Hclosed_base.
+  }
+  assert (Hclosed_y_prod :
+      wfworld_closed_on ({[y]} : aset) (res_product n my Hc)).
+  {
+    assert (Hy_n : ({[y]} : aset) ⊆ world_dom (n : WorldT)).
+    {
+      apply basic_world_formula_models_iff in Hworld as [_ [Hdom_y _]].
+      rewrite dom_insert_L, dom_empty_L in Hdom_y.
+      rewrite lvars_fv_union, lvars_fv_empty,
+        lvars_fv_singleton_free in Hdom_y.
+      intros a Ha. apply Hdom_y.
+      apply elem_of_union_l. exact Ha.
+    }
+    eapply wfworld_closed_on_le.
+    - exact Hy_n.
+    - apply res_product_le_l.
+    - eapply basic_world_formula_singleton_free_closed_on. exact Hworld.
+  }
+  eapply (wfworld_closed_on_mono _
+    ((fv_tm e1 ∪ fv_tm e2) ∪ ({[y]} : aset)) (res_product n my Hc)).
+  - apply wand_tapp_apps_fv_subset.
+  - apply (wfworld_closed_on_union (fv_tm e1 ∪ fv_tm e2) ({[y]} : aset));
+      [exact Hclosed_base_prod|exact Hclosed_y_prod].
 Qed.
 
 Lemma wand_result_source_world
@@ -386,8 +404,6 @@ Lemma basic_world_formula_wand_open_result_target
   y ∉ fv_cty τx ->
   y ∉ fv_cty τr ->
   y ∉ fv_tm e1 ∪ fv_tm e2 ->
-  my ⊨ basic_world_formula
-    ((<[LVFree y := erase_ty τx]> (∅ : gmap logic_var ty)) : lty_env) ->
   res_product n my Hc ⊨ ty_denote_gas gas
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y)) ->
@@ -398,9 +414,14 @@ Lemma basic_world_formula_wand_open_result_target
   res_product n my Hc ⊨ basic_world_formula
     (relevant_env
       (<[LVFree y := erase_ty τx]> Σ)
-      (cty_open 0 y τr) (tapp_tm e2 (vfvar y))).
+    (cty_open 0 y τr) (tapp_tm e2 (vfvar y))).
 Proof.
-  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hworld Hres_mid Harg.
+  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hres_mid Harg.
+  pose proof (ty_denote_gas_ret_fvar_basic_world_singleton
+    gas
+    (<[LVFree y := erase_ty τx]>
+      (relevant_env Σ (CTWand τx τr) e2))
+    τx y n Harg) as Hworld_arg.
   pose proof (wand_result_source_world
     Σ τx τr e1 e2 m my Hequiv Hrestrict) as Hworld_src_my.
   assert (Hworld_src_prod :
@@ -410,7 +431,7 @@ Proof.
   assert (Hworld_y_prod :
       res_product n my Hc ⊨ basic_world_formula
         ((<[LVFree y := erase_ty τx]> (∅ : gmap logic_var ty)) : lty_env)).
-  { eapply res_models_kripke; [apply res_product_le_r|exact Hworld]. }
+  { eapply res_models_kripke; [apply res_product_le_l|exact Hworld_arg]. }
   pose proof (basic_world_formula_wand_open_result_big
     Σ τx τr e1 e2 m (res_product n my Hc) y
     Hequiv Hyτx Hyτr Hye Hworld_src_prod Hworld_y_prod) as Hworld_big.
@@ -468,8 +489,6 @@ Lemma wand_result_target_typing
   y ∉ fv_cty τx ->
   y ∉ fv_cty τr ->
   y ∉ fv_tm e1 ∪ fv_tm e2 ->
-  my ⊨ basic_world_formula
-    ((<[LVFree y := erase_ty τx]> (∅ : gmap logic_var ty)) : lty_env) ->
   res_product n my Hc ⊨ ty_denote_gas gas
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y)) ->
@@ -483,10 +502,10 @@ Lemma wand_result_target_typing
       (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
     (tapp_tm e2 (vfvar y)) (erase_ty (cty_open 0 y τr)).
 Proof.
-  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hworld Hres_mid Harg.
+  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hres_mid Harg.
   pose proof (basic_world_formula_wand_open_result_target
     gas Σ τx τr e1 e2 m my n y Hc Hequiv Hdom Hrestrict
-    Hyτx Hyτr Hye Hworld Hres_mid Harg) as Hworld_tgt.
+    Hyτx Hyτr Hye Hres_mid Harg) as Hworld_tgt.
   apply expr_basic_typing_formula_models_iff.
   apply basic_world_formula_models_iff in Hworld_tgt
     as [Hlc_tgt [Hscope_tgt _]].
@@ -509,8 +528,6 @@ Lemma ty_denote_gas_zero_wand_open_result_target
   y ∉ fv_cty τx ->
   y ∉ fv_cty τr ->
   y ∉ fv_tm e1 ∪ fv_tm e2 ->
-  my ⊨ basic_world_formula
-    ((<[LVFree y := erase_ty τx]> (∅ : gmap logic_var ty)) : lty_env) ->
   res_product n my Hc ⊨ ty_denote_gas gas
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y)) ->
@@ -522,7 +539,7 @@ Lemma ty_denote_gas_zero_wand_open_result_target
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e2 (vfvar y)).
 Proof.
-  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hworld Hres_mid Harg.
+  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hres_mid Harg.
   pose proof (ty_denote_gas_guard gas
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y))
@@ -550,7 +567,11 @@ Proof.
          fv_tm (tapp_tm e2 (vfvar y)))
         (res_product n my Hc)).
   {
-    eapply wfworld_closed_on_wand_open_result_apps; eauto.
+    eapply wfworld_closed_on_wand_open_result_apps.
+    - exact Hequiv.
+    - exact Hdom.
+    - exact Hrestrict.
+    - eapply ty_denote_gas_ret_fvar_basic_world_singleton. exact Harg.
   }
   assert (Heq_apps :
       tm_equiv_on (res_product n my Hc)
@@ -681,8 +702,6 @@ Lemma typed_total_equiv_wand_open_result_mid
   y ∉ fv_cty τx ->
   y ∉ fv_cty τr ->
   y ∉ fv_tm e1 ∪ fv_tm e2 ->
-  my ⊨ basic_world_formula
-    ((<[LVFree y := erase_ty τx]> (∅ : gmap logic_var ty)) : lty_env) ->
   res_product n my Hc ⊨ ty_denote_gas gas
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y)) ->
@@ -695,7 +714,7 @@ Lemma typed_total_equiv_wand_open_result_mid
     (cty_open 0 y τr) (res_product n my Hc)
     (tapp_tm e1 (vfvar y)) (tapp_tm e2 (vfvar y)).
 Proof.
-  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hworld Hres_mid Harg.
+  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hres_mid Harg.
   pose proof (typed_total_equiv_term_lc
     Σ (CTWand τx τr) m e1 e2 Hequiv) as [Hlc1 Hlc2].
   pose proof (typed_total_equiv_source_zero
@@ -719,6 +738,7 @@ Proof.
   {
     eapply (wfworld_closed_on_wand_open_result_apps
       Σ τx τr e1 e2 m my n y Hc); eauto.
+    eapply ty_denote_gas_ret_fvar_basic_world_singleton. exact Harg.
   }
   pose proof (typed_total_equiv_term_scope
     Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.

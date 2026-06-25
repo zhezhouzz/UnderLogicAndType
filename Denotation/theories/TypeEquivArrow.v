@@ -358,8 +358,6 @@ Lemma basic_world_formula_arrow_open_result_target
   y ∉ fv_cty τx ->
   y ∉ fv_cty τr ->
   y ∉ fv_tm e1 ∪ fv_tm e2 ->
-  my ⊨ basic_world_formula
-    ((<[LVFree y := erase_ty τx]> (∅ : gmap logic_var ty)) : lty_env) ->
   my ⊨ ty_denote_gas gas
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y)) ->
@@ -372,7 +370,12 @@ Lemma basic_world_formula_arrow_open_result_target
       (<[LVFree y := erase_ty τx]> Σ)
       (cty_open 0 y τr) (tapp_tm e2 (vfvar y))).
 Proof.
-  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hworld Hres_mid Harg.
+  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hres_mid Harg.
+  pose proof (ty_denote_gas_ret_fvar_basic_world_singleton
+    gas
+    (<[LVFree y := erase_ty τx]>
+      (relevant_env Σ (CTArrow τx τr) e2))
+    τx y my Harg) as Hworld.
   pose proof (arrow_result_source_world
     Σ τx τr e1 e2 m my Hequiv Hrestrict) as Hworld_src_my.
   pose proof (basic_world_formula_arrow_open_result_big
@@ -477,8 +480,6 @@ Lemma arrow_result_target_typing
   y ∉ fv_cty τx ->
   y ∉ fv_cty τr ->
   y ∉ fv_tm e1 ∪ fv_tm e2 ->
-  my ⊨ basic_world_formula
-    ((<[LVFree y := erase_ty τx]> (∅ : gmap logic_var ty)) : lty_env) ->
   my ⊨ ty_denote_gas gas
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y)) ->
@@ -492,10 +493,10 @@ Lemma arrow_result_target_typing
       (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
     (tapp_tm e2 (vfvar y)) (erase_ty (cty_open 0 y τr)).
 Proof.
-  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hworld Hres_mid Harg.
+  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hres_mid Harg.
   pose proof (basic_world_formula_arrow_open_result_target
     gas Σ τx τr e1 e2 m my y Hequiv Hdom Hrestrict
-    Hyτx Hyτr Hye Hworld Hres_mid Harg) as Hworld_tgt.
+    Hyτx Hyτr Hye Hres_mid Harg) as Hworld_tgt.
   apply expr_basic_typing_formula_models_iff.
   apply basic_world_formula_models_iff in Hworld_tgt
     as [Hlc_tgt [Hscope_tgt _]].
@@ -518,8 +519,6 @@ Lemma ty_denote_gas_zero_arrow_open_result_target
   y ∉ fv_cty τx ->
   y ∉ fv_cty τr ->
   y ∉ fv_tm e1 ∪ fv_tm e2 ->
-  my ⊨ basic_world_formula
-    ((<[LVFree y := erase_ty τx]> (∅ : gmap logic_var ty)) : lty_env) ->
   my ⊨ ty_denote_gas gas
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y)) ->
@@ -531,7 +530,7 @@ Lemma ty_denote_gas_zero_arrow_open_result_target
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e2 (vfvar y)).
 Proof.
-  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hworld Hres_mid Harg.
+  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hres_mid Harg.
   pose proof (ty_denote_gas_guard gas
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y)) my Hres_mid)
@@ -553,12 +552,21 @@ Proof.
   destruct Hguard_arg as [Hwf_arg [Hworld_arg [Hbasic_arg Htotal_arg]]].
   destruct Hguard_top_tgt as [Hwf_top_tgt [Hworld_top_tgt
     [Hbasic_top_tgt Htotal_top_tgt]]].
+  pose proof (ty_denote_gas_ret_fvar_basic_world_singleton
+    gas
+    (<[LVFree y := erase_ty τx]>
+      (relevant_env Σ (CTArrow τx τr) e2))
+    τx y my Harg) as Hworld_y.
   assert (Hclosed_apps :
       wfworld_closed_on
         (fv_tm (tapp_tm e1 (vfvar y)) ∪
          fv_tm (tapp_tm e2 (vfvar y))) my).
   {
-    eapply wfworld_closed_on_arrow_open_result_apps; eauto.
+    eapply wfworld_closed_on_arrow_open_result_apps.
+    - exact Hequiv.
+    - exact Hdom.
+    - exact Hrestrict.
+    - exact Hworld_y.
   }
   assert (Heq_apps :
       tm_equiv_on my
@@ -672,8 +680,6 @@ Lemma typed_total_equiv_arrow_open_result_mid
   y ∉ fv_cty τx ->
   y ∉ fv_cty τr ->
   y ∉ fv_tm e1 ∪ fv_tm e2 ->
-  my ⊨ basic_world_formula
-    ((<[LVFree y := erase_ty τx]> (∅ : gmap logic_var ty)) : lty_env) ->
   my ⊨ ty_denote_gas gas
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y)) ->
@@ -686,16 +692,24 @@ Lemma typed_total_equiv_arrow_open_result_mid
     (cty_open 0 y τr) my
     (tapp_tm e1 (vfvar y)) (tapp_tm e2 (vfvar y)).
 Proof.
-  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hworld Hres_mid Harg.
+  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hres_mid Harg.
   pose proof (typed_total_equiv_term_lc
     Σ (CTArrow τx τr) m e1 e2 Hequiv) as [Hlc1 Hlc2].
+  pose proof (ty_denote_gas_ret_fvar_basic_world_singleton
+    gas
+    (<[LVFree y := erase_ty τx]>
+      (relevant_env Σ (CTArrow τx τr) e2))
+    τx y my Harg) as Hworld_y.
   assert (Hclosed_apps :
       wfworld_closed_on
         (fv_tm (tapp_tm e1 (vfvar y)) ∪
          fv_tm (tapp_tm e2 (vfvar y))) my).
   {
-    eapply (wfworld_closed_on_arrow_open_result_apps
-      Σ τx τr e1 e2 m my y); eauto.
+    eapply wfworld_closed_on_arrow_open_result_apps.
+    - exact Hequiv.
+    - exact Hdom.
+    - exact Hrestrict.
+    - exact Hworld_y.
   }
   assert (Heq_base_my : tm_equiv_on my e1 e2).
   {
@@ -756,8 +770,6 @@ Lemma ty_denote_gas_tm_equiv_arrow_open_result
   y ∉ lvars_fv
     (dom (typed_lty_env_bind
       (relevant_env Σ (CTArrow τx τr) e2) (erase_ty τx))) ->
-  my ⊨ basic_world_formula
-    ((<[LVFree y := erase_ty τx]> (∅ : gmap logic_var ty)) : lty_env) ->
   my ⊨ ty_denote_gas gas
     (<[LVFree y := erase_ty τx]>
       (relevant_env Σ (CTArrow τx τr) e2))
@@ -771,7 +783,7 @@ Lemma ty_denote_gas_tm_equiv_arrow_open_result
       (relevant_env Σ (CTArrow τx τr) e2))
     (cty_open 0 y τr) (tapp_tm e2 (vfvar y)).
 Proof.
-  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye HyΣ1 HyΣ2 Hworld Harg Hres.
+  intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye HyΣ1 HyΣ2 Harg Hres.
   pose proof (typed_total_equiv_term_lc
     Σ (CTArrow τx τr) m e1 e2 Hequiv) as [Hlc1 Hlc2].
   pose proof (typed_total_equiv_source_zero
@@ -831,7 +843,6 @@ Proof.
     + exact Hyτx.
     + exact Hyτr.
     + exact Hye.
-    + exact Hworld.
     + exact Hres_mid.
     + exact Harg.
   - exact Hres_mid.
