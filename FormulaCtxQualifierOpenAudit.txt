@@ -97,3 +97,16 @@ Top buckets:
   - `SoundnessAppD.vo` and `Soundness.vo` compile.
 - Next active item: `SoundnessLamArrow.v`, then `SoundnessLamWand.v` and
   `SoundnessFixApply.v`.
+- `SoundnessLamArrow.v` iteration completed:
+  - `lam_result_first_arrow_value_denotation` now consumes and returns the
+    normalized `arrow_value_denote_gas_with ... (<[z := funTy]> Σrel) ...`
+    form.
+  - `fundamental_lam_case` normalizes both the scoped value body and the
+    target goal at the Soundness source before calling the helper.
+  - Remaining `formula_open` occurrences in `SoundnessLamArrow.v` are
+    explicit normalizer/support lemmas:
+    `lam_arrow_open_arg_normalize`,
+    `lam_result_first_outer_result_plain`, and
+    `lamd_result_first_outer_result_plain`.
+  - `SoundnessLamArrow.vo` and `Soundness.vo` compile.
+- Next active item: `SoundnessLamWand.v`, then `SoundnessFixApply.v`.

@@ -20,6 +20,7 @@ From Denotation Require Import Context
   TypeEquivCore
   TypeEquivFiberBase
   TypeEquivTLet
+  TypePersistArrow
   TypeEquiv
   ConstDenote.
 From ContextTyping Require Import PrimOpContext Typing
@@ -828,11 +829,43 @@ Proof.
         z ∉ L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
           fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
     { clear -Hz. better_set_solver. }
-    pose proof (lam_result_first_outer_result_plain
-      Σ Γ τx τ e mz z Hwf
-      ltac:(clear -Hzfresh; better_set_solver) Hres_raw) as Hres_plain.
-    eapply lam_result_first_arrow_value_denotation; eauto.
-    eapply formula_scoped_impl_r. exact Hopened_scope.
+	    pose proof (lam_result_first_outer_result_plain
+	      Σ Γ τx τ e mz z Hwf
+	      ltac:(clear -Hzfresh; better_set_solver) Hres_raw) as Hres_plain.
+	    assert (Hscope_value_norm :
+	        formula_scoped_in_world mz
+	          (arrow_value_denote_gas_with ty_denote_gas gas
+	            (<[LVFree z := erase_ty (CTArrow τx τ)]>
+	              (relevant_env Δ (CTArrow τx τ) (tret vf)))
+	            τx τ (tret (vfvar z)))).
+	    {
+	      rewrite <- (formula_open_result_first_arrow_value_ret_bvar0
+	        gas (relevant_env Δ (CTArrow τx τ) (tret vf))
+	        τx τ (erase_ty (CTArrow τx τ)) z).
+	      - eapply formula_scoped_impl_r. exact Hopened_scope.
+	      - apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
+	      - apply soundness_relevant_env_arrow_value_fresh.
+	        subst vf. cbn [fv_value]. clear -Hzfresh. better_set_solver.
+	      - apply (context_typing_wf_arrow_arg_lc Σ Γ (tret vf) τx τ).
+	        subst vf. exact Hwf.
+	      - apply (context_typing_wf_arrow_result_lc1 Σ Γ (tret vf) τx τ).
+	        subst vf. exact Hwf.
+	      - clear -Hzfresh. better_set_solver.
+	      - clear -Hzfresh. better_set_solver.
+	    }
+	    rewrite (formula_open_result_first_arrow_value_ret_bvar0
+	      gas (relevant_env Δ (CTArrow τx τ) (tret vf))
+	      τx τ (erase_ty (CTArrow τx τ)) z).
+	    2:{ apply relevant_env_closed. apply atom_store_to_lvar_store_closed. }
+	    2:{ apply soundness_relevant_env_arrow_value_fresh.
+	        subst vf. cbn [fv_value]. clear -Hzfresh. better_set_solver. }
+	    2:{ apply (context_typing_wf_arrow_arg_lc Σ Γ (tret vf) τx τ).
+	        subst vf. exact Hwf. }
+	    2:{ apply (context_typing_wf_arrow_result_lc1 Σ Γ (tret vf) τx τ).
+	        subst vf. exact Hwf. }
+	    2:{ clear -Hzfresh. better_set_solver. }
+	    2:{ clear -Hzfresh. better_set_solver. }
+	    eapply lam_result_first_arrow_value_denotation; eauto.
 Qed.
 
 Lemma fundamental_lamd_case Σ Γ τx τ e (L : aset) :
