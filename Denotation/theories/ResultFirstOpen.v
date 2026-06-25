@@ -675,8 +675,44 @@ Proof.
   exact Hinner.
 Qed.
 
+End TypeDenote.
+
 Ltac result_first_open_norm :=
   repeat match goal with
+  | |- context [formula_open 0 ?y
+      (formula_open 1 ?f
+        (ty_denote_gas ?gas
+          (typed_lty_env_bind (typed_lty_env_bind ?Σ ?Tf)
+            (erase_ty (cty_shift 0 ?τx)))
+          (cty_shift 0 (cty_shift 0 ?τx)) (tret (vbvar 0))))] =>
+      rewrite (formula_open_result_first_fun_arg_two gas Σ τx Tf f y)
+        by (try eassumption; try congruence; try set_solver)
+  | H : context [formula_open 0 ?y
+      (formula_open 1 ?f
+        (ty_denote_gas ?gas
+          (typed_lty_env_bind (typed_lty_env_bind ?Σ ?Tf)
+            (erase_ty (cty_shift 0 ?τx)))
+          (cty_shift 0 (cty_shift 0 ?τx)) (tret (vbvar 0))))] |- _ =>
+      rewrite (formula_open_result_first_fun_arg_two gas Σ τx Tf f y) in H
+        by (try eassumption; try congruence; try set_solver)
+  | |- context [formula_open 0 ?y
+      (formula_open 1 ?f
+        (ty_denote_gas ?gas
+          (typed_lty_env_bind (typed_lty_env_bind ?Σ ?Tf)
+            (erase_ty (cty_shift 0 ?τx)))
+          (cty_shift 1 ?τr)
+          (tapp_tm (tret (vbvar 1)) (vbvar 0))))] =>
+      rewrite (formula_open_result_first_fun_result_two gas Σ τx τr Tf f y)
+        by (try eassumption; try congruence; try set_solver)
+  | H : context [formula_open 0 ?y
+      (formula_open 1 ?f
+        (ty_denote_gas ?gas
+          (typed_lty_env_bind (typed_lty_env_bind ?Σ ?Tf)
+            (erase_ty (cty_shift 0 ?τx)))
+          (cty_shift 1 ?τr)
+          (tapp_tm (tret (vbvar 1)) (vbvar 0))))] |- _ =>
+      rewrite (formula_open_result_first_fun_result_two gas Σ τx τr Tf f y) in H
+        by (try eassumption; try congruence; try set_solver)
   | |- context [formula_open 0 ?f
       (arrow_value_denote_gas_with ty_denote_gas ?gas ?Σ ?τx ?τr
         (tret (vbvar 0)))] =>
@@ -732,6 +768,23 @@ Ltac result_first_open_norm :=
 
 Ltac result_first_open_norm_in H :=
   repeat match type of H with
+  | context [formula_open 0 ?y
+      (formula_open 1 ?f
+        (ty_denote_gas ?gas
+          (typed_lty_env_bind (typed_lty_env_bind ?Σ ?Tf)
+            (erase_ty (cty_shift 0 ?τx)))
+          (cty_shift 0 (cty_shift 0 ?τx)) (tret (vbvar 0))))] =>
+      rewrite (formula_open_result_first_fun_arg_two gas Σ τx Tf f y) in H
+        by (try eassumption; try congruence; try set_solver)
+  | context [formula_open 0 ?y
+      (formula_open 1 ?f
+        (ty_denote_gas ?gas
+          (typed_lty_env_bind (typed_lty_env_bind ?Σ ?Tf)
+            (erase_ty (cty_shift 0 ?τx)))
+          (cty_shift 1 ?τr)
+          (tapp_tm (tret (vbvar 1)) (vbvar 0))))] =>
+      rewrite (formula_open_result_first_fun_result_two gas Σ τx τr Tf f y) in H
+        by (try eassumption; try congruence; try set_solver)
   | context [formula_open 0 ?f
       (arrow_value_denote_gas_with ty_denote_gas ?gas ?Σ ?τx ?τr
         (tret (vbvar 0)))] =>
@@ -760,5 +813,3 @@ Ltac result_first_open_norm_in H :=
   cbn [formula_open arrow_value_denote_gas arrow_value_denote_gas_with
         wand_value_denote_gas wand_value_denote_gas_with] in H;
   denotation_open_norm_in H.
-
-End TypeDenote.

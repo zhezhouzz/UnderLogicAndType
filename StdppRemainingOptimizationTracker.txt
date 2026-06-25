@@ -653,3 +653,38 @@ Follow-up Batch U: singleton ret-fvar freshness consolidation.
 - Validation:
   - `timeout 20s make TIMED=1 Denotation/theories/TypePersistSingleton.vo`
     completed in about 2.33s.
+
+Follow-up Batch V: Arrow result-first open normalization at source.
+
+- Removed the raw-open local Arrow result-first bridge helpers:
+  - `arrow_result_first_arg_to_regular_open`;
+  - `arrow_result_first_regular_to_arg_open`;
+  - `arrow_result_first_result_to_regular_open`;
+  - `arrow_result_first_regular_to_result_open`.
+- Replaced them with normalized fresh-function-slot add/drop facts:
+  - `arrow_result_first_arg_drop_fun_slot`;
+  - `arrow_result_first_arg_add_fun_slot`.
+- Reworked `TypeEquivArrowResultFirst` so the outer function result slot is
+  normalized immediately with
+  `formula_open_result_first_arrow_value_ret_bvar0`; the inner argument/result
+  openings are normalized with the single-open bind lemmas instead of trying
+  to repair double raw opens later.
+- Reworked the local `tlet_arrow_value_body_env` interface in
+  `TypeEquivTLet.v` to consume and produce normalized
+  `arrow_value_denote_gas_with ... (<[f := ...]> Σrel) ... (ret f)` facts.
+  Its caller now normalizes at the outer result slot before calling it.
+- Removed the local `arrow_lc_lvars_shift_from` wrapper; callers use
+  `result_first_lc_lvars_shift_from` directly.
+- Leak scan for the removed helper names is empty. A broad raw-open scan now
+  leaves only syntax/normalizer/support locations for this batch:
+  `TypeDenote.v`, `Context.v`, `ResultFirstOpen.v`, and
+  `TypeEquivFiberBody.v`.
+- Validation:
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivArrowResultFirst.vo`
+    completed in about 1.81s.
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivTLet.vo`
+    completed in about 4.47s.
+  - `timeout 20s make TIMED=1 ContextTyping/theories/Soundness.vo`
+    completed after dependency-cache retries; final `Soundness.vo` pass took
+    about 4.68s.
+  - `rg -n "Admitted\\.|admit\\." -g '*.v' .` is clean.
