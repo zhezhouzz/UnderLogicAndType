@@ -9,16 +9,6 @@ From ContextAlgebra Require Import ResourceAlgebra.
 
 Section TypePersist.
 
-Local Lemma elem_open_world_inter_singleton x y (B : aset) :
-  x ∈ B ->
-  x ∈ (B ∪ {[y]}) ∩ ({[x]} : aset).
-Proof.
-  intros Hx.
-  apply elem_of_intersection. split.
-  - apply elem_of_union_l. exact Hx.
-  - apply elem_of_singleton. reflexivity.
-Qed.
-
 Lemma res_restrict_singleton_pullback_ret_fvar_result
     A D x y (m my : WfWorldT) σy :
   A ⊆ world_dom (m : WorldT) ->
@@ -362,17 +352,6 @@ Proof.
   { rewrite Hsingle. reflexivity. }
   rewrite res_restrict_dom, Hdomσ in Hdom_eq.
   set_solver.
-Qed.
-
-Local Lemma res_fiber_from_projection_world_dom
-    (m mfib : WfWorldT) (X : aset) (σ : StoreT) :
-  res_fiber_from_projection m X σ mfib ->
-  world_dom (mfib : WorldT) = world_dom (m : WorldT).
-Proof.
-  intros [_ Hfib].
-  pose proof (f_equal world_dom Hfib) as Hdom.
-  cbn [raw_fiber rawA_fiber world_dom worldA_dom] in Hdom.
-  exact Hdom.
 Qed.
 
 Lemma res_fiber_from_projection_restrict_singleton

@@ -50,6 +50,16 @@ Lemma elem_union_singleton_not_eq_left (A : aset) a y :
   a ∈ A.
 Proof. set_solver. Qed.
 
+Lemma elem_open_world_inter_singleton x y (B : aset) :
+  x ∈ B ->
+  x ∈ (B ∪ {[y]}) ∩ ({[x]} : aset).
+Proof.
+  intros Hx.
+  apply elem_of_intersection. split.
+  - apply elem_of_union_l. exact Hx.
+  - apply elem_of_singleton. reflexivity.
+Qed.
+
 Lemma store_restrict_union_singleton_ignore_r
     (σ : StoreT) x (v : value) X :
   x ∉ X ->
@@ -88,6 +98,68 @@ Proof.
   symmetry.
   apply storeA_restrict_twice_subset.
   set_solver.
+Qed.
+
+Lemma store_restrict_obs_result_eq
+    (σv σbase σbig : StoreT) Dsmall Dobs Xbase y v :
+  Dobs ⊆ Dsmall ->
+  lvars_fv Dobs ⊆ Xbase ->
+  store_restrict σv (lvars_fv Dsmall) =
+    store_restrict σbase (lvars_fv Dsmall) ->
+  store_restrict σbase Xbase =
+    store_restrict σbig Xbase ->
+  σv !! y = Some v ->
+  σbig !! y = Some v ->
+  store_restrict σv (lvars_fv Dobs ∪ {[y]}) =
+    store_restrict σbig (lvars_fv Dobs ∪ {[y]}).
+Proof.
+  intros HDobs Hobs_base Hv_base Hbase_big Hyv Hybig.
+  apply storeA_map_eq. intros a.
+  destruct (decide (a ∈ lvars_fv Dobs ∪ {[y]})) as [Ha|Ha].
+  2:{
+    rewrite !storeA_restrict_lookup_none_r by exact Ha.
+    reflexivity.
+  }
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (a ∈ lvars_fv Dobs ∪ {[y]})) as [_|Hbad];
+    [|contradiction].
+  apply elem_of_union in Ha as [HaD|Hay].
+  - assert (Ha_small : a ∈ lvars_fv Dsmall).
+    {
+      apply lvars_fv_elem. apply HDobs.
+      apply lvars_fv_elem. exact HaD.
+    }
+    assert (Ha_base : a ∈ Xbase) by set_solver.
+    transitivity ((σbase : StoreT) !! a).
+    + eapply store_lookup_eq_of_restrict_eq; [exact Ha_small|exact Hv_base].
+    + eapply store_lookup_eq_of_restrict_eq; [exact Ha_base|exact Hbase_big].
+  - apply elem_of_singleton in Hay as ->.
+    transitivity (Some v); [exact Hyv|symmetry; exact Hybig].
+Qed.
+
+Lemma notin_store_union_singleton_dom
+    (σ : StoreT) x vx z :
+  z ∉ dom (σ : StoreT) ->
+  z <> x ->
+  z ∉ dom (((σ : StoreT) ∪ ({[x := vx]} : StoreT)) : StoreT).
+Proof.
+  intros Hzσ Hzx Hzdom.
+  change (z ∈ dom
+    ((((σ : StoreT) : gmap atom value) ∪
+      ({[x := vx]} : gmap atom value)) : gmap atom value)) in Hzdom.
+  apply elem_of_dom in Hzdom as [vz Hlook].
+  apply map_lookup_union_Some_raw in Hlook as [Hlook|[_ Hlook]].
+  - apply Hzσ.
+    change (z ∈ dom (σ : gmap atom value)).
+    apply elem_of_dom. exists vz. exact Hlook.
+  - apply Hzx.
+    pose proof (dom_singleton_L (M:=gmap atom) x vx) as Hdom_single.
+    change (dom (({[x := vx]} : StoreT)) = {[x]}) in Hdom_single.
+    apply elem_of_dom_2 in Hlook.
+    change (z ∈ dom (({[x := vx]} : StoreT))) in Hlook.
+    rewrite Hdom_single in Hlook.
+    apply elem_of_singleton in Hlook.
+    exact Hlook.
 Qed.
 
 Lemma store_restrict_insert_same_observed
@@ -201,6 +273,86 @@ Proof.
   - exact Hσm.
 Qed.
 
+Lemma opened_world_dom_contains_slot
+    (m my : WfWorldT) y :
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  y ∈ world_dom (my : WorldT).
+Proof.
+  intros Hdom.
+  rewrite Hdom. apply elem_of_union_r. apply elem_of_singleton_2.
+  reflexivity.
+Qed.
+
+Lemma fvar_in_singleton_restrict_dom
+    (m my : WfWorldT) (σ : StoreT) x y :
+  x ∈ world_dom (m : WorldT) ->
+  (my : WorldT) σ ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  x ∈ dom (storeA_restrict σ ({[x]} : aset) : gmap atom value).
+Proof.
+  intros Hxm Hσ Hdom.
+  rewrite storeA_restrict_dom.
+  rewrite (wfworld_store_dom my σ Hσ), Hdom.
+  apply elem_of_intersection. split.
+  - apply elem_of_union_l. exact Hxm.
+  - apply elem_of_singleton. reflexivity.
+Qed.
+
+Lemma notin_union_singleton_of_notin_world
+    (A : aset) x y (m : WfWorldT) :
+  y ∉ A ->
+  x ∈ world_dom (m : WorldT) ->
+  y ∉ world_dom (m : WorldT) ->
+  y ∉ A ∪ {[x]}.
+Proof.
+  intros HyA Hxm Hym HyAx.
+  apply elem_of_union in HyAx as [HyA'|Hyx].
+  - exact (HyA HyA').
+  - apply elem_of_singleton in Hyx. subst y. exact (Hym Hxm).
+Qed.
+
+Lemma notin_union_singleton_swap_ne (A : aset) a x y :
+  a ∉ A ∪ {[y]} ->
+  a <> x ->
+  a ∉ A ∪ {[x]}.
+Proof.
+  intros Ha Hax HaAx.
+  apply elem_of_union in HaAx as [HaA|Hax'].
+  - apply Ha. apply elem_of_union_l. exact HaA.
+  - apply elem_of_singleton in Hax'. subst a. contradiction.
+Qed.
+
+Lemma singleton_subset_world_dom (m : WfWorldT) z :
+  z ∈ world_dom (m : WorldT) ->
+  ({[z]} : aset) ⊆ world_dom (m : WorldT).
+Proof.
+  intros Hzm a Ha. apply elem_of_singleton in Ha. subst a. exact Hzm.
+Qed.
+
+Lemma wfworld_closed_on_open_world_from_base
+    (m my : WfWorldT) X :
+  X ⊆ world_dom (m : WorldT) ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  wfworld_closed_on X m ->
+  wfworld_closed_on X my.
+Proof.
+  intros HX Hbase Hclosed σ Hσ.
+  assert (Hσm :
+      (m : WorldT) (store_restrict σ (world_dom (m : WorldT)))).
+  {
+    assert (Hσres :
+        (res_restrict my (world_dom (m : WorldT)) : WorldT)
+          (store_restrict σ (world_dom (m : WorldT)))).
+    { exists σ. split; [exact Hσ|reflexivity]. }
+    rewrite Hbase in Hσres.
+    exact Hσres.
+  }
+  specialize (Hclosed _ Hσm).
+  rewrite (storeA_restrict_twice_subset σ
+    (world_dom (m : WorldT)) X HX) in Hclosed.
+  exact Hclosed.
+Qed.
+
 Lemma wfworld_closed_on_store_restrict_closed
     X (m : WfWorldT) (σ : StoreT) :
   wfworld_closed_on X m ->
@@ -209,6 +361,15 @@ Lemma wfworld_closed_on_store_restrict_closed
 Proof.
   intros Hclosed Hσ.
   exact (Hclosed σ Hσ).
+Qed.
+
+Lemma wfworld_eq_by_dom_stores (m n : WfWorldT) :
+  world_dom (m : WorldT) = world_dom (n : WorldT) ->
+  (forall σ, (m : WorldT) σ <-> (n : WorldT) σ) ->
+  m = n.
+Proof.
+  intros Hdom Hstores.
+  apply wfworld_ext. apply world_ext; assumption.
 Qed.
 
 Ltac denotation_set_norm :=

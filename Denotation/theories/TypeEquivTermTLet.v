@@ -45,31 +45,6 @@ Proof.
   exact Hopen.
 Qed.
 
-Local Lemma notin_store_union_singleton_dom
-    (σm : StoreT) x vx z :
-  z ∉ dom (σm : StoreT) ->
-  z <> x ->
-  z ∉ dom (((σm : StoreT) ∪ ({[x := vx]} : StoreT)) : StoreT).
-Proof.
-  intros Hzσm Hzx Hzdom.
-  change (z ∈ dom
-    ((((σm : StoreT) : gmap atom value) ∪
-      ({[x := vx]} : gmap atom value)) : gmap atom value)) in Hzdom.
-  apply elem_of_dom in Hzdom as [vz Hlook].
-  apply map_lookup_union_Some_raw in Hlook as [Hlook|[_ Hlook]].
-  - apply Hzσm.
-    change (z ∈ dom (σm : gmap atom value)).
-    apply elem_of_dom. exists vz. exact Hlook.
-  - apply Hzx.
-    pose proof (dom_singleton_L (M:=gmap atom) x vx) as Hdom_single.
-    change (dom (({[x := vx]} : StoreT)) = {[x]}) in Hdom_single.
-    apply elem_of_dom_2 in Hlook.
-    change (z ∈ dom (({[x := vx]} : StoreT))) in Hlook.
-    rewrite Hdom_single in Hlook.
-    apply elem_of_singleton in Hlook.
-    exact Hlook.
-Qed.
-
 Local Lemma tlet_fresh_for_parts
     (σ : StoreT) e1 e2 X x z :
   z ∉ dom (σ : StoreT) ∪ fv_tm e1 ∪ fv_tm e2 ∪ X ∪ {[x]} ->

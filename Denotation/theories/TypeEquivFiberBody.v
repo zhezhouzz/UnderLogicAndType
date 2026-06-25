@@ -2,7 +2,7 @@
 
     Over/Under/Sum body lemmas for the fiber-equality term transport theorem. *)
 
-From Denotation Require Import Notation TypeDenote ResultFirstOpen.
+From Denotation Require Import Notation TypeDenote ResultFirstOpen DenotationSetMapFacts.
 From Denotation Require Import TypeEquivCore TypeEquivTerm.
 From Denotation Require Import TypeEquivFiberTransport.
 From Denotation Require Import TypeEquivFiberBase.
@@ -20,16 +20,6 @@ Local Lemma lvars_shift_from_lc_eq k D :
   lvars_shift_from k D = D.
 Proof.
   apply result_first_lvars_shift_from_lc_eq.
-Qed.
-
-Local Lemma opened_world_dom_contains_slot
-    (m my : WfWorldT) y :
-  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
-  y ∈ world_dom (my : WorldT).
-Proof.
-  intros Hdom.
-  rewrite Hdom. apply elem_of_union_r. apply elem_of_singleton_2.
-  reflexivity.
 Qed.
 
 Local Ltac expr_result_shift0_side :=

@@ -17,7 +17,7 @@ facts and should be moved down.
 Current Count
 -------------
 
-After three lowering passes there are 79 local lemmas in scope.
+After eight lowering passes there are 67 local lemmas in scope.
 
 Completed Lowering Passes
 -------------------------
@@ -52,6 +52,41 @@ Completed Lowering Passes
    `TypePersistArrow.v` was removed. Its two call sites now use the existing
    lower-layer lemma `cty_open_shift_from_lc_fresh` directly, after a local
    `change` from typeclass `open_one` notation to `cty_open`.
+
+4. Projected-result store observation facts were consolidated:
+
+   - `store_restrict_eq_lookup_in` was removed from
+     `TypeEquivFiberBaseProjected.v`; call sites now use the existing shared
+     `store_lookup_eq_of_restrict_eq`.
+   - `store_restrict_obs_result_eq` was moved to
+     `Denotation/theories/DenotationSetMapFacts.v`.
+
+5. Resource-domain helper cleanup:
+
+   - `opened_world_dom_contains_slot` moved from `TypeEquivFiberBody.v` to
+     `Denotation/theories/DenotationSetMapFacts.v`.
+   - `res_fiber_from_projection_world_dom` was not duplicated in Denotation:
+     the local copy in `TypePersistSingleton.v` was removed and callers use the
+     existing lower-layer `ResourceInterface` fact.
+
+6. Persistency resource/store helpers were lowered from `TypePersistBase.v` to
+   `Denotation/theories/DenotationSetMapFacts.v`:
+
+   - `fvar_in_singleton_restrict_dom`
+   - `notin_union_singleton_of_notin_world`
+   - `notin_union_singleton_swap_ne`
+   - `singleton_subset_world_dom`
+   - `wfworld_closed_on_open_world_from_base`
+
+7. TLet/singleton pure facts were lowered:
+
+   - `elem_open_world_inter_singleton` moved from `TypePersistSingleton.v`.
+   - `notin_store_union_singleton_dom` moved from `TypeEquivTermTLet.v`.
+
+8. `wfworld_eq_by_dom_stores` moved from
+   `TypeEquivFiberBaseProjected.v` to `DenotationSetMapFacts.v`, with proof
+   rewritten through public `wfworld_ext`/`world_ext` instead of internal
+   resource constructors.
 
 Classification Table
 --------------------
@@ -111,15 +146,14 @@ proof body or statement.
 
 ### Denotation/theories/TypeEquivFiberBaseProjected.v
 
-- `wfworld_eq_by_dom_stores`: resource
-- `store_restrict_eq_lookup_in`: stdpp/store
-- `store_restrict_obs_result_eq`: stdpp/store
+- No remaining local store lemma after moving/reusing
+  `store_restrict_obs_result_eq`, `store_lookup_eq_of_restrict_eq`, and
+  `wfworld_eq_by_dom_stores`.
 
 ### Denotation/theories/TypeEquivFiberBody.v
 
 - `lc_lvars_shift_from`: wrapper over `ResultFirstOpen`
 - `lvars_shift_from_lc_eq`: wrapper over `ResultFirstOpen`
-- `opened_world_dom_contains_slot`: resource
 - `formula_open_shifted_ret_bound0_ty_denote_gas`: logic/formula + basic-term + type-syntax + denotation
 
 ### Denotation/theories/TypeEquivTLet.v
@@ -156,7 +190,6 @@ proof body or statement.
 - `fv_tm_tlete_left_subset`: basic-term
 - `notin_fv_tm_tlete`: stdpp/store + basic-term
 - `elem_of_fv_tm_open_fvar`: basic-term
-- `notin_store_union_singleton_dom`: stdpp/store
 - `tlet_fresh_for_parts`: stdpp/store + basic-term
 
 ### Denotation/theories/TypeEquivWand.v
@@ -183,18 +216,14 @@ proof body or statement.
 ### Denotation/theories/TypePersistBase.v
 
 - `singleton_fvar_in_insert_env_dom`: stdpp/store
-- `fvar_in_singleton_restrict_dom`: resource
-- `notin_union_singleton_of_notin_world`: stdpp/store + resource
-- `notin_union_singleton_swap_ne`: stdpp/store
 - `swap_opened_singleton_domain`: stdpp/store
-- `singleton_subset_world_dom`: resource
-- `wfworld_closed_on_open_world_from_base`: stdpp/store + resource
 - `lvfree_notin_lvars_at_depth1_qual_vars`: qualifier
 
 ### Denotation/theories/TypePersistSingleton.v
 
-- `elem_open_world_inter_singleton`: stdpp/store
-- `res_fiber_from_projection_world_dom`: resource
+No remaining local store/resource-only helper after moving
+`elem_open_world_inter_singleton` and reusing the lower-layer
+`res_fiber_from_projection_world_dom`.
 
 ### Denotation/theories/TypePersistWandForward.v
 
@@ -204,8 +233,12 @@ proof body or statement.
 Next Candidate Passes
 ---------------------
 
-1. Consider moving resource-only helpers such as
-   `res_fiber_from_projection_world_dom` and `opened_world_dom_contains_slot`
-   to a resource/fiber facts file.
-2. Const over/under local helpers are symmetric and should be generalized in a
-   focused Const pass.
+1. Remaining local lemmas that still mention store/resource usually also depend
+   on formula/denotation shape (`ConstDenote` scoped fibers, TLet body
+   transport, Wand scope). These are not good candidates for the pure
+   `DenotationSetMapFacts` file without first extracting a semantic helper.
+2. `swap_opened_singleton_domain` is still a pure set/swap lemma, but it is
+   tied to one atom-swap proof shape in `TypePersistBase`; lower only if a
+   second caller appears.
+3. Const over/under local helpers are symmetric and should be generalized in a
+   focused Const pass rather than moved as store/resource facts.

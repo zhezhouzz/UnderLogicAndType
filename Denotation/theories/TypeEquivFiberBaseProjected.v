@@ -2,77 +2,10 @@
 
     Projected result transport and typed-fiber projection helpers. *)
 
-From Denotation Require Import Notation TypeDenote TypeEquivCore TypeEquivTerm TypeEquivFiberBaseCore TypeEquivFiberBaseResult.
+From Denotation Require Import Notation DenotationSetMapFacts TypeDenote TypeEquivCore TypeEquivTerm TypeEquivFiberBaseCore TypeEquivFiberBaseResult.
 From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.
-
-Local Lemma wfworld_eq_by_dom_stores (m n : WfWorldT) :
-  world_dom (m : WorldT) = world_dom (n : WorldT) ->
-  (forall σ, (m : WorldT) σ <-> (n : WorldT) σ) ->
-  m = n.
-Proof.
-  intros Hdom Hstores.
-  apply wfworldA_ext. apply worldA_ext; assumption.
-Qed.
-
-Local Lemma store_restrict_eq_lookup_in
-    (σ1 σ2 : StoreT) X a :
-  a ∈ X ->
-  store_restrict σ1 X = store_restrict σ2 X ->
-  σ1 !! a = σ2 !! a.
-Proof.
-  intros Ha Heq.
-  destruct (σ1 !! a) as [v1|] eqn:H1.
-  - assert (Hlook :
-      (store_restrict σ2 X : StoreT) !! a = Some v1).
-    { rewrite <- Heq. apply storeA_restrict_lookup_some_2; assumption. }
-    apply storeA_restrict_lookup_some in Hlook as [_ H2].
-    symmetry. exact H2.
-  - destruct (σ2 !! a) as [v2|] eqn:H2; [|reflexivity].
-    assert (Hlook :
-      (store_restrict σ1 X : StoreT) !! a = Some v2).
-    { rewrite Heq. apply storeA_restrict_lookup_some_2; assumption. }
-    apply storeA_restrict_lookup_some in Hlook as [_ H1'].
-    exfalso. eapply eq_None_not_Some; eauto.
-Qed.
-
-Local Lemma store_restrict_obs_result_eq
-    (σv σbase σbig : StoreT) Dsmall Dobs Xbase y v :
-  Dobs ⊆ Dsmall ->
-  lvars_fv Dobs ⊆ Xbase ->
-  store_restrict σv (lvars_fv Dsmall) =
-    store_restrict σbase (lvars_fv Dsmall) ->
-  store_restrict σbase Xbase =
-    store_restrict σbig Xbase ->
-  σv !! y = Some v ->
-  σbig !! y = Some v ->
-  store_restrict σv (lvars_fv Dobs ∪ {[y]}) =
-    store_restrict σbig (lvars_fv Dobs ∪ {[y]}).
-Proof.
-  intros HDobs Hobs_base Hv_base Hbase_big Hyv Hybig.
-  apply storeA_map_eq. intros a.
-  destruct (decide (a ∈ lvars_fv Dobs ∪ {[y]})) as [Ha|Ha].
-  2:{
-    rewrite !storeA_restrict_lookup_none_r by exact Ha.
-    reflexivity.
-  }
-  rewrite !storeA_restrict_lookup.
-  destruct (decide (a ∈ lvars_fv Dobs ∪ {[y]})) as [_|Hbad];
-    [|contradiction].
-  apply elem_of_union in Ha as [HaD|Hay].
-  - assert (Ha_small : a ∈ lvars_fv Dsmall).
-    {
-      apply lvars_fv_elem. apply HDobs.
-      apply lvars_fv_elem. exact HaD.
-    }
-    assert (Ha_base : a ∈ Xbase) by set_solver.
-    transitivity ((σbase : StoreT) !! a).
-    + eapply store_restrict_eq_lookup_in; [exact Ha_small|exact Hv_base].
-    + eapply store_restrict_eq_lookup_in; [exact Ha_base|exact Hbase_big].
-  - apply elem_of_singleton in Hay as ->.
-    transitivity (Some v); [exact Hyv|symmetry; exact Hybig].
-Qed.
 
 Lemma expr_result_formula_at_projection_eq_of_domains
     Dsmall Dbig Dobs e y (m my_small my_big : WfWorldT) :

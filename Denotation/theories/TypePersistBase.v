@@ -31,45 +31,6 @@ Proof.
   destruct decide as [_|Hbad]; [reflexivity|contradiction].
 Qed.
 
-Local Lemma fvar_in_singleton_restrict_dom
-    (m my : WfWorldT) (σ : StoreT) x y :
-  x ∈ world_dom (m : WorldT) ->
-  (my : WorldT) σ ->
-  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
-  x ∈ dom (storeA_restrict σ ({[x]} : aset) : gmap atom value).
-Proof.
-  intros Hxm Hσ Hdom.
-  rewrite storeA_restrict_dom.
-  rewrite (wfworld_store_dom my σ Hσ), Hdom.
-  apply elem_of_intersection. split.
-  - apply elem_of_union_l. exact Hxm.
-  - apply elem_of_singleton. reflexivity.
-Qed.
-
-Local Lemma notin_union_singleton_of_notin_world
-    (A : aset) x y (m : WfWorldT) :
-  y ∉ A ->
-  x ∈ world_dom (m : WorldT) ->
-  y ∉ world_dom (m : WorldT) ->
-  y ∉ A ∪ {[x]}.
-Proof.
-  intros HyA Hxm Hym HyAx.
-  apply elem_of_union in HyAx as [HyA'|Hyx].
-  - exact (HyA HyA').
-  - apply elem_of_singleton in Hyx. subst y. exact (Hym Hxm).
-Qed.
-
-Local Lemma notin_union_singleton_swap_ne (A : aset) a x y :
-  a ∉ A ∪ {[y]} ->
-  a <> x ->
-  a ∉ A ∪ {[x]}.
-Proof.
-  intros Ha Hax HaAx.
-  apply elem_of_union in HaAx as [HaA|Hax'].
-  - apply Ha. apply elem_of_union_l. exact HaA.
-  - apply elem_of_singleton in Hax'. subst a. contradiction.
-Qed.
-
 Local Lemma swap_opened_singleton_domain (M A : aset) x y :
   x ∈ M ->
   y ∉ M ->
@@ -123,37 +84,6 @@ Proof.
         -- apply elem_of_union_l.
         apply elem_of_union in HaAx as [HaA|Hax']; [exact HaA|].
            apply elem_of_singleton in Hax'. contradiction.
-Qed.
-
-Local Lemma singleton_subset_world_dom (m : WfWorldT) z :
-  z ∈ world_dom (m : WorldT) ->
-  ({[z]} : aset) ⊆ world_dom (m : WorldT).
-Proof.
-  intros Hzm a Ha. apply elem_of_singleton in Ha. subst a. exact Hzm.
-Qed.
-
-Local Lemma wfworld_closed_on_open_world_from_base
-    (m my : WfWorldT) X :
-  X ⊆ world_dom (m : WorldT) ->
-  res_restrict my (world_dom (m : WorldT)) = m ->
-  wfworld_closed_on X m ->
-  wfworld_closed_on X my.
-Proof.
-  intros HX Hbase Hclosed σ Hσ.
-  assert (Hσm :
-      (m : WorldT) (store_restrict σ (world_dom (m : WorldT)))).
-  {
-    assert (Hσres :
-        (res_restrict my (world_dom (m : WorldT)) : WorldT)
-          (store_restrict σ (world_dom (m : WorldT)))).
-    { exists σ. split; [exact Hσ|reflexivity]. }
-    rewrite Hbase in Hσres.
-    exact Hσres.
-  }
-  specialize (Hclosed _ Hσm).
-  rewrite (storeA_restrict_twice_subset σ
-    (world_dom (m : WorldT)) X HX) in Hclosed.
-  exact Hclosed.
 Qed.
 
 Definition over_ret_fvar_env (Σ : lty_env) b (φ : type_qualifier) z : lty_env :=
