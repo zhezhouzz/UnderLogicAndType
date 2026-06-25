@@ -95,7 +95,7 @@ Proof.
   apply (map_fold_insert_L (M:=gmap nat) (A:=atom) (B:=A)
     openA a k x η).
   - intros i j xi xj acc Hij Hi Hj.
-    apply open_commute; [exact Hij|].
+    apply (open_commute _ _ _ _ _ Hij).
     intros Heq. subst xj.
     pose proof (open_env_values_inj_insert k x η Hfresh Havoid Hinj)
       as Hinj'.

@@ -3,6 +3,18 @@ ContextTypeLanguage Apply/Exact Optimization Stats
 
 Candidates: 44
 
+Implementation Status
+---------------------
+
+- Completed: first syntax-normalization batch in `WF.v` and `TypeOpen.v`:
+  `qual_open_shift_from_lc_fresh`, `open_commute`, and `lvars_bv_elem`
+  occurrences now pass direct proof arguments or use deterministic rewrites.
+- Verified: `timeout 20s make TIMED=1 ContextTypeLanguage/theories/WF.vo`;
+  `TypeOpen.vo` was rebuilt successfully during the first check.
+- Deferred: induction-hypothesis applications such as `IHτ1/IHτ2` are left
+  untouched; these should be optimized only if a local regularity helper can
+  replace the repeated shape.
+
 | file | line | shape |
 |---|---:|---|
 | `ContextTypeLanguage/theories/Syntax.v` | 749 | `try (apply IHτ1_2; exact H2)).` |
