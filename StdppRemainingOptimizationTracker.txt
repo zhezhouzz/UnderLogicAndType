@@ -443,10 +443,16 @@ Follow-up Batch J: ret-fvar regular extraction for open-result target worlds.
   target/mid helpers.  For Wand the singleton world is derived from the
   argument resource and lifted through `res_product_le_l`, which better matches
   the separating function semantics.
+- Simplified the Wand product variants as well:
+  - replaced two manual guard/subenv derivations of the singleton argument
+    world with `ty_denote_gas_ret_fvar_basic_world_singleton`;
+  - replaced a long proof of `y ∈ world_dom (n ×ᵣ m)` with
+    `ty_denote_gas_ret_fvar_world_dom` plus `res_product_le_l`.
 - Validation:
   - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivCore.vo`
   - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivArrow.vo`
   - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivWand.vo`
+    passed after the product cleanup in 1.29s.
   - `timeout 20s make TIMED=1 Denotation/theories/TypeEquiv.vo`
   - `timeout 20s make TIMED=1 ContextTyping/theories/Soundness.vo` after
     warmed dependency rebuild
