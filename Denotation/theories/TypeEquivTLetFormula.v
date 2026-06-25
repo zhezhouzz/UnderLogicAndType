@@ -110,7 +110,7 @@ Proof.
 	    D D D e1 x mbase m
 	    ltac:(intros lv Hlv; exact Hlv)
 	    ltac:(intros lv Hlv; exact Hlv)
-	    HlcD HeD HxD Hx_base
+	    HlcD HeD Hx_base
 	    HD_base Hdom_m Hrestrict_m Htotal_e1_base Hres)
     as [mstd [Hdom_std [Hrestrict_std [Hres_std Hproj_std_m]]]].
   assert (Hzero_body_std :

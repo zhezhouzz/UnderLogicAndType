@@ -1,0 +1,81 @@
+Projected Result Premise Analysis
+=================================
+
+Scope
+-----
+
+Inspected lemmas:
+
+- `expr_result_formula_at_projection_eq_of_domains`
+- `expr_result_formula_at_refine_domain_projected`
+- `expr_result_formula_at_projection_eq_of_fiber_equiv`
+- `tm_result_refines_projected_project`
+
+Findings
+--------
+
+1. `expr_result_formula_at_refine_domain_projected` had a redundant freshness
+   premise:
+
+   ```
+   LVFree y ∉ Dbig
+   ```
+
+   This follows from the existing premises:
+
+   ```
+   y ∉ world_dom m
+   lvars_fv Dbig ⊆ world_dom m
+   ```
+
+   via `lvars_fv_elem`.  The premise was removed and derived internally.
+
+2. `expr_result_formula_at_projection_eq_of_fiber_equiv` had four redundant
+   regular premises:
+
+   ```
+   lc_lvars (D ∪ tm_lvars e_src)
+   lc_lvars (D ∪ tm_lvars e_tgt)
+   lvars_fv (D ∪ tm_lvars e_src) ⊆ world_dom m
+   lvars_fv (D ∪ tm_lvars e_tgt) ⊆ world_dom m
+   ```
+
+   These follow from the two `expr_result_formula_at ...` hypotheses plus the
+   opened-world domain equalities and the fresh result variable premise.  The
+   lemma now extracts scoped/LC information directly from the result formulas.
+
+3. `expr_result_formula_at_projection_eq_of_domains` still has many premises,
+   but most are semantic rather than regular:
+
+   - `Dsmall ⊆ Dbig`, `Dobs ⊆ Dsmall`, and `tm_lvars e ⊆ Dsmall` are needed to
+     relate source, target, and observed projections.
+   - `LVFree y ∉ Dbig` cannot be removed from this lemma as stated because the
+     lemma does not assume `y ∉ world_dom m`.
+
+   Future cleanup can add a wrapper that takes `y ∉ world_dom m` and
+   `lvars_fv Dbig ⊆ world_dom m`, then derives `LVFree y ∉ Dbig`.
+
+4. `tm_result_refines_projected_project` still takes LC/domain/total premises
+   for the larger projected relation.  Some of these are derivable in specific
+   typed callers from gas-zero facts, but the lemma itself is currently
+   caller-agnostic.  Future cleanup should add typed wrappers rather than
+   weakening this core projected relation lemma.
+
+Implementation Status
+---------------------
+
+Completed:
+
+- Removed the redundant `LVFree y ∉ Dbig` premise from
+  `expr_result_formula_at_refine_domain_projected`.
+- Removed the two LC and two domain-subset premises from
+  `expr_result_formula_at_projection_eq_of_fiber_equiv`.
+- Updated callers in `TypeEquivFiberBaseProjected.v` and
+  `TypeEquivTLetFormula.v`.
+
+Deferred:
+
+- Add a fresh-domain wrapper for `expr_result_formula_at_projection_eq_of_domains`
+  if future call sites repeat the same `LVFree y ∉ Dbig` derivation.
+- Add typed wrappers around `tm_result_refines_projected_project` only at
+  actual typed call sites; the core lemma should remain semantic and explicit.
