@@ -86,8 +86,7 @@ Local Lemma const_open_fib_over_swapped_scoped c y (m : WfWorldT) :
     (FFibVars
       (set_swap (LVBound 0) (LVFree y)
         (qual_vars (mk_q_eq (vbvar 0) (vconst c)) ∖ {[LVBound 0]}))
-      (FOver (FAtom
-        (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c)))))).
+      (FOver (FAtom (mk_q_eq (vfvar y) (vconst c))))).
 Proof.
   intros Hy.
   unfold formula_scoped_in_world.
@@ -108,12 +107,11 @@ Proof.
     reflexivity.
   }
   replace (lvars_fv
-      (qual_vars (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c)))))
+      (qual_vars (mk_q_eq (vfvar y) (vconst c))))
     with ({[y]} : aset).
   2:{
-    unfold qual_dom, qual_open_atom, mk_q_eq, qual_vars.
+    unfold qual_dom, mk_q_eq, qual_vars.
     cbn [qual_lvars lvar_value_keys].
-    base_swap_normalize.
     rewrite ?lvars_fv_union, ?lvars_fv_empty, ?lvars_fv_singleton_free.
     apply set_eq. intros a. set_solver.
   }
@@ -129,8 +127,7 @@ Local Lemma const_open_fib_under_swapped_scoped c y (m : WfWorldT) :
     (FFibVars
       (set_swap (LVBound 0) (LVFree y)
         (qual_vars (mk_q_eq (vbvar 0) (vconst c)) ∖ {[LVBound 0]}))
-      (FUnder (FAtom
-        (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c)))))).
+      (FUnder (FAtom (mk_q_eq (vfvar y) (vconst c))))).
 Proof.
   intros Hy.
   unfold formula_scoped_in_world.
@@ -151,12 +148,11 @@ Proof.
     reflexivity.
   }
   replace (lvars_fv
-      (qual_vars (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c)))))
+      (qual_vars (mk_q_eq (vfvar y) (vconst c))))
     with ({[y]} : aset).
   2:{
-    unfold qual_dom, qual_open_atom, mk_q_eq, qual_vars.
+    unfold qual_dom, mk_q_eq, qual_vars.
     cbn [qual_lvars lvar_value_keys].
-    base_swap_normalize.
     rewrite ?lvars_fv_union, ?lvars_fv_empty, ?lvars_fv_singleton_free.
     apply set_eq. intros a. set_solver.
   }
@@ -284,18 +280,19 @@ Proof.
     + exists (∅ : aset). intros y _ F HFin HFout my Hext.
 		      pose proof (res_extend_by_dom m F my Hext) as Hdom.
 		      rewrite !formula_open_impl.
-		      rewrite formula_open_expr_result_formula_at_shift0.
-		      2:{ apply const_lc_lvars_shift_empty. }
-		      2:{
-		        rewrite const_lvars_shift_empty.
-		        intros Hy. unfold empty_lvset in Hy.
-		        rewrite lvars_fv_empty in Hy.
-		        rewrite elem_of_empty in Hy. contradiction.
-		      }
-		      2:{ constructor. constructor. }
-		      2:{ cbn [fv_tm fv_value]. set_solver. }
-		      rewrite formula_open_fibvars, formula_open_over.
-			      rewrite formula_open_atom.
+          rewrite formula_open_expr_result_formula_at_shift0.
+          2:{ apply const_lc_lvars_shift_empty. }
+          2:{
+            rewrite const_lvars_shift_empty.
+            intros Hy. unfold empty_lvset in Hy.
+            rewrite lvars_fv_empty in Hy.
+            rewrite elem_of_empty in Hy. contradiction.
+          }
+          2:{ constructor. constructor. }
+          2:{ cbn [fv_tm fv_value]. set_solver. }
+          rewrite formula_open_fibvars, formula_open_over.
+          rewrite formula_open_atom.
+          rewrite const_qual_open_eq.
 		      eapply res_models_impl_intro_scoped.
 		      * eapply const_expr_result_open_scoped.
 		        rewrite Hdom. unfold ext_out in HFout. rewrite HFout.
@@ -308,7 +305,7 @@ Proof.
 	          (set_swap (LVBound 0) (LVFree y)
 	             (qual_vars (mk_q_eq (vbvar 0) (vconst c)) ∖ {[LVBound 0]}))
 	          with
-	          (qual_vars (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))) ∖
+	          (qual_vars (mk_q_eq (vfvar y) (vconst c)) ∖
 	          {[LVFree y]}).
 	        2:{
 	          rewrite const_qual_vars_bound, const_qual_open_vars.
@@ -320,9 +317,9 @@ Proof.
 	            by set_solver.
 	          rewrite set_swap_empty.
 	          reflexivity.
-		        }
-		        change (my ⊨ expr_result_formula (tret (vconst c)) (LVFree y)) in Hexpr.
-		        exact (const_fib_over_from_expr c y my Hexpr).
+          }
+          change (my ⊨ expr_result_formula (tret (vconst c)) (LVFree y)) in Hexpr.
+          exact (const_fib_over_from_expr c y my Hexpr).
 Qed.
 
 Lemma const_under_denotation_gas gas (Σ : gmap atom ty) c (m : WfWorldT) :
@@ -368,18 +365,19 @@ Proof.
     + exists (∅ : aset). intros y _ F HFin HFout my Hext.
 		      pose proof (res_extend_by_dom m F my Hext) as Hdom.
 		      rewrite !formula_open_impl.
-		      rewrite formula_open_expr_result_formula_at_shift0.
-		      2:{ apply const_lc_lvars_shift_empty. }
-		      2:{
-		        rewrite const_lvars_shift_empty.
-		        intros Hy. unfold empty_lvset in Hy.
-		        rewrite lvars_fv_empty in Hy.
-		        rewrite elem_of_empty in Hy. contradiction.
-		      }
-		      2:{ constructor. constructor. }
-		      2:{ cbn [fv_tm fv_value]. set_solver. }
-		      rewrite formula_open_fibvars, formula_open_under.
-			      rewrite formula_open_atom.
+          rewrite formula_open_expr_result_formula_at_shift0.
+          2:{ apply const_lc_lvars_shift_empty. }
+          2:{
+            rewrite const_lvars_shift_empty.
+            intros Hy. unfold empty_lvset in Hy.
+            rewrite lvars_fv_empty in Hy.
+            rewrite elem_of_empty in Hy. contradiction.
+          }
+          2:{ constructor. constructor. }
+          2:{ cbn [fv_tm fv_value]. set_solver. }
+          rewrite formula_open_fibvars, formula_open_under.
+          rewrite formula_open_atom.
+          rewrite const_qual_open_eq.
 		      eapply res_models_impl_intro_scoped.
 		      * eapply const_expr_result_open_scoped.
 		        rewrite Hdom. unfold ext_out in HFout. rewrite HFout.
@@ -392,7 +390,7 @@ Proof.
 	          (set_swap (LVBound 0) (LVFree y)
 	             (qual_vars (mk_q_eq (vbvar 0) (vconst c)) ∖ {[LVBound 0]}))
 	          with
-	          (qual_vars (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))) ∖
+	          (qual_vars (mk_q_eq (vfvar y) (vconst c)) ∖
 	          {[LVFree y]}).
 	        2:{
 	          rewrite const_qual_vars_bound, const_qual_open_vars.
@@ -404,9 +402,9 @@ Proof.
 	            by set_solver.
 	          rewrite set_swap_empty.
 	          reflexivity.
-		        }
-		        change (my ⊨ expr_result_formula (tret (vconst c)) (LVFree y)) in Hexpr.
-		        exact (const_fib_under_from_expr c y my Hexpr).
+          }
+          change (my ⊨ expr_result_formula (tret (vconst c)) (LVFree y)) in Hexpr.
+          exact (const_fib_under_from_expr c y my Hexpr).
 Qed.
 
 Lemma const_direct_denotation_gas_in_ctx
@@ -425,34 +423,7 @@ Proof.
     replace (store_restrict Σ (∅ : aset) ∪ (∅ : gmap atom ty))
       with (∅ : gmap atom ty)
       by (rewrite storeA_restrict_empty_set; symmetry; apply map_union_empty).
-    change (m ⊨
-      FAnd
-        (FAnd
-          (context_ty_wf_formula
-            (relevant_env (atom_env_to_lty_env (∅ : gmap atom ty))
-              (CTInter
-                (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
-                (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
-              (tret (vconst c)))
-            (CTInter
-              (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
-              (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))))
-          (FAnd (basic_world_formula
-            (relevant_env (atom_env_to_lty_env (∅ : gmap atom ty))
-              (CTInter
-                (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
-                (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
-              (tret (vconst c))))
-            (FAnd
-              (expr_basic_typing_formula
-                (relevant_env (atom_env_to_lty_env (∅ : gmap atom ty))
-                  (CTInter
-                    (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
-                    (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
-                  (tret (vconst c)))
-                (tret (vconst c)) (TBase (base_ty_of_const c)))
-              (expr_total_formula (tret (vconst c))))))
-        FTrue).
+    cbn [ty_denote_gas].
     rewrite relevant_env_const_precise_atom_env_empty.
     eapply res_models_and_intro_from_models;
       [ eapply res_models_and_intro_from_models;
@@ -467,41 +438,8 @@ Proof.
     replace (store_restrict Σ (∅ : aset) ∪ (∅ : gmap atom ty))
       with (∅ : gmap atom ty)
       by (rewrite storeA_restrict_empty_set; symmetry; apply map_union_empty).
-    change (m ⊨
-      FAnd
-        (FAnd
-          (context_ty_wf_formula
-            (relevant_env (atom_env_to_lty_env (∅ : gmap atom ty))
-              (CTInter
-                (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
-                (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
-              (tret (vconst c)))
-            (CTInter
-              (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
-              (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))))
-          (FAnd (basic_world_formula
-            (relevant_env (atom_env_to_lty_env (∅ : gmap atom ty))
-              (CTInter
-                (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
-                (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
-              (tret (vconst c))))
-            (FAnd
-              (expr_basic_typing_formula
-                (relevant_env (atom_env_to_lty_env (∅ : gmap atom ty))
-                  (CTInter
-                    (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
-                    (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
-                  (tret (vconst c)))
-                (tret (vconst c)) (TBase (base_ty_of_const c)))
-              (expr_total_formula (tret (vconst c))))))
-        (FAnd
-          (ty_denote_gas gas' (atom_env_to_lty_env (∅ : gmap atom ty))
-            (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
-            (tret (vconst c)))
-          (ty_denote_gas gas' (atom_env_to_lty_env (∅ : gmap atom ty))
-            (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
-            (tret (vconst c))))).
-    rewrite relevant_env_const_precise_atom_env_empty.
+	    cbn [ty_denote_gas].
+	    rewrite relevant_env_const_precise_atom_env_empty.
     eapply res_models_and_intro_from_models;
       [ eapply res_models_and_intro_from_models;
         [ exact (context_ty_wf_formula_const_precise_empty c m)
