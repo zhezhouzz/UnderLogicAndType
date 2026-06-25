@@ -20,6 +20,7 @@ From Denotation Require Import Context
   TypeEquivArrow
   TypeEquivWand
   TypeEquiv
+  TypePersistArrow
   ConstDenote.
 From ContextTyping Require Import Typing SoundnessLam SoundnessFixBase
   SoundnessFixOpen.
@@ -131,20 +132,19 @@ Lemma fix_body_arrow_outer_value_open
     res_restrict mz (world_dom (my : WorldT)) = my /\
     res_extend_by my Fz mz /\
     mz ⊨ expr_result_formula (tret ({0 ~> vfvar y} vf)) (LVFree z) /\
-    mz ⊨ formula_open 0 z
-      (arrow_value_denote_gas
+    mz ⊨ arrow_value_denote_gas
         (Nat.max (cty_depth (fix_rec_call_ty b y τx τ))
           (cty_depth ({0 ~> y} τ)))
-        (typed_lty_env_bind
+        (<[LVFree z :=
+            erase_ty (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))]>
           (relevant_env
             (<[LVFree y := erase_ty τx]>
               (atom_env_to_lty_env (erase_ctx Γ)))
             (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))
-            (tret ({0 ~> vfvar y} vf)))
-          (erase_ty (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))))
-        (cty_shift 0 (fix_rec_call_ty b y τx τ))
-        (cty_shift 1 ({0 ~> y} τ))
-        (tret (vbvar 0))).
+            (tret ({0 ~> vfvar y} vf))))
+        (fix_rec_call_ty b y τx τ)
+        ({0 ~> y} τ)
+        (tret (vfvar z)).
 Proof.
   intros Hbody_wf Hy Hbody_den.
   set (Δy := <[LVFree y := erase_ty τx]>
@@ -157,6 +157,28 @@ Proof.
   {
     subst body τself τres.
     eapply context_typing_wf_ret_lc_value. exact Hbody_wf.
+  }
+  assert (Hτself_lc : lc_context_ty τself).
+  {
+    subst τself τres.
+    pose proof (context_typing_wf_context_ty
+      Σ (CtxComma Γ (CtxBind y τx)) (tret ({0 ~> vfvar y} vf))
+      (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ)) Hbody_wf)
+      as Hwf_ty.
+    cbn [wf_context_ty_at] in Hwf_ty.
+    destruct Hwf_ty as [Hτself_wf _].
+    eapply wf_context_ty_at_lc. exact Hτself_wf.
+  }
+  assert (Hτres_lc1 : cty_lc_at 1 τres).
+  {
+    subst τself τres.
+    pose proof (context_typing_wf_context_ty
+      Σ (CtxComma Γ (CtxBind y τx)) (tret ({0 ~> vfvar y} vf))
+      (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ)) Hbody_wf)
+      as Hwf_ty.
+    cbn [wf_context_ty_at] in Hwf_ty.
+    destruct Hwf_ty as [_ Hτres_wf].
+    eapply wf_context_ty_at_lc. exact Hτres_wf.
   }
   assert (Hbody_fv_my : fv_tm (tret body) ⊆ world_dom (my : WorldT)).
   { eapply ty_denote_gas_fv_tm_subset. exact Hbody_den. }
@@ -174,6 +196,15 @@ Proof.
   { clear -Hzfresh. better_set_solver. }
   assert (HzΣrel : z ∉ lvars_fv (dom Σrel)).
   { clear -Hzfresh. better_set_solver. }
+  assert (HzΣrel_free : LVFree z ∉ dom Σrel).
+  {
+    intros Hin. apply HzΣrel.
+    apply lvars_fv_elem. exact Hin.
+  }
+  assert (Hzτself : z ∉ fv_cty τself).
+  { subst τself. apply fix_apply_fix_rec_call_ty_fresh. clear -Hzfresh. set_solver. }
+  assert (Hzτres : z ∉ fv_cty τres).
+  { subst τres. apply fix_apply_open_cty_fresh. clear -Hzfresh. set_solver. }
   assert (Hzbody : z ∉ fv_value body).
   {
     subst body.
@@ -241,6 +272,36 @@ Proof.
   split; [exact Hmz_restrict|].
   split; [exact Hextz|].
   split; [exact Hres_plain|].
+  assert (Hvalue_open_eq :
+      formula_open 0 z
+        (arrow_value_denote_gas
+          (Nat.max (cty_depth τself) (cty_depth τres))
+          (typed_lty_env_bind Σrel (erase_ty (CTArrow τself τres)))
+          (cty_shift 0 τself) (cty_shift 1 τres)
+          (tret (vbvar 0))) =
+      arrow_value_denote_gas
+        (Nat.max (cty_depth τself) (cty_depth τres))
+        (<[LVFree z := erase_ty (CTArrow τself τres)]> Σrel)
+        τself τres (tret (vfvar z))).
+  {
+    apply formula_open_result_first_arrow_value_ret_bvar0.
+    - subst Σrel. apply relevant_env_closed.
+      subst Δy. apply lty_env_closed_insert_free.
+      apply atom_store_to_lvar_store_closed.
+    - exact HzΣrel_free.
+    - exact Hτself_lc.
+    - exact Hτres_lc1.
+    - exact Hzτself.
+    - exact Hzτres.
+  }
+  change (mz ⊨ formula_open 0 z
+    (arrow_value_denote_gas
+      (Nat.max (cty_depth τself) (cty_depth τres))
+      (typed_lty_env_bind Σrel (erase_ty (CTArrow τself τres)))
+      (cty_shift 0 τself) (cty_shift 1 τres)
+      (tret (vbvar 0)))) in Hvalue.
+  rewrite Hvalue_open_eq in Hvalue.
+  subst τself τres body Σrel Δy.
   exact Hvalue.
 Qed.
 
@@ -463,15 +524,15 @@ Proof.
   cbn [formula_open] in Hinner.
   assert (Harg_open :
       mw ⊨ formula_open 0 w
-        (formula_open 1 z
-          (ty_denote_gas gas
-            (typed_lty_env_bind
-              (typed_lty_env_bind Σrel (erase_ty (CTArrow τself τres)))
-              (erase_ty (cty_shift 0 τself)))
-            (cty_shift 0 (cty_shift 0 τself)) (tret (vbvar 0))))).
+        (ty_denote_gas gas
+          (typed_lty_env_bind
+            (<[LVFree z := erase_ty (CTArrow τself τres)]> Σrel)
+            (erase_ty τself))
+          (cty_shift 0 τself) (tret (vbvar 0)))).
   {
-    rewrite (formula_open_result_first_fun_arg_two
-      gas Σrel τself (erase_ty (CTArrow τself τres)) z w).
+    rewrite (formula_open_ty_denote_gas_bind_ret_bvar0
+      w gas (<[LVFree z := erase_ty (CTArrow τself τres)]> Σrel)
+      τself).
     - eapply res_models_ty_denote_gas_env_agree_on
         with (Σ1 := <[LVFree w := erase_ty τself]> Δy)
           (X := relevant_lvars τself (tret (vfvar w))).
@@ -495,21 +556,18 @@ Proof.
         * exact Hτself_lc.
         * clear -Hwbody Hwτself Hwτres. better_set_solver.
       + exact Hself_w.
-    - subst Σrel. apply relevant_env_closed.
+    - apply lty_env_closed_insert_free.
+      subst Σrel. apply relevant_env_closed.
       subst Δy. apply lty_env_closed_insert_free.
       apply atom_store_to_lvar_store_closed.
-    - intros Hbad. apply Hzfresh. apply lvars_fv_elem in Hbad.
-      clear -Hbad. better_set_solver.
-    - exact Hwz.
     - rewrite dom_insert_L. intros Hin.
       apply elem_of_union in Hin as [Hin|Hin].
       + apply elem_of_singleton in Hin.
         injection Hin as Hzw.
         exact (Hwz Hzw).
       + clear -HwΣrel Hin. apply HwΣrel. exact Hin.
-    - exact Hτself_lc.
-    - exact Hzτself.
     - exact Hwτself.
+    - exact Hτself_lc.
   }
   pose proof (res_models_impl_elim _ _ _ Hinner Harg_open) as Hres_raw.
   assert (Hres_src :
@@ -519,22 +577,20 @@ Proof.
         τres (tapp_tm (tret (vfvar z)) (vfvar w))).
   {
     change (mw ⊨ formula_open 0 w
-      (formula_open 1 z
-        (ty_denote_gas gas
-          (typed_lty_env_bind
-            (typed_lty_env_bind Σrel (erase_ty (CTArrow τself τres)))
-            (erase_ty (cty_shift 0 τself)))
-          (cty_shift 1 τres)
-          (tapp_tm (tret (vbvar 1)) (vbvar 0))))) in Hres_raw.
-    rewrite (formula_open_result_first_fun_result_two
-      gas Σrel τself τres (erase_ty (CTArrow τself τres)) z w)
+      (ty_denote_gas gas
+        (typed_lty_env_bind
+          (<[LVFree z := erase_ty (CTArrow τself τres)]> Σrel)
+          (erase_ty τself))
+        τres (tapp_tm (tm_shift 0 (tret (vfvar z))) (vbvar 0))))
       in Hres_raw.
-    2:{ subst Σrel. apply relevant_env_closed.
+    rewrite (formula_open_ty_denote_gas_bind_tapp_shift_bvar0
+      w gas (<[LVFree z := erase_ty (CTArrow τself τres)]> Σrel)
+      τres (erase_ty τself) (tret (vfvar z)))
+      in Hres_raw.
+    2:{ apply lty_env_closed_insert_free.
+        subst Σrel. apply relevant_env_closed.
         subst Δy. apply lty_env_closed_insert_free.
         apply atom_store_to_lvar_store_closed. }
-    2:{ intros Hbad. apply Hzfresh. apply lvars_fv_elem in Hbad.
-        clear -Hbad. better_set_solver. }
-    2:{ exact Hwz. }
     2:{
       rewrite dom_insert_L. intros Hin.
       apply elem_of_union in Hin as [Hin|Hin].
@@ -543,9 +599,9 @@ Proof.
         exact (Hwz Hzw).
       - clear -HwΣrel Hin. apply HwΣrel. exact Hin.
     }
-    2:{ exact Hτres_lc1. }
-    2:{ clear -Hzτself Hzτres. set_solver. }
-    2:{ clear -Hwτself Hwτres. better_set_solver. }
+    2:{ cbn [fv_tm fv_value]. clear -Hwz. set_solver. }
+    2:{ exact Hwτres. }
+    2:{ repeat constructor. }
     rewrite (cty_open_above_lc_fresh 0 0 w τres) in Hres_raw
       by (lia || exact Hτres_lc0 || exact Hwτres).
     eapply res_models_ty_denote_gas_env_agree_on
