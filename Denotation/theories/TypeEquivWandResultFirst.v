@@ -6,7 +6,6 @@ From Denotation Require Import
   TypeEquivCore
   TypeEquivTerm
   TypeEquivFiberBase
-  TypeEquivFiberTransport
   TypeEquivBody
   TypeEquivArrow
   TypeEquivWand.

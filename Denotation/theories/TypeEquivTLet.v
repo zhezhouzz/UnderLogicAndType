@@ -13,7 +13,6 @@ From Denotation Require Import Notation TypeDenote.
 From Denotation Require Import
   TypeEquivCore
   TypeEquivTerm
-  TypeEquivFiberTransport
   TypeEquivFiberBase
   TypeEquivFiberBody
   TypeEquivBody

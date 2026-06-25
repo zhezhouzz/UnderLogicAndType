@@ -201,3 +201,10 @@ Remaining buckets:
     `TypeEquivFiberTransport.v` for that ret-value result fact.
   - `TypeEquivTermResult.vo`, `TypeEquivFiberTransport.vo`,
     `SoundnessPersist.vo`, and `Soundness.vo` compile.
+- `TypeEquivFiberTransport.v` raw-open cleanup:
+  - Deleted unused legacy Arrow/Wand open-result helpers from
+    `TypeEquivFiberTransport.v`; their normalized replacements live in
+    `TypeEquivArrow.v` and `TypeEquivWand.v`.
+  - The file now only contains alias/application result facts used by
+    `TypeEquiv.v`.
+  - Residual raw-open scan for `TypeEquivFiberTransport.v` is empty.

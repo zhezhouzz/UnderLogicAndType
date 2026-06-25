@@ -4,7 +4,6 @@
 
 From Denotation Require Import Notation TypeDenote ResultFirstOpen DenotationSetMapFacts.
 From Denotation Require Import TypeEquivCore TypeEquivTerm.
-From Denotation Require Import TypeEquivFiberTransport.
 From Denotation Require Import TypeEquivFiberBase.
 Section TypeDenote.
 

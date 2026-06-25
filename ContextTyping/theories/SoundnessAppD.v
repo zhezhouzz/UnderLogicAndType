@@ -12,7 +12,6 @@ From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qu
 From Denotation Require Import Context
   DenotationSetMapFacts
   TypeEquivCore
-  TypeEquivFiberTransport
   TypeEquivFiberBase
   TypeEquivArrow
   TypeEquivWand
