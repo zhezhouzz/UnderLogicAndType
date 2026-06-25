@@ -27,7 +27,7 @@ Proof.
     as HΣv.
   apply elem_of_dom in HΣv as [T HΣv].
   apply elem_of_dom. exists T.
-  unfold relevant_env, lty_env_restrict_lvars, relevant_lvars.
+  unfold relevant_env, lty_env_restrict_lvars, relevant_lvars, context_tm_support.
   apply (storeA_restrict_lookup_some_2 _ _ _ _ HΣv).
   set_solver.
 Qed.
@@ -37,7 +37,7 @@ Lemma relevant_env_agree_on_tm_lvars
   storeA_restrict (relevant_env Σ τ1 e) (tm_lvars e) =
   storeA_restrict (relevant_env Σ τ2 e) (tm_lvars e).
 Proof.
-  unfold relevant_env, lty_env_restrict_lvars, relevant_lvars.
+  unfold relevant_env, lty_env_restrict_lvars, relevant_lvars, context_tm_support.
   rewrite !storeA_restrict_twice_subset by set_solver.
   reflexivity.
 Qed.

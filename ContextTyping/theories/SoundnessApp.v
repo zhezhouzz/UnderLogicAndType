@@ -239,7 +239,7 @@ Proof.
         relevant_env Σopen (cty_open 0 x τ)
           (tapp v1 (vfvar x))).
     {
-      unfold relevant_env, lty_env_restrict_lvars, relevant_lvars.
+      unfold relevant_env, lty_env_restrict_lvars, relevant_lvars, context_tm_support.
       rewrite tm_lvars_tapp_tm_fvar.
       cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
       better_set_solver.
@@ -275,7 +275,9 @@ Proof.
           -- constructor; [exact Hlc_v1|constructor].
           -- unfold Σopen.
              symmetry. apply relevant_env_restrict_subset.
-             unfold relevant_lvars. set_solver.
+             unfold relevant_lvars, context_tm_support.
+             cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+             set_solver.
 	        * eapply tm_equiv_total.
 	          -- exact Htotal_equiv.
 	          -- constructor; [exact Hlc_v1|constructor].
@@ -427,7 +429,7 @@ Proof.
            exists y. split; [reflexivity|exact (Hτ_fv y Hyτ)].
         -- exfalso. apply Hyx.
            apply elem_of_singleton in Hyx_single. exact Hyx_single.
-      * unfold relevant_lvars.
+      * unfold relevant_lvars, context_tm_support.
         cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys
           context_ty_lvars context_ty_lvars_at].
         assert (Hy_fv_open : y ∈ fv_cty (cty_open 0 x τ)).
@@ -812,7 +814,7 @@ Proof.
       * rewrite lookup_insert_ne by congruence.
         destruct (decide (a = z)) as [->|Haz].
         -- exfalso.
-           unfold relevant_lvars in Hu.
+	           unfold relevant_lvars, context_tm_support in Hu.
            cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hu.
            apply elem_of_union in Hu as [Hτx|Hxvar].
            ++ apply Hzfresh. apply elem_of_union_l.
@@ -825,10 +827,10 @@ Proof.
            unfold relevant_env, lty_env_restrict_lvars.
            rewrite storeA_restrict_lookup.
            destruct (decide
-             (LVFree a ∈ relevant_lvars (CTArrow τx τ) (tret v1)))
+             (LVFree a ∈ context_tm_support (CTArrow τx τ) (tret v1)))
              as [_|Hbad]; [reflexivity|].
            exfalso. apply Hbad.
-           unfold relevant_lvars in Hu |- *.
+           unfold relevant_lvars, context_tm_support in Hu |- *.
            cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys
              context_ty_lvars context_ty_lvars_at] in Hu |- *.
            apply elem_of_union in Hu as [Haτx|Hax_single].

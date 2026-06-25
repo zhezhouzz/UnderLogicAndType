@@ -591,7 +591,7 @@ Proof.
   {
     subst self.
     intros Hbad.
-    unfold relevant_lvars in Hbad.
+    unfold relevant_lvars, context_tm_support in Hbad.
     apply elem_of_union in Hbad as [Hτbad|Htmbad].
     - apply Hx_fresh.
       apply elem_of_union_r.
@@ -962,12 +962,12 @@ Proof.
 	      rewrite !lookup_insert_ne by congruence.
 	      unfold relevant_env, lty_env_restrict_lvars.
 	      rewrite storeA_restrict_lookup.
-		      destruct (decide (v ∈ relevant_lvars
-		        (fix_rec_call_ty b xcur (over_ty b φx) τ)
-		        (tret (vfix (TBase b →ₜ t) vf)))) as [_|Hmiss].
+			      destruct (decide (v ∈ context_tm_support
+			        (fix_rec_call_ty b xcur (over_ty b φx) τ)
+			        (tret (vfix (TBase b →ₜ t) vf)))) as [_|Hmiss].
 		      { reflexivity. }
 			      { exfalso. apply Hmiss.
-			        unfold relevant_lvars, fix_rec_call_ty in Hv |- *.
+				        unfold relevant_lvars, context_tm_support, fix_rec_call_ty in Hv |- *.
 			        cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys
 			          context_ty_lvars context_ty_lvars_at] in Hv |- *.
 			        apply elem_of_union in Hv as [Hvτarg|Hvw_only].
@@ -1202,7 +1202,7 @@ Proof.
 	        unfold relevant_env, lty_env_restrict_lvars.
 	        apply storeA_restrict_lookup_some_2.
 	        - apply map_lookup_insert.
-	        - unfold relevant_lvars.
+        - unfold relevant_lvars, context_tm_support.
 	          cbn [tm_lvars tm_lvars_at value_lvars_at value_lvars].
 	          apply elem_of_union_r.
 	          apply elem_of_singleton_2.

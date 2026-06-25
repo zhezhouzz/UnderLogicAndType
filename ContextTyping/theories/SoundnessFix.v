@@ -151,7 +151,7 @@ Proof.
         rewrite <- tm_lvars_fv.
         apply (proj2 (lvars_fv_elem _ _)).
         exact Hv.
-    + unfold relevant_lvars. set_solver.
+    + unfold relevant_lvars, context_tm_support. set_solver.
   - set_solver.
   - intros Hzbad.
     pose proof (soundness_relevant_env_arrow_value_fresh

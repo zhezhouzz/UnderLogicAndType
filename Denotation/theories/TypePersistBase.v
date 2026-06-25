@@ -167,7 +167,7 @@ Lemma insert_relevant_env_ret_fvar_restrict_eq Σ τ z y :
     (relevant_lvars τ (tret (vfvar y))).
 Proof.
   intros Hy Hzτ.
-  unfold relevant_env, relevant_lvars, lty_env_restrict_lvars.
+  unfold relevant_env, relevant_lvars, context_tm_support, lty_env_restrict_lvars.
   apply storeA_map_eq. intros v.
   rewrite !storeA_restrict_lookup.
   destruct (decide (v ∈ context_ty_lvars τ ∪ tm_lvars (tret (vfvar y))))

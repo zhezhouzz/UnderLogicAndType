@@ -1361,18 +1361,31 @@ Proof.
   eapply ty_denote_gas_env_agree_on
     with (X := relevant_lvars (cty_shift 0 τ) (tret (vbvar 0))).
   - reflexivity.
-  - unfold relevant_env, relevant_lvars.
+  - unfold relevant_env, relevant_lvars, context_tm_support.
     apply map_eq. intros v.
-    unfold lty_env_restrict_lvars.
+    change ((storeA_restrict
+      (typed_lty_env_bind
+        (storeA_restrict Σ
+          (context_ty_lvars (CTPersist τ) ∪ tm_lvars e_src))
+        (erase_ty (CTPersist τ)))
+      (context_ty_lvars (cty_shift 0 τ) ∪ tm_lvars (tret (vbvar 0)))) !! v =
+    (storeA_restrict
+      (typed_lty_env_bind
+        (storeA_restrict Σ
+          (context_ty_lvars (CTPersist τ) ∪ tm_lvars e_tgt))
+        (erase_ty (CTPersist τ)))
+      (context_ty_lvars (cty_shift 0 τ) ∪ tm_lvars (tret (vbvar 0)))) !! v).
     rewrite (storeA_restrict_lookup
-        (typed_lty_env_bind
-          (lty_env_restrict_lvars Σ (relevant_lvars (CTPersist τ) e_src))
-          (erase_ty (CTPersist τ)))
+      (typed_lty_env_bind
+        (storeA_restrict Σ
+          (context_ty_lvars (CTPersist τ) ∪ tm_lvars e_src))
+        (erase_ty (CTPersist τ)))
       (context_ty_lvars (cty_shift 0 τ) ∪ tm_lvars (tret (vbvar 0))) v).
     rewrite (storeA_restrict_lookup
-        (typed_lty_env_bind
-          (lty_env_restrict_lvars Σ (relevant_lvars (CTPersist τ) e_tgt))
-          (erase_ty (CTPersist τ)))
+      (typed_lty_env_bind
+        (storeA_restrict Σ
+          (context_ty_lvars (CTPersist τ) ∪ tm_lvars e_tgt))
+        (erase_ty (CTPersist τ)))
       (context_ty_lvars (cty_shift 0 τ) ∪ tm_lvars (tret (vbvar 0))) v).
     destruct (decide (v ∈ context_ty_lvars (cty_shift 0 τ) ∪
       tm_lvars (tret (vbvar 0)))) as [Hv|Hv]; cbn.

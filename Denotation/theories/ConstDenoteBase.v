@@ -113,7 +113,7 @@ Lemma relevant_env_const_precise_atom_env_empty Σ c :
     (tret (vconst c)) = (∅ : lty_env).
 Proof.
   apply relevant_env_empty.
-  unfold relevant_lvars, precise_ty, over_ty, under_ty, mk_q_eq.
+  unfold relevant_lvars, context_tm_support, precise_ty, over_ty, under_ty, mk_q_eq.
   cty_lvars_syntax_norm.
   unfold qual_vars.
   cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
@@ -128,7 +128,7 @@ Lemma relevant_env_const_over_atom_env_empty Σ c :
     (tret (vconst c)) = (∅ : lty_env).
 Proof.
   apply relevant_env_empty.
-  unfold relevant_lvars, mk_q_eq.
+  unfold relevant_lvars, context_tm_support, mk_q_eq.
   cty_lvars_syntax_norm.
   unfold qual_vars.
   cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
@@ -143,7 +143,7 @@ Lemma relevant_env_const_under_atom_env_empty Σ c :
     (tret (vconst c)) = (∅ : lty_env).
 Proof.
   apply relevant_env_empty.
-  unfold relevant_lvars, mk_q_eq.
+  unfold relevant_lvars, context_tm_support, mk_q_eq.
   cty_lvars_syntax_norm.
   unfold qual_vars.
   cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].

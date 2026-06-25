@@ -475,7 +475,7 @@ Proof.
   unfold relevant_env, lty_env_restrict_lvars.
   apply storeA_restrict_lookup_some_2.
   - apply lty_env_open_one_typed_bind_lookup_current.
-  - unfold relevant_lvars, tapp_tm.
+  - unfold relevant_lvars, context_tm_support, tapp_tm.
     cbn [context_ty_lvars tm_lvars tm_lvars_at value_lvars_at].
     set_solver.
 Qed.
@@ -510,13 +510,13 @@ Proof.
   destruct (decide (v ∈ tm_lvars e2)) as [Hv|Hv]; [|reflexivity].
   assert (Hv_source : v ∈ relevant_lvars τtop e2).
   {
-    unfold relevant_lvars. set_solver.
+    unfold relevant_lvars, context_tm_support. set_solver.
   }
   assert (Hv_target :
       v ∈ relevant_lvars (cty_open 0 y τr)
         (tapp_tm e2 (vfvar y))).
   {
-    unfold relevant_lvars, tapp_tm.
+    unfold relevant_lvars, context_tm_support, tapp_tm.
       cbn [tm_lvars tm_lvars_at value_lvars_at].
     set_solver.
   }
