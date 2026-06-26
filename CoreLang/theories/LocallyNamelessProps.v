@@ -182,10 +182,22 @@ Proof.
   - inversion Heq; subst. f_equal; eauto; lia.
   - inversion Heq; subst. f_equal; eauto; lia.
   - inversion Heq. f_equal; eauto.
+  - inversion Heq; subst. f_equal; eauto.
+    all: match goal with
+    | IH : forall i j, i <> j ->
+        open_tm i ?u0 (open_tm j ?w0 ?e) = open_tm j ?w0 ?e ->
+        open_tm i ?u0 ?e = ?e
+      |- open_tm ?ii ?u0 ?e = ?e =>
+        eapply IH; [lia|eassumption]
+    end.
   - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.
+  - inversion Heq; subst. f_equal.
+    + eapply IHv; [exact Hneq|exact H0].
+    + eapply IHv0; [exact Hneq|exact H1].
+    + eapply (IHv1 (i + 3) (j + 3)); [lia|exact H2].
 Qed.
 
 Lemma open_rec_open_eq_tm u w (e : tm) i j :
@@ -208,6 +220,21 @@ Proof.
   - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.
+  - inversion Heq. f_equal; eauto.
+  - inversion Heq. subst. f_equal; eauto.
+    repeat match goal with
+    | IH : forall i j, i <> j ->
+        open_value i u (open_value j w ?v) = open_value j w ?v ->
+        open_value i u ?v = ?v
+        |- open_value ?ii u ?v = ?v =>
+        eapply IH; [lia|eassumption]
+	    | IH : forall i j, i <> j ->
+	        open_tm i u (open_tm j w ?e) = open_tm j w ?e ->
+	        open_tm i u ?e = ?e
+	        |- open_tm ?ii u ?e = ?e =>
+	        eapply IH; [lia|eassumption]
+	    end.
+    eapply (IHe3 (i + 3) (j + 3)); [lia|exact H2].
 Qed.
 
 Lemma open_rec_lc_mutual :
@@ -229,6 +256,23 @@ Proof.
     assert (Hx : x ∉ L) by (subst x; apply fresh_for_not_in).
     eapply open_rec_open_eq_tm with (j := 0) (w := vfvar x); [lia |].
     exact (H0 x Hx (S k) u).
+  - f_equal; eauto.
+	    pose (root := fresh_for L).
+	    pose (left := fresh_for (L ∪ {[root]})).
+	    pose (right := fresh_for (L ∪ {[root; left]})).
+	    assert (Hroot : root ∉ L) by (subst root; apply fresh_for_not_in).
+	    assert (Hleft_big : left ∉ L ∪ {[root]})
+	      by (subst left; apply fresh_for_not_in).
+		    assert (Hright_big : right ∉ L ∪ {[root; left]})
+		      by (subst right; apply fresh_for_not_in).
+		    assert (Hright_nested : right ∉ L ∪ {[root]} ∪ {[left]})
+		      by set_solver.
+    unfold open_tree_node_branch in H1.
+    unfold open_tree_node_branch_value in H1.
+	    eapply open_rec_open_eq_tm with (j := 0) (w := vfvar root); [lia|].
+	    eapply open_rec_open_eq_tm with (j := 1) (w := vfvar left); [lia|].
+	    eapply open_rec_open_eq_tm with (j := 2) (w := vfvar right); [lia|].
+	    exact (H1 root left right Hroot Hleft_big Hright_nested (k + 3) u).
 Qed.
 
 Lemma open_rec_lc_value v :
@@ -301,6 +345,17 @@ Proof.
       by (simpl; rewrite decide_False by set_solver; reflexivity).
     rewrite <- subst_open_tm by eauto.
     apply H0; set_solver.
+	  - eapply LC_matchtree with (L := L ∪ {[x]}); eauto.
+	    intros root left right Hroot Hleft Hright.
+	    unfold open_tree_node_branch, open_tree_node_branch_value.
+	    replace (vfvar root) with (value_subst x u (vfvar root))
+	      by (simpl; rewrite decide_False by set_solver; reflexivity).
+	    replace (vfvar left) with (value_subst x u (vfvar left))
+	      by (simpl; rewrite decide_False by set_solver; reflexivity).
+	    replace (vfvar right) with (value_subst x u (vfvar right))
+	      by (simpl; rewrite decide_False by set_solver; reflexivity).
+	    rewrite <- !subst_open_tm by eauto.
+	    apply H1; set_solver.
 Qed.
 
 Lemma subst_lc_value x u v :

@@ -475,6 +475,51 @@ Proof.
     rewrite IH. reflexivity.
 Qed.
 
+Lemma msubst_tnode σ root left right :
+  m{σ} (tnode root left right) =
+  tnode (m{σ} root) (m{σ} left) (m{σ} right).
+Proof.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ =>
+      map_fold (fun x vx acc => {x := vx} acc) (tnode root left right) σ =
+      tnode
+        (map_fold (fun x vx acc => {x := vx} acc) root σ)
+        (map_fold (fun x vx acc => {x := vx} acc) left σ)
+        (map_fold (fun x vx acc => {x := vx} acc) right σ)) _ _ σ).
+  - reflexivity.
+  - intros x vx σ' Hfresh Hfold IH.
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) root).
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) left).
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) right).
+    setoid_rewrite (Hfold tm (fun x vx acc => {x := vx} acc)
+      (tnode root left right)).
+    rewrite IH. reflexivity.
+Qed.
+
+Lemma msubst_tmatchtree σ v eleaf enode :
+  m{σ} (tmatchtree v eleaf enode) =
+  tmatchtree (m{σ} v) (m{σ} eleaf) (m{σ} enode).
+Proof.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ =>
+      map_fold (fun x vx acc => {x := vx} acc)
+        (tmatchtree v eleaf enode) σ =
+      tmatchtree
+        (map_fold (fun x vx acc => {x := vx} acc) v σ)
+        (map_fold (fun x vx acc => {x := vx} acc) eleaf σ)
+        (map_fold (fun x vx acc => {x := vx} acc) enode σ)) _ _ σ).
+  - reflexivity.
+  - intros x vx σ' Hfresh Hfold IH.
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) v).
+    rewrite (Hfold tm (fun x vx acc => {x := vx} acc) eleaf).
+    rewrite (Hfold tm (fun x vx acc => {x := vx} acc) enode).
+    setoid_rewrite (Hfold tm (fun x vx acc => {x := vx} acc)
+      (tmatchtree v eleaf enode)).
+    rewrite IH. reflexivity.
+Qed.
+
 Lemma msubst_vlam σ s e :
   m{σ} (vlam s e) = vlam s (m{σ} e).
 Proof.
@@ -557,6 +602,24 @@ Lemma subst_map_tmatch σ v et ef :
 Proof.
   change (m{σ} (tmatch v et ef) = tmatch (m{σ} v) (m{σ} et) (m{σ} ef)).
   apply msubst_tmatch.
+Qed.
+
+Lemma subst_map_tnode σ root left right :
+  subst_map σ (tnode root left right) =
+  tnode (subst_map σ root) (subst_map σ left) (subst_map σ right).
+Proof.
+  change (m{σ} (tnode root left right) =
+    tnode (m{σ} root) (m{σ} left) (m{σ} right)).
+  apply msubst_tnode.
+Qed.
+
+Lemma subst_map_tmatchtree σ v eleaf enode :
+  subst_map σ (tmatchtree v eleaf enode) =
+  tmatchtree (subst_map σ v) (subst_map σ eleaf) (subst_map σ enode).
+Proof.
+  change (m{σ} (tmatchtree v eleaf enode) =
+    tmatchtree (m{σ} v) (m{σ} eleaf) (m{σ} enode)).
+  apply msubst_tmatchtree.
 Qed.
 
 Lemma msubst_fvar_lookup_closed σ x v :

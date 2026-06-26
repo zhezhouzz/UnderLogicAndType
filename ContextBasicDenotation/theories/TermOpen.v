@@ -212,10 +212,10 @@ Proof.
           lstore_instantiate_value_at d σ (open_value (d + k) (vfvar y) v))
       end.
       apply H; set_solver.
-    + match goal with
-      | |- lstore_instantiate_tm_split_at d _ _ ?e =
-           lstore_instantiate_tm_split_at d _ _
-             (open_tm (d + k) (vfvar y) ?e) =>
+	    + match goal with
+	      | |- lstore_instantiate_tm_split_at d _ _ ?e =
+	           lstore_instantiate_tm_split_at d _ _
+	             (open_tm (d + k) (vfvar y) ?e) =>
           change (lstore_instantiate_tm_at d
             (lstore_swap (LVBound k) (LVFree y) σ) e =
           lstore_instantiate_tm_at d σ (open_tm (d + k) (vfvar y) e))
@@ -228,8 +228,71 @@ Proof.
           change (lstore_instantiate_tm_at d
             (lstore_swap (LVBound k) (LVFree y) σ) e =
           lstore_instantiate_tm_at d σ (open_tm (d + k) (vfvar y) e))
-      end.
-      apply H1; set_solver.
+	      end.
+	      apply H1; set_solver.
+	  - f_equal.
+	    + match goal with
+	      | |- lstore_instantiate_value_split_at d _ _ ?v =
+	           lstore_instantiate_value_split_at d _ _
+	             (open_value (d + k) (vfvar y) ?v) =>
+	          change (lstore_instantiate_value_at d
+	            (lstore_swap (LVBound k) (LVFree y) σ) v =
+	          lstore_instantiate_value_at d σ
+	            (open_value (d + k) (vfvar y) v))
+	      end.
+	      apply H; set_solver.
+	    + match goal with
+	      | |- lstore_instantiate_value_split_at d _ _ ?v =
+	           lstore_instantiate_value_split_at d _ _
+	             (open_value (d + k) (vfvar y) ?v) =>
+	          change (lstore_instantiate_value_at d
+	            (lstore_swap (LVBound k) (LVFree y) σ) v =
+	          lstore_instantiate_value_at d σ
+	            (open_value (d + k) (vfvar y) v))
+	      end.
+	      apply H0; set_solver.
+	    + match goal with
+	      | |- lstore_instantiate_value_split_at d _ _ ?v =
+	           lstore_instantiate_value_split_at d _ _
+	             (open_value (d + k) (vfvar y) ?v) =>
+	          change (lstore_instantiate_value_at d
+	            (lstore_swap (LVBound k) (LVFree y) σ) v =
+	          lstore_instantiate_value_at d σ
+	            (open_value (d + k) (vfvar y) v))
+	      end.
+	      apply H1; set_solver.
+	  - f_equal.
+	    + match goal with
+	      | |- lstore_instantiate_value_split_at d _ _ ?v =
+	           lstore_instantiate_value_split_at d _ _
+	             (open_value (d + k) (vfvar y) ?v) =>
+	          change (lstore_instantiate_value_at d
+	            (lstore_swap (LVBound k) (LVFree y) σ) v =
+	          lstore_instantiate_value_at d σ
+	            (open_value (d + k) (vfvar y) v))
+	      end.
+	      apply H; set_solver.
+	    + match goal with
+	      | |- lstore_instantiate_tm_split_at d _ _ ?e =
+	           lstore_instantiate_tm_split_at d _ _
+	             (open_tm (d + k) (vfvar y) ?e) =>
+	          change (lstore_instantiate_tm_at d
+	            (lstore_swap (LVBound k) (LVFree y) σ) e =
+	          lstore_instantiate_tm_at d σ
+	            (open_tm (d + k) (vfvar y) e))
+	      end.
+	      apply H0; set_solver.
+	    + replace (d + k + 3) with (d + 3 + k) by lia.
+	      match goal with
+	      | |- lstore_instantiate_tm_split_at (d + 3) _ _ ?e =
+	           lstore_instantiate_tm_split_at (d + 3) _ _
+	             (open_tm (d + 3 + k) (vfvar y) ?e) =>
+	          change (lstore_instantiate_tm_at (d + 3)
+	            (lstore_swap (LVBound k) (LVFree y) σ) e =
+	          lstore_instantiate_tm_at (d + 3) σ
+	            (open_tm (d + 3 + k) (vfvar y) e))
+	      end.
+	      apply H1; set_solver.
 Qed.
 
 Lemma lstore_instantiate_tm_insert_open

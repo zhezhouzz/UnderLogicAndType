@@ -39,6 +39,7 @@ Notation tyctx := (gmap atom ty).
 
 Notation "'𝔹'" := TBool : core_scope.
 Notation "'ℕ'" := TNat : core_scope.
+Notation "'Tree'" := TTree : core_scope.
 Notation "T1 '→' T2" := (TArrow T1 T2)
   (at level 99, right associativity) : core_scope.
 Notation "T1 ⇒ T2" := (TArrow T1 T2)
@@ -54,12 +55,15 @@ Definition constant_to_uint (c : constant) : option Number.uint :=
   match c with
   | cnat n => Some (Nat.to_num_uint n)
   | cbool _ => None
+  | ctree _ => None
   end.
 
 Number Notation constant constant_of_uint constant_to_uint : core_scope.
 
 Notation "'#' n" := (vbvar n)
   (at level 5, format "# n") : core_scope.
+
+Notation "'leaf'" := (ctree tr_leaf) (only printing) : core_scope.
 
 Notation "'λ:' T ',' e" := (vlam T e)
   (at level 100, T at level 200, e at level 200,
@@ -83,6 +87,17 @@ Notation "v1 · v2" := (tapp v1 v2)
 Notation "'if' v 'then' et 'else' ef" := (tmatch v et ef)
   (at level 100, v at level 200, et at level 200, ef at level 200,
    format "'[v' if  v  then '/' et '/' else '/' ef ']'") : core_scope.
+
+Notation "'Leaf'" := (vconst (ctree tr_leaf))
+  (at level 20, format "Leaf") : core_scope.
+Notation "'Node' r l rr" := (tnode r l rr)
+  (at level 30, r at level 30, l at level 30, rr at level 30,
+   format "Node  r  l  rr") : core_scope.
+Notation "'matchTree' v 'with' 'Leaf' '=>' el '|' 'Node' '=>' en" :=
+  (tmatchtree v el en)
+  (at level 100, v at level 200, el at level 200, en at level 200,
+   format "'[v' matchTree  v  with '/' Leaf  =>  el '/' |  Node  =>  en ']'")
+  : core_scope.
 
 Notation "'iszero' v" := (tprim op_eq0 v)
   (at level 30, v at level 30, format "iszero  v") : core_scope.

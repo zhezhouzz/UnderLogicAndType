@@ -87,7 +87,24 @@ Inductive head_step : tm → tm → Prop :=
 
   | HS_MatchFalse et ef :
       lc_tm (tmatch (vconst (cbool false)) et ef) →
-      head_step (tmatch (vconst (cbool false)) et ef) ef.
+      head_step (tmatch (vconst (cbool false)) et ef) ef
+
+  | HS_TreeNode n left right :
+      lc_tm (tnode (vconst (cnat n)) (vconst (ctree left)) (vconst (ctree right))) →
+      head_step
+        (tnode (vconst (cnat n)) (vconst (ctree left)) (vconst (ctree right)))
+        (tret (vconst (ctree (tr_node n left right))))
+
+  | HS_MatchTreeLeaf eleaf enode :
+      lc_tm (tmatchtree (vconst (ctree tr_leaf)) eleaf enode) →
+      head_step (tmatchtree (vconst (ctree tr_leaf)) eleaf enode) eleaf
+
+  | HS_MatchTreeNode n left right eleaf enode :
+      lc_tm (tmatchtree (vconst (ctree (tr_node n left right))) eleaf enode) →
+      head_step
+        (tmatchtree (vconst (ctree (tr_node n left right))) eleaf enode)
+        (open_tree_node_branch_value
+          (vconst (cnat n)) (vconst (ctree left)) (vconst (ctree right)) enode).
 
 #[global] Hint Constructors head_step : core.
 
@@ -179,6 +196,22 @@ Proof.
     + econstructor; eauto.
   - inversion Hty; subst; eauto.
   - inversion Hty; subst; eauto.
+  - inversion Hty; subst. constructor; constructor.
+  - inversion Hty; subst; eauto.
+  - inversion Hty; subst.
+    pose (root := fresh_for (L ∪ fv_tm enode)).
+    assert (Hroot : root ∉ L ∪ fv_tm enode)
+      by (subst root; apply fresh_for_not_in).
+    pose (left0 := fresh_for (L ∪ fv_tm enode ∪ {[root]})).
+    assert (Hleft : left0 ∉ L ∪ fv_tm enode ∪ {[root]})
+      by (subst left0; apply fresh_for_not_in).
+    pose (right0 := fresh_for (L ∪ fv_tm enode ∪ {[root]} ∪ {[left0]})).
+    assert (Hright : right0 ∉ L ∪ fv_tm enode ∪ {[root]} ∪ {[left0]})
+      by (subst right0; apply fresh_for_not_in).
+    eapply basic_typing_open_tree_node_branch_const
+      with (root := root) (left := left0) (right := right0);
+      [set_solver | set_solver | set_solver | set_solver | set_solver | set_solver |
+       eapply H7; set_solver].
 Qed.
 
 (** ** Preservation *)

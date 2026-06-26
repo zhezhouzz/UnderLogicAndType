@@ -938,14 +938,26 @@ Definition mk_q_eq (v1 v2 : value) : type_qualifier :=
 (** Default well-founded orders used by context-type fixed points.  This is
     the HAT-style construction: each base type chooses a measure into [nat],
     and recursive calls are required to decrease under that measure. *)
+Fixpoint tree_measure (t : tree) : nat :=
+  match t with
+  | tr_leaf => 0
+  | tr_node n lft rgt => S (n + tree_measure lft + tree_measure rgt)
+  end.
+
 Definition constant_measure_for_base (b : base_ty) (c : constant) : nat :=
   match b, c with
   | TNat, cnat n => n
   | TNat, cbool false => 0
   | TNat, cbool true => 1
+  | TNat, ctree t => tree_measure t
   | TBool, cbool false => 0
   | TBool, cbool true => 1
   | TBool, cnat n => n
+  | TBool, ctree t => tree_measure t
+  | TTree, ctree t => tree_measure t
+  | TTree, cnat n => n
+  | TTree, cbool false => 0
+  | TTree, cbool true => 1
   end.
 
 Definition constant_lt_for_base (b : base_ty) : constant -> constant -> Prop :=

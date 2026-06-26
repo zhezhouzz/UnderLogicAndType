@@ -89,7 +89,7 @@ Proof.
     (tprim op (vfvar x))
     ({0 ~> x} (primop_result_ty (Φ op))) Hwf) as Hbasic.
   inversion Hbasic as
-    [| |Γop op' v arg_b ret_b Hop_type Harg_basic| |]; subst; clear Hbasic.
+    [| |Γop op' v arg_b ret_b Hop_type Harg_basic| | | |]; subst; clear Hbasic.
   inversion Harg_basic as [|Γv xv T Hlookup| |]; subst; clear Harg_basic.
   pose proof (Φ_wf op) as Hsig.
   pose proof (wf_primop_erasure op (Φ op) Hsig) as Herasure.

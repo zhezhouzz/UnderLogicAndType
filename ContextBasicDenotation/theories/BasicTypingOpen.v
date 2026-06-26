@@ -7,6 +7,7 @@
 
 From ContextBasicDenotation Require Import Notation StoreTyping TermSyntax TermEval
   TermOpen BasicTypingFormula.
+From CoreLang Require Import LocallyNamelessExtra.
 From ContextBase Require Import BaseTactics.
 From ContextQualifier Require Import Qualifier.
 
@@ -80,13 +81,26 @@ Lemma open_value_commute_fresh_mutual :
     open_tm i (vfvar x) (open_tm j (vfvar y) e) =
     open_tm j (vfvar y) (open_tm i (vfvar x) e)).
 Proof.
-  apply value_tm_mutind;
-    cbn [open_value open_tm]; intros; try reflexivity;
-    try solve [f_equal; eauto; lia].
+  apply value_tm_mutind; cbn [open_value open_tm]; intros.
+  - reflexivity.
+  - reflexivity.
   - destruct (decide (j = n)) as [->|Hjn];
       destruct (decide (i = n)) as [->|Hin];
       try contradiction; cbn [open_value];
       repeat case_decide; try congruence; reflexivity.
+  - f_equal. eauto; lia.
+  - f_equal. eauto; lia.
+  - f_equal. eauto.
+  - f_equal; eauto; lia.
+  - f_equal. eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+    match goal with
+    | IH : forall i j x y, i <> j -> x <> y -> _ |- _ =>
+        eapply IH; [lia|eassumption]
+    end.
 Qed.
 
 Lemma open_value_commute_fresh v i j x y :
@@ -130,6 +144,22 @@ Lemma open_tm_fv_fresh_inv e k x y :
   y ∈ fv_tm e.
 Proof. exact (snd open_fv_fresh_inv_mutual e k x y). Qed.
 
+Lemma open_tree_node_branch_fv_fresh
+    enode root left right y :
+  y <> root ->
+  y <> left ->
+  y <> right ->
+  y ∉ fv_tm enode ->
+  y ∉ fv_tm (open_tree_node_branch root left right enode).
+Proof.
+  intros Hyroot Hyleft Hyright Hyenode Hyopen.
+  unfold open_tree_node_branch, open_tree_node_branch_value in Hyopen.
+  apply (open_tm_fv_fresh_inv _ 2 right y) in Hyopen; [|exact Hyright].
+  apply (open_tm_fv_fresh_inv _ 1 left y) in Hyopen; [|exact Hyleft].
+  apply (open_tm_fv_fresh_inv _ 0 root y) in Hyopen; [|exact Hyroot].
+  exact (Hyenode Hyopen).
+Qed.
+
 Lemma close_open_commute_fresh_mutual :
   (forall v i j x y,
     i <> j ->
@@ -142,14 +172,26 @@ Lemma close_open_commute_fresh_mutual :
     close_tm y j (open_tm i (vfvar x) e) =
     open_tm i (vfvar x) (close_tm y j e)).
 Proof.
-  apply value_tm_mutind;
-    cbn [close_value close_tm open_value open_tm]; intros;
-    try reflexivity; try solve [f_equal; eauto; lia].
+  apply value_tm_mutind; cbn [close_value close_tm open_value open_tm]; intros.
+  - reflexivity.
   - unfold subst_one.
     repeat case_decide; subst; cbn [open_value close_value];
       repeat case_decide; try congruence; try lia; reflexivity.
   - destruct (decide (i = n)); cbn [close_value];
       repeat case_decide; try congruence; try lia; reflexivity.
+  - f_equal. eauto; lia.
+  - f_equal. eauto; lia.
+  - f_equal. eauto.
+  - f_equal; eauto; lia.
+  - f_equal. eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+    match goal with
+    | IH : forall i j x y, i <> j -> x <> y -> _ |- _ =>
+        eapply IH; [lia|eassumption]
+    end.
 Qed.
 
 Lemma close_value_open_commute_fresh v i j x y :
@@ -405,6 +447,62 @@ Proof.
 	    + eapply H; set_solver.
 	    + eapply H0; set_solver.
 	    + eapply H1; set_solver.
+	  - eapply BTT_TreeNode.
+	    + eapply H; set_solver.
+	    + eapply H0; set_solver.
+	    + eapply H1; set_solver.
+	  - eapply BTT_TreeMatch
+	      with (L := L ∪ {[y]} ∪ fv_tm enode ∪ lvars_fv (dom Σ)).
+	    + eapply H.
+	      match goal with
+	      | Hfresh : y ∉ lvars_fv (dom Σ) ∪ fv_tm (tmatchtree _ _ _) |- _ =>
+	          cbn [fv_tm] in Hfresh; clear -Hfresh; set_solver
+	      end.
+	    + eapply H0.
+	      match goal with
+	      | Hfresh : y ∉ lvars_fv (dom Σ) ∪ fv_tm (tmatchtree _ _ _) |- _ =>
+	          cbn [fv_tm] in Hfresh; clear -Hfresh; set_solver
+	      end.
+	    + intros root left right Hroot Hleft Hright.
+	      rewrite open_tree_node_branch_open_outer by constructor.
+	      rewrite <- lty_env_open_one_tree_node_branch_open_env.
+	      * eapply H1.
+	        -- clear -Hroot. set_solver.
+	        -- clear -Hleft. set_solver.
+	        -- clear -Hright. set_solver.
+	        --
+	        assert (Hyenv :
+	          y ∉ lvars_fv (dom (tree_node_branch_open_env Σ root left right))).
+	        {
+	          intros Hybad.
+	          apply tree_node_branch_open_env_lvars_fv_dom_subset in Hybad.
+	          match goal with
+	          | Hfresh : y ∉ lvars_fv (dom Σ) ∪ fv_tm (tmatchtree _ _ _) |- _ =>
+	              cbn [fv_tm] in Hfresh; clear -Hybad Hfresh Hroot Hleft Hright; set_solver
+	          end.
+	        }
+	        assert (Hybody :
+	          y ∉ fv_tm (open_tree_node_branch root left right enode)).
+	        {
+	          apply open_tree_node_branch_fv_fresh.
+	          - clear -Hroot. set_solver.
+	          - clear -Hleft. set_solver.
+	          - clear -Hright. set_solver.
+	          - match goal with
+	            | Hfresh : y ∉ lvars_fv (dom Σ) ∪ fv_tm (tmatchtree _ _ _) |- _ =>
+	                cbn [fv_tm] in Hfresh; clear -Hfresh; set_solver
+	            end.
+		        }
+		        intros Hybad.
+		        apply elem_of_union in Hybad as [Hybad|Hybad].
+		        { exact (Hyenv Hybad). }
+		        { exact (Hybody Hybad). }
+	      * clear -Hroot. set_solver.
+	      * clear -Hleft. set_solver.
+	      * clear -Hright. set_solver.
+	      * intros HyΣ.
+	        apply H2. apply elem_of_union_l.
+	        apply lvars_fv_elem. exact HyΣ.
 Qed.
 
 Lemma basic_tm_has_ltype_open_one_fresh k y Σ e T :
@@ -599,20 +697,76 @@ Proof.
         match goal with
         | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
         end.
-    - eapply BTT_Match.
-      + eapply H; [|reflexivity].
-        match goal with
-        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+	    - eapply BTT_Match.
+	      + eapply H; [|reflexivity].
+	        match goal with
+	        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
         end.
       + eapply H0; [|reflexivity].
         match goal with
         | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
         end.
-      + eapply H1; [|reflexivity].
-        match goal with
-        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
-        end.
-  }
+	      + eapply H1; [|reflexivity].
+	        match goal with
+	        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+	        end.
+	    - eapply BTT_TreeNode.
+	      + eapply H; [|reflexivity].
+	        match goal with
+	        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+	        end.
+	      + eapply H0; [|reflexivity].
+	        match goal with
+	        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+	        end.
+	      + eapply H1; [|reflexivity].
+	        match goal with
+	        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+	        end.
+	    - eapply BTT_TreeMatch
+	        with (L := L ∪ {[y]} ∪ lvars_fv (dom Σ0)).
+	      + eapply H; [|reflexivity].
+	        match goal with
+	        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+	        end.
+	      + eapply H0; [|reflexivity].
+	        match goal with
+	        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+	        end.
+	      + intros root left right Hroot Hleft Hright.
+	        pose proof (H1 root left right
+	          ltac:(clear -Hroot; set_solver)
+	          ltac:(clear -Hleft; set_solver)
+	          ltac:(clear -Hright; set_solver)
+	          (k + 3) y
+	          (tree_node_branch_open_env Σ0 root left right)) as Hbody.
+	        specialize (Hbody ltac:(
+	          intros Hybad;
+	          apply tree_node_branch_open_env_lvars_fv_dom_subset in Hybad;
+	          match goal with
+	          | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ =>
+	              clear -Hybad Hfresh Hroot Hleft Hright; set_solver
+	          end)).
+	        specialize (Hbody ltac:(
+	          symmetry; apply lty_env_open_one_tree_node_branch_open_env;
+	          [clear -Hroot; set_solver
+	          |clear -Hleft; set_solver
+	          |clear -Hright; set_solver
+	          |intros HyΣ;
+	           match goal with
+	           | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ =>
+	               apply Hfresh; apply lvars_fv_elem; exact HyΣ
+	           end])).
+	        unfold open_tree_node_branch, open_tree_node_branch_value.
+	        unfold open_tree_node_branch, open_tree_node_branch_value in Hbody.
+	        rewrite close_tm_open_commute_fresh in Hbody
+	          by (lia || clear -Hright; set_solver).
+	        rewrite close_tm_open_commute_fresh in Hbody
+	          by (lia || clear -Hleft; set_solver).
+	        rewrite close_tm_open_commute_fresh in Hbody
+	          by (lia || clear -Hroot; set_solver).
+	        exact Hbody.
+	  }
   rewrite close_open_var_tm in Hclosed by set_solver.
   exact Hclosed.
 Qed.

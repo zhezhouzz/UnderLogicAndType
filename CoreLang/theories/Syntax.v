@@ -11,8 +11,12 @@ From ContextBase Require Import LogicVar BaseTactics.
 
 (** ** Base and basic types *)
 
+Inductive tree : Type :=
+  | tr_leaf
+  | tr_node (root : nat) (left right : tree).
+
 Inductive base_ty : Type :=
-  | TBool | TNat.
+  | TBool | TNat | TTree.
 
 Inductive ty : Type :=
   | TBase  (b : base_ty)
@@ -22,6 +26,7 @@ Coercion TBase : base_ty >-> ty.
 Notation "s1 '→ₜ' s2" := (TArrow s1 s2)
   (at level 30, right associativity, only parsing).
 
+#[global] Instance tree_eqdec : EqDecision tree. Proof. solve_decision. Defined.
 #[global] Instance base_ty_eqdec : EqDecision base_ty. Proof. solve_decision. Defined.
 #[global] Instance ty_eqdec      : EqDecision ty.      Proof. solve_decision. Defined.
 
@@ -37,7 +42,8 @@ Notation "s1 '→ₜ' s2" := (TArrow s1 s2)
 
 Inductive constant : Type :=
   | cbool (b : bool)
-  | cnat  (n : nat).
+  | cnat  (n : nat)
+  | ctree (t : tree).
 
 #[global] Instance constant_eqdec : EqDecision constant. Proof. solve_decision. Defined.
 
@@ -51,7 +57,11 @@ Inductive prim_op : Type :=
 #[global] Instance prim_op_eqdec : EqDecision prim_op. Proof. solve_decision. Defined.
 
 Definition base_ty_of_const (c : constant) : base_ty :=
-  match c with cbool _ => TBool | cnat _ => TNat end.
+  match c with
+  | cbool _ => TBool
+  | cnat _ => TNat
+  | ctree _ => TTree
+  end.
 
 (** ** Values and terms — mutual induction, locally nameless
 
@@ -64,8 +74,10 @@ Definition base_ty_of_const (c : constant) : base_ty :=
                          binders directly.
       [tlete e1 e2]    : bvar 0 in e2 = the let-bound variable
       [tmatch v et ef] : boolean case split; both branches bind no variables.
-                         Natural-number matching should be added as a separate
-                         term former if/when it is needed. *)
+      [tmatchtree v el en] : tree case split.  The leaf branch binds no
+                         variables.  The node branch binds three variables:
+                         bvar 0 = root : Nat, bvar 1 = left : Tree,
+                         bvar 2 = right : Tree. *)
 
 Inductive value : Type :=
   | vconst (c : constant)
@@ -79,7 +91,9 @@ with tm : Type :=
   | tlete   (e1 e2 : tm)
   | tprim   (op : prim_op) (arg : value)
   | tapp    (v1 v2 : value)
-  | tmatch  (v : value) (etrue efalse : tm).
+  | tmatch  (v : value) (etrue efalse : tm)
+  | tnode   (root left right : value)
+  | tmatchtree (v : value) (eleaf enode : tm).
 
 Scheme value_mut := Induction for value Sort Type
   with tm_mut    := Induction for tm    Sort Type.
@@ -119,6 +133,10 @@ with open_tm (k : nat) (s : value) (e : tm) : tm :=
   | tapp v1 v2      => tapp (open_value k s v1) (open_value k s v2)
   | tmatch v et ef  =>
       tmatch (open_value k s v) (open_tm k s et) (open_tm k s ef)
+  | tnode r l rr =>
+      tnode (open_value k s r) (open_value k s l) (open_value k s rr)
+  | tmatchtree v el en =>
+      tmatchtree (open_value k s v) (open_tm k s el) (open_tm (k + 3) s en)
   end.
 
 #[global] Instance open_value_inst      : Open value value := open_value.
@@ -132,6 +150,14 @@ Arguments open_tm_atom_inst /.
 
 (** [e ^^ x] works for both [value] and [tm], and for both [value] and [atom]
     second arguments via the four [Open] instances above. *)
+
+Definition open_tree_node_branch_value
+    (root left right : value) (e : tm) : tm :=
+  open_tm 2 right (open_tm 1 left (open_tm 0 root e)).
+
+Definition open_tree_node_branch
+    (root left right : atom) (e : tm) : tm :=
+  open_tree_node_branch_value (vfvar root) (vfvar left) (vfvar right) e.
 
 (** ** Closing *)
 
@@ -151,6 +177,10 @@ with close_tm (x : atom) (k : nat) (e : tm) : tm :=
   | tapp v1 v2      => tapp (close_value x k v1) (close_value x k v2)
   | tmatch v et ef  =>
       tmatch (close_value x k v) (close_tm x k et) (close_tm x k ef)
+  | tnode r l rr =>
+      tnode (close_value x k r) (close_value x k l) (close_value x k rr)
+  | tmatchtree v el en =>
+      tmatchtree (close_value x k v) (close_tm x k el) (close_tm x (k + 3) en)
   end.
 
 #[global] Instance close_value_inst : Close value := close_value.
@@ -175,6 +205,8 @@ with fv_tm (e : tm) : aset :=
   | tprim _ v       => fv_value v
   | tapp v1 v2      => fv_value v1 ∪ fv_value v2
   | tmatch v et ef  => fv_value v ∪ fv_tm et ∪ fv_tm ef
+  | tnode r l rr => fv_value r ∪ fv_value l ∪ fv_value rr
+  | tmatchtree v el en => fv_value v ∪ fv_tm el ∪ fv_tm en
   end.
 
 #[global] Instance stale_value_inst : Stale value := fv_value.
@@ -210,6 +242,10 @@ with tm_lvars_at (d : nat) (e : tm) : lvset :=
   | tapp v1 v2 => value_lvars_at d v1 ∪ value_lvars_at d v2
   | tmatch v et ef =>
       value_lvars_at d v ∪ tm_lvars_at d et ∪ tm_lvars_at d ef
+  | tnode r l rr =>
+      value_lvars_at d r ∪ value_lvars_at d l ∪ value_lvars_at d rr
+  | tmatchtree v el en =>
+      value_lvars_at d v ∪ tm_lvars_at d el ∪ tm_lvars_at (d + 3) en
   end.
 
 Definition value_lvars (v : value) : lvset :=
@@ -241,6 +277,12 @@ with tm_swap_atom (x y : atom) (e : tm) : tm :=
   | tmatch v et ef =>
       tmatch (value_swap_atom x y v)
         (tm_swap_atom x y et) (tm_swap_atom x y ef)
+  | tnode r l rr =>
+      tnode (value_swap_atom x y r) (value_swap_atom x y l)
+        (value_swap_atom x y rr)
+  | tmatchtree v el en =>
+      tmatchtree (value_swap_atom x y v)
+        (tm_swap_atom x y el) (tm_swap_atom x y en)
   end.
 
 Lemma fv_value_swap_atom x y v :
@@ -256,6 +298,8 @@ Proof.
     + apply fv_value_swap_atom.
     + rewrite !fv_tm_swap_atom. better_base_solver.
     + apply fv_value_swap_atom.
+    + rewrite !fv_value_swap_atom. better_base_solver.
+    + rewrite fv_value_swap_atom, !fv_tm_swap_atom. better_base_solver.
     + rewrite !fv_value_swap_atom. better_base_solver.
     + rewrite fv_value_swap_atom, !fv_tm_swap_atom. better_base_solver.
 Qed.
@@ -321,6 +365,16 @@ Proof.
   better_base_solver.
 Qed.
 
+Lemma open_tree_node_branch_swap_atom x y root left right e :
+  open_tree_node_branch root left right (tm_swap_atom x y e) =
+  tm_swap_atom x y
+    (open_tree_node_branch (swap x y root) (swap x y left) (swap x y right) e).
+Proof.
+  unfold open_tree_node_branch, open_tree_node_branch_value.
+  rewrite !open_tm_swap_atom.
+  reflexivity.
+Qed.
+
 (** ** Single-variable substitution *)
 
 Fixpoint value_subst (x : atom) (s : value) (v : value) : value :=
@@ -339,6 +393,10 @@ with tm_subst (x : atom) (s : value) (e : tm) : tm :=
   | tapp v1 v2      => tapp (value_subst x s v1) (value_subst x s v2)
   | tmatch v et ef  =>
       tmatch (value_subst x s v) (tm_subst x s et) (tm_subst x s ef)
+  | tnode r l rr =>
+      tnode (value_subst x s r) (value_subst x s l) (value_subst x s rr)
+  | tmatchtree v el en =>
+      tmatchtree (value_subst x s v) (tm_subst x s el) (tm_subst x s en)
   end.
 
 #[global] Instance subst_value_inst : SubstV value value := value_subst.
@@ -391,7 +449,18 @@ with lc_tm : tm → Prop :=
       lc_tm (tapp v1 v2)
   | LC_match v et ef :
       lc_value v → lc_tm et → lc_tm ef →
-      lc_tm (tmatch v et ef).
+      lc_tm (tmatch v et ef)
+  | LC_node root left right :
+      lc_value root → lc_value left → lc_value right →
+      lc_tm (tnode root left right)
+  | LC_matchtree v eleaf enode (L : aset) :
+      lc_value v →
+      lc_tm eleaf →
+      (∀ root left right,
+        root ∉ L → left ∉ L ∪ {[root]} →
+        right ∉ L ∪ {[root]} ∪ {[left]} →
+        lc_tm (open_tree_node_branch root left right enode)) →
+      lc_tm (tmatchtree v eleaf enode).
 
 Scheme lc_value_mut  := Induction for lc_value  Sort Prop
   with lc_tm_mut     := Induction for lc_tm     Sort Prop.
