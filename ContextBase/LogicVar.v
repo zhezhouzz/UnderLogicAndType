@@ -563,7 +563,7 @@ Proof.
   intros Hbv v Hv.
   destruct v as [k|x].
   - exfalso.
-    assert (k ∈ lvars_bv D) by (apply lvars_bv_elem; exact Hv).
+    assert (k ∈ lvars_bv D) by (rewrite lvars_bv_elem; exact Hv).
     rewrite Hbv in H. better_set_solver.
   - unfold lvars_of_atoms. apply elem_of_map.
     exists x. split; [reflexivity|].

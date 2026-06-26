@@ -20,6 +20,8 @@ Fixpoint cty_lc_at (d : nat) (τ : context_ty) : Prop :=
   | CTArrow τx τ
   | CTWand τx τ =>
       cty_lc_at d τx /\ cty_lc_at (S d) τ
+  | CTPersist τ =>
+      cty_lc_at d τ
   end.
 
 Definition lc_context_ty (τ : context_ty) : Prop :=
@@ -34,6 +36,8 @@ Fixpoint context_ty_shape_ok (τ : context_ty) : Prop :=
       erase_ty τ1 = erase_ty τ2
   | CTArrow τx τ | CTWand τx τ =>
       context_ty_shape_ok τx /\ context_ty_shape_ok τ
+  | CTPersist τ =>
+      context_ty_shape_ok τ
   end.
 
 Definition basic_context_ty_lvars (D : lvset) (τ : context_ty) : Prop :=
@@ -63,6 +67,8 @@ Fixpoint wf_context_ty_at (d : nat) (D : aset) (τ : context_ty) : Prop :=
   | CTWand τx τ =>
       wf_context_ty_at 0 ∅ τx /\
       wf_context_ty_at (S d) D τ
+  | CTPersist τ =>
+      wf_context_ty_at d D τ
   end.
 
 Definition basic_context_ty (D : aset) (τ : context_ty) : Prop :=
@@ -81,6 +87,7 @@ Proof.
   - destruct Hwf as [H1 [H2 Herase]]. repeat split; eauto.
   - destruct Hwf as [H1 H2]. split; eauto.
   - destruct Hwf as [H1 H2]. split; eauto.
+  - eauto.
 Qed.
 
 #[global] Instance lc_cty_inst : Lc context_ty := lc_context_ty.
@@ -103,6 +110,7 @@ Proof.
     try tauto.
   all: try rewrite !cty_open_preserves_erasure.
   all: try rewrite IHτ1, IHτ2.
+  all: try rewrite IHτ.
   all: tauto.
 Qed.
 
@@ -137,6 +145,7 @@ Proof.
   - destruct Hlc as [H1 H2]. split.
     + eapply IHτ1; [exact Hdd|exact H1].
     + eapply (IHτ2 (S d) (S d')); [lia|exact H2].
+  - eauto.
 Qed.
 
 Lemma cty_open_above_lc_fresh d k x τ :
@@ -203,6 +212,7 @@ Proof.
       unfold fv_cty, context_ty_lvars in Hx |- *.
       cbn [context_ty_lvars_at] in Hx.
       rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx. set_solver.
+  - f_equal. eapply IHτ; eauto.
 Qed.
 
 Lemma cty_open_shift_from_lc_fresh d x τ :
@@ -214,12 +224,12 @@ Proof.
     cbn [cty_lc_at cty_open cty_shift open_one open_cty_atom_inst];
     intros Hlc Hx.
   - f_equal.
-    apply qual_open_shift_from_lc_fresh; [exact Hlc|].
+    apply (qual_open_shift_from_lc_fresh _ _ _ Hlc).
     unfold fv_cty, context_ty_lvars, qual_dom in Hx.
     cbn [context_ty_lvars_at] in Hx.
     rewrite lvars_fv_lvars_at_depth in Hx. exact Hx.
   - f_equal.
-    apply qual_open_shift_from_lc_fresh; [exact Hlc|].
+    apply (qual_open_shift_from_lc_fresh _ _ _ Hlc).
     unfold fv_cty, context_ty_lvars, qual_dom in Hx.
     cbn [context_ty_lvars_at] in Hx.
     rewrite lvars_fv_lvars_at_depth in Hx. exact Hx.
@@ -273,6 +283,7 @@ Proof.
       unfold fv_cty, context_ty_lvars in Hx |- *.
       cbn [context_ty_lvars_at] in Hx. rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx.
       set_solver.
+  - f_equal. apply IHτ; assumption.
 Qed.
 
 Lemma wf_context_ty_at_lc d D τ :
@@ -289,6 +300,7 @@ Proof.
     + eapply (cty_lc_at_mono_depth 0 d); [lia|].
       eapply IHτ1. exact H1.
     + eapply IHτ2. exact H2.
+  - eauto.
 Qed.
 
 Lemma basic_context_ty_lc D τ :
@@ -297,6 +309,81 @@ Lemma basic_context_ty_lc D τ :
 Proof.
   rewrite basic_context_ty_iff_wf_context_ty_at.
   apply wf_context_ty_at_lc.
+Qed.
+
+Lemma context_ty_lvars_at_lc d D τ :
+  lc_lvars D ->
+  context_ty_lvars_at d τ ⊆ D ->
+  context_ty_shape_ok τ ->
+  cty_lc_at d τ.
+Proof.
+  intros HD Hvars Hshape.
+  induction τ in d, D, HD, Hvars, Hshape |- *;
+    cbn [cty_lc_at context_ty_lvars_at context_ty_shape_ok] in *.
+  - intros k Hk.
+    destruct (decide (S d <= k)) as [Hle|Hlt]; [|lia].
+    exfalso.
+    specialize (HD (LVBound (k - S d))).
+    apply HD.
+    apply Hvars.
+    rewrite lvars_at_depth_elem.
+    exists (LVBound k). split; [rewrite <- lvars_bv_elem; exact Hk|].
+    cbn [logic_var_at_depth].
+    rewrite decide_True by lia.
+    reflexivity.
+  - intros k Hk.
+    destruct (decide (S d <= k)) as [Hle|Hlt]; [|lia].
+    exfalso.
+    specialize (HD (LVBound (k - S d))).
+    apply HD.
+    apply Hvars.
+    rewrite lvars_at_depth_elem.
+    exists (LVBound k). split; [rewrite <- lvars_bv_elem; exact Hk|].
+    cbn [logic_var_at_depth].
+    rewrite decide_True by lia.
+    reflexivity.
+  - destruct Hshape as [Hshape1 [Hshape2 _]].
+    split.
+    + eapply IHτ1; [exact HD| |exact Hshape1].
+      intros v Hv. apply Hvars. set_solver.
+    + eapply IHτ2; [exact HD| |exact Hshape2].
+      intros v Hv. apply Hvars. set_solver.
+  - destruct Hshape as [Hshape1 [Hshape2 _]].
+    split.
+    + eapply IHτ1; [exact HD| |exact Hshape1].
+      intros v Hv. apply Hvars. set_solver.
+    + eapply IHτ2; [exact HD| |exact Hshape2].
+      intros v Hv. apply Hvars. set_solver.
+  - destruct Hshape as [Hshape1 [Hshape2 _]].
+    split.
+    + eapply IHτ1; [exact HD| |exact Hshape1].
+      intros v Hv. apply Hvars. set_solver.
+    + eapply IHτ2; [exact HD| |exact Hshape2].
+      intros v Hv. apply Hvars. set_solver.
+  - destruct Hshape as [Hshape1 Hshape2].
+    split.
+    + eapply IHτ1; [exact HD| |exact Hshape1].
+      intros v Hv. apply Hvars. set_solver.
+    + eapply IHτ2; [exact HD| |exact Hshape2].
+      intros v Hv. apply Hvars. set_solver.
+  - destruct Hshape as [Hshape1 Hshape2].
+    split.
+    + eapply IHτ1; [exact HD| |exact Hshape1].
+      intros v Hv. apply Hvars. set_solver.
+    + eapply IHτ2; [exact HD| |exact Hshape2].
+      intros v Hv. apply Hvars. set_solver.
+  - eapply IHτ; [exact HD| |exact Hshape].
+    exact Hvars.
+Qed.
+
+Lemma basic_context_ty_lvars_lc D τ :
+  lc_lvars D ->
+  basic_context_ty_lvars D τ ->
+  lc_context_ty τ.
+Proof.
+  intros HD [Hvars Hshape].
+  unfold lc_context_ty, context_ty_lvars in *.
+  eapply context_ty_lvars_at_lc; eauto.
 Qed.
 
 Lemma lvars_lc_at_depth_bv_empty d L :
@@ -310,7 +397,7 @@ Proof.
   intros [v [Hv Hdepth]].
   destruct v as [n|x]; cbn [logic_var_at_depth] in Hdepth.
   - destruct (decide (d <= n)) as [Hdn|Hdn]; [|discriminate].
-    exfalso. specialize (Hlc n ltac:(apply lvars_bv_elem; exact Hv)).
+    exfalso. specialize (Hlc n ltac:(rewrite lvars_bv_elem; exact Hv)).
     lia.
   - discriminate.
 Qed.
@@ -332,6 +419,7 @@ Proof.
     rewrite lvars_bv_union, IHτ1, IHτ2 by assumption. set_solver.
   - destruct Hlc as [H1 H2].
     rewrite lvars_bv_union, IHτ1, IHτ2 by assumption. set_solver.
+  - eauto.
 Qed.
 
 Lemma wf_context_ty_at_fv_subset d D τ :
@@ -362,6 +450,7 @@ Proof.
     pose proof (IHτ2 (S d) D H2).
     rewrite !context_ty_lvars_fv_at in *.
     set_solver.
+  - eauto.
 Qed.
 
 Lemma wf_context_ty_at_notin_fv d D τ x :
@@ -411,6 +500,7 @@ Proof.
       * pose proof (wf_context_ty_at_fv_subset 0 ∅ τ1 H1) as Hfv.
         set_solver.
     + apply (IHτ2 (S d)); assumption.
+  - apply IHτ; assumption.
 Qed.
 
 Lemma basic_context_ty_fv_subset D τ :
@@ -430,7 +520,7 @@ Proof.
       pose proof (cty_lc_at_lvars_bv_empty d τ
         (wf_context_ty_at_lc d D τ Hwf)) as Hbv.
       assert (k ∈ lvars_bv (context_ty_lvars_at d τ)) as Hk
-        by (apply lvars_bv_elem; exact Hv).
+        by (rewrite lvars_bv_elem; exact Hv).
       rewrite Hbv in Hk. set_solver.
     + unfold lvars_of_atoms. apply elem_of_map.
       exists x. split; [reflexivity|].

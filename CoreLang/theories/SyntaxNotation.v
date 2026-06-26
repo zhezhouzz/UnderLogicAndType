@@ -93,9 +93,16 @@ Notation "'succ' v" := (tprim op_plus1 v)
 Notation "'pred' v" := (tprim op_minus1 v)
   (at level 30, v at level 30, format "pred  v") : core_scope.
 
+
 Notation "'cons' v1 v2" := (tbinop op_cons v1%core v2%core) (at level 60) : core_scope.
 
 Coercion cbool : bool >-> constant.
 Coercion cnat : nat >-> constant.
 Coercion clist : list >-> constant.
 Coercion tret : value >-> tm.
+
+Notation "'boolGen' v" := (tprim op_boolGen v)
+  (at level 30, v at level 30, format "boolGen  v") : core_scope.
+Notation "'natGen' v" := (tprim op_natGen v)
+  (at level 30, v at level 30, format "natGen  v") : core_scope.
+

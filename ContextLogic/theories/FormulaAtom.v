@@ -56,6 +56,136 @@ Definition qualifier_holds_store
         P (lstore_on_lift_store D σ Hlc Hsub)
   end.
 
+Lemma dom_lstore_to_store_lc
+    (D : lvset) (s : LStoreOn (V := V) D) :
+  lc_lvars D ->
+  dom (lstore_to_store (lso_store s) : Store (V := V)) = lvars_fv D.
+Proof.
+  intros Hlc.
+  apply set_eq. intros x. split.
+  - intros Hx.
+    change (x ∈ dom (lstore_to_store (lso_store s) : gmap atom V)) in Hx.
+    apply elem_of_dom in Hx as [v Hv].
+    rewrite lstore_to_store_lookup in Hv.
+    change ((lso_store s : gmap logic_var V) !! LVFree x = Some v) in Hv.
+    apply elem_of_dom_2 in Hv.
+    rewrite lso_dom in Hv.
+    apply lvars_fv_elem. exact Hv.
+  - intros Hx.
+    change (x ∈ dom (lstore_to_store (lso_store s) : gmap atom V)).
+    apply elem_of_dom.
+    apply lvars_fv_elem in Hx.
+    rewrite <- (lso_dom s) in Hx.
+    change (LVFree x ∈ dom (lso_store s : gmap logic_var V)) in Hx.
+    apply elem_of_dom in Hx as [v Hv].
+    exists v. rewrite lstore_to_store_lookup. exact Hv.
+Qed.
+
+Definition atom_store_extend_lstore_on
+    (A : aset) (D : lvset) (s : LStoreOn (V := V) D) : Store (V := V) :=
+  @union (gmap atom V) _ (lstore_to_store (lso_store s))
+    (gset_to_gmap inhabitant (A ∖ lvars_fv D)).
+
+Lemma atom_store_extend_lstore_on_dom
+    (A : aset) (D : lvset) (s : LStoreOn (V := V) D) :
+  lc_lvars D ->
+  lvars_fv D ⊆ A ->
+  dom (atom_store_extend_lstore_on A D s : Store (V := V)) = A.
+Proof.
+  intros Hlc Hsub.
+  unfold atom_store_extend_lstore_on.
+  apply set_eq. intros x. split.
+  - intros Hx.
+    change (x ∈ stale_store (@union (gmap atom V) _
+      (lstore_to_store (lso_store s))
+      (gset_to_gmap inhabitant (A ∖ lvars_fv D)))) in Hx.
+    cbn [stale_store] in Hx.
+    apply elem_of_dom in Hx as [v Hxv].
+    apply lookup_union_Some_raw in Hxv as [Hxv|[_ Hxv]].
+    + assert (HxD : x ∈ dom (lstore_to_store (lso_store s) : StoreT)).
+      { change (x ∈ dom (lstore_to_store (lso_store s) : gmap atom V)).
+        apply elem_of_dom. exists v. exact Hxv. }
+      rewrite dom_lstore_to_store_lc in HxD by exact Hlc.
+      set_solver.
+    + apply elem_of_dom_2 in Hxv.
+      rewrite dom_gset_to_gmap in Hxv. set_solver.
+  - intros Hx.
+    change (x ∈ stale_store (@union (gmap atom V) _
+      (lstore_to_store (lso_store s))
+      (gset_to_gmap inhabitant (A ∖ lvars_fv D)))).
+    cbn [stale_store].
+    apply elem_of_dom.
+    destruct (decide (x ∈ lvars_fv D)) as [HxD|HxD].
+    + rewrite <- (dom_lstore_to_store_lc D s Hlc) in HxD.
+      change (x ∈ dom (lstore_to_store (lso_store s) : gmap atom V)) in HxD.
+      apply elem_of_dom in HxD as [v Hv].
+      exists v. apply lookup_union_Some_raw. left. exact Hv.
+    + exists inhabitant. apply lookup_union_Some_raw. right.
+      split.
+      * apply not_elem_of_dom.
+        change (x ∉ dom (lstore_to_store (lso_store s) : StoreT)).
+        rewrite (dom_lstore_to_store_lc D s Hlc). exact HxD.
+      * apply lookup_gset_to_gmap_Some. set_solver.
+Qed.
+
+Lemma atom_store_extend_lstore_on_lift_restrict
+    (A : aset) (D : lvset) (s : LStoreOn (V := V) D) :
+  lc_lvars D ->
+  lvars_fv D ⊆ A ->
+  storeA_restrict
+    (lstore_lift_free (atom_store_extend_lstore_on A D s) : LStoreT) D =
+  lso_store s.
+Proof.
+  intros Hlc Hsub.
+  apply storeA_map_eq. intros v.
+  destruct (decide (v ∈ D)) as [HvD|HvD].
+  - rewrite storeA_restrict_lookup.
+    destruct decide as [_|Hbad]; [|contradiction].
+    destruct v as [k|x].
+    + exfalso. exact (Hlc (LVBound k) HvD).
+    + rewrite lstore_lift_free_lookup_free.
+      unfold atom_store_extend_lstore_on.
+      assert (HxD : x ∈ lvars_fv D) by (rewrite lvars_fv_elem; exact HvD).
+      assert (Hxdom : x ∈ dom (lstore_to_store (lso_store s) : gmap atom V)).
+      {
+        change (x ∈ dom (lstore_to_store (lso_store s) : StoreT)).
+        rewrite (dom_lstore_to_store_lc D s Hlc). exact HxD.
+      }
+      apply elem_of_dom in Hxdom as [a Ha].
+      change ((@union (gmap atom V) _
+        (lstore_to_store (lso_store s))
+        (gset_to_gmap inhabitant (A ∖ lvars_fv D))) !! x =
+        (lso_store s : gmap logic_var V) !! LVFree x).
+      rewrite <- (lstore_to_store_lookup (lso_store s) x).
+      transitivity (Some a); [|symmetry; exact Ha].
+      apply (proj2 (map_lookup_union_Some_raw
+        (lstore_to_store (lso_store s))
+        (gset_to_gmap inhabitant (A ∖ lvars_fv D)) x a)).
+      left. exact Ha.
+  - rewrite storeA_restrict_lookup_none_r by exact HvD.
+    symmetry. apply not_elem_of_dom.
+    rewrite lso_dom. exact HvD.
+Qed.
+
+Definition qualifier_saturated_raw_world
+    (A : aset) (q : qualifier (V := V)) : WorldT := {|
+  worldA_dom := A;
+  worldA_stores := fun σ =>
+    dom (σ : StoreT) = A /\ qualifier_holds_store q σ;
+|}.
+
+Definition qualifier_saturated_world
+    (A : aset) (q : qualifier (V := V))
+    (σ0 : StoreT)
+    (Hdom0 : dom (σ0 : StoreT) = A)
+    (Hholds0 : qualifier_holds_store q σ0) : WfWorldT.
+Proof.
+  refine (exist _ (qualifier_saturated_raw_world A q) _).
+  split.
+  - exists σ0. split; [exact Hdom0|exact Hholds0].
+  - intros σ [Hdom _]. exact Hdom.
+Defined.
+
 Lemma lstore_in_lworld_on_atom_swap_front x y D
     (s : LStoreOn (V := V) D)
     (w : LWorldOnT (lvars_swap x y D)) :
@@ -209,12 +339,12 @@ Proof.
       rewrite lstore_lift_free_lookup_bound. reflexivity.
     + symmetry. apply storeA_restrict_lookup_none_l.
       rewrite lstore_lift_free_lookup_bound. reflexivity.
-  - assert (HxD : x ∈ lvars_fv D) by (apply lvars_fv_elem; exact HzD).
+  - assert (HxD : x ∈ lvars_fv D) by (rewrite lvars_fv_elem; exact HzD).
     destruct ((σ : gmap atom V) !! x) as [v|] eqn:Hσx.
     + transitivity (Some v).
       * apply storeA_restrict_lookup_some_2; [|exact HzD].
         rewrite lstore_lift_free_lookup_free.
-        apply storeA_restrict_lookup_some_2; [exact Hσx|exact HxD].
+        apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσx HxD).
       * symmetry. apply storeA_restrict_lookup_some_2; [|exact HzD].
         rewrite lstore_lift_free_lookup_free. exact Hσx.
     + transitivity (@None V).
@@ -223,6 +353,101 @@ Proof.
         apply storeA_restrict_lookup_none_l. exact Hσx.
       * symmetry. apply storeA_restrict_lookup_none_l.
         rewrite lstore_lift_free_lookup_free. exact Hσx.
+Qed.
+
+Lemma qualifier_saturated_world_exact
+    (A : aset) (q : qualifier (V := V))
+    (σ0 : StoreT)
+    (Hdom0 : dom (σ0 : StoreT) = A)
+    (Hholds0 : qualifier_holds_store q σ0) :
+  qual_dom q ⊆ A ->
+  qualifier_exact_denote q
+    (qualifier_saturated_world A q σ0 Hdom0 Hholds0).
+Proof.
+  destruct q as [D P].
+  cbn [qualifier_exact_denote qual_dom qual_lvars].
+  intros HsubA.
+  destruct Hholds0 as [Hlc0 [Hsub0 HP0]].
+  assert (Hlc : lc_lvars D) by exact Hlc0.
+  assert (Hholds0' :
+      qualifier_holds_store (tqual D P) σ0).
+  { exists Hlc0, Hsub0. exact HP0. }
+  assert (Hsub_world :
+      lvars_fv D ⊆
+      world_dom (qualifier_saturated_world A (tqual D P)
+        σ0 Hdom0 Hholds0' : WorldT)).
+  { cbn [qualifier_saturated_world qualifier_saturated_raw_world world_dom].
+    exact HsubA. }
+  exists Hlc, Hsub_world. intros s.
+  split.
+  - intros HPs.
+    unfold lstore_in_lworld_on, lworld_on_lift.
+    cbn [lw lraw_world raw_worldA worldA_stores].
+    exists (lstore_lift_free
+      (store_restrict (atom_store_extend_lstore_on A D s) (lvars_fv D))).
+    split.
+    + exists (store_restrict (atom_store_extend_lstore_on A D s)
+        (lvars_fv D)).
+      split.
+      * exists (atom_store_extend_lstore_on A D s).
+        split.
+        -- cbn [qualifier_saturated_world qualifier_saturated_raw_world
+             raw_world raw_worldA world_stores worldA_stores].
+           split.
+           ++ apply atom_store_extend_lstore_on_dom; [exact Hlc|exact HsubA].
+           ++ exists Hlc.
+              assert (Hsub_ext :
+                  lvars_fv D ⊆
+                  dom (atom_store_extend_lstore_on A D s : StoreT)).
+              {
+                rewrite atom_store_extend_lstore_on_dom by (exact Hlc || exact HsubA).
+                exact HsubA.
+              }
+              exists Hsub_ext.
+              assert (Hs_eq :
+                  lstore_on_lift_store D
+                    (atom_store_extend_lstore_on A D s) Hlc Hsub_ext = s).
+              {
+                apply lstore_on_ext.
+                unfold lstore_on_lift_store.
+                cbn [lso_store storeAO_store].
+                rewrite atom_store_extend_lstore_on_lift_restrict
+                  by (exact Hlc || exact HsubA).
+                reflexivity.
+              }
+              rewrite Hs_eq. exact HPs.
+        -- reflexivity.
+      * reflexivity.
+    + rewrite lstore_lift_free_restrict_fv_lvars_eq.
+      apply atom_store_extend_lstore_on_lift_restrict;
+        [exact Hlc|exact HsubA].
+  - unfold lstore_in_lworld_on, lworld_on_lift.
+    cbn [lw lraw_world raw_worldA worldA_stores].
+    intros Hmem.
+    destruct Hmem as [ρ Hmem].
+    destruct Hmem as [Hlift Hρeq].
+    unfold res_lift_free in Hlift.
+    cbn [raw_worldA worldA_stores] in Hlift.
+    destruct Hlift as [store_restricted [Hrestricted Hρeq_lift]].
+    destruct Hrestricted as [store_src [Hstore_src Hrestrict_src]].
+    destruct Hstore_src as [Hdomσ Hholdsσ].
+    cbn [qualifier_holds_store] in Hholdsσ.
+    destruct Hholdsσ as [Hlcσ Hholdsσ].
+    destruct Hholdsσ as [Hsubσ HPσ].
+    assert (Hs_eq :
+        s =
+        lstore_on_lift_store D store_src Hlcσ Hsubσ).
+    {
+      apply lstore_on_ext.
+      unfold lstore_on_lift_store.
+      cbn [lso_store storeAO_store].
+      rewrite <- Hρeq.
+      rewrite Hρeq_lift.
+      rewrite <- Hrestrict_src.
+      rewrite lstore_lift_free_restrict_fv_lvars_eq.
+      reflexivity.
+    }
+    rewrite Hs_eq. exact HPσ.
 Qed.
 
 Lemma lstore_in_lworld_on_lift_store_of_world
@@ -324,7 +549,7 @@ Proof.
       symmetry.
       change ((storeA_restrict σ (lvars_fv ({[LVFree y]} : lvset))
         : gmap atom V) !! y = Some v).
-      apply storeA_restrict_lookup_some_2; [exact Hσy|].
+      apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσy).
       rewrite lvars_fv_singleton_free. apply elem_of_singleton.
       reflexivity.
     }

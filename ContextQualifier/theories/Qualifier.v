@@ -230,6 +230,22 @@ Proof.
     rewrite (right_id_L ∅ (∪)). reflexivity.
 Qed.
 
+Lemma qual_mlsubst_merge ρ_outer ρ_inner q :
+  dom (ρ_outer : gmap logic_var V) ##
+    dom (ρ_inner : gmap logic_var V) ->
+  qual_mlsubst ρ_inner (qual_mlsubst ρ_outer q) =
+  qual_mlsubst (ρ_outer ∪ ρ_inner) q.
+Proof.
+  intros Hdisj.
+  destruct q as [D P]. cbn [qual_mlsubst].
+  apply qual_ext.
+  - set_solver.
+  - intros s1 s2 Hs. cbn [qual_prop qual_lvars].
+    pose proof (lstore_on_mlsubst_back_merge
+      D ρ_outer ρ_inner s1 s2 Hdisj Hs) as Hmerge.
+    rewrite Hmerge. reflexivity.
+Qed.
+
 Lemma qual_atom_swap_mlsubst x y (ρ : LStoreT) q :
   qual_atom_swap x y (qual_mlsubst ρ q) =
   qual_mlsubst (lvar_store_swap x y ρ) (qual_atom_swap x y q).
@@ -277,6 +293,57 @@ Qed.
 Definition qual_msubst_store (σ : StoreT) (q : qualifier) :
     qualifier :=
   qual_mlsubst (atom_store_to_lvar_store σ) q.
+
+Lemma qual_msubst_store_merge σ_outer σ_inner q :
+  dom (σ_outer : StoreT) ## dom (σ_inner : StoreT) ->
+  qual_msubst_store σ_inner (qual_msubst_store σ_outer q) =
+  qual_msubst_store (σ_outer ∪ σ_inner) q.
+Proof.
+  intros Hdisj.
+  unfold qual_msubst_store.
+  rewrite atom_store_to_lvar_store_union.
+  apply qual_mlsubst_merge.
+  rewrite !atom_store_to_lvar_store_dom.
+  unfold lvars_of_atoms.
+  set_solver.
+Qed.
+
+Lemma qual_mlsubst_open_atom_fresh ρ k x q :
+  (forall j, LVBound j ∉ dom (ρ : gmap logic_var V)) ->
+  LVFree x ∉ dom (ρ : gmap logic_var V) ->
+  qual_mlsubst ρ (qual_open_atom k x q) =
+  qual_open_atom k x (qual_mlsubst ρ q).
+Proof.
+  intros Hbound Hfree.
+  destruct q as [D P]. cbn [qual_mlsubst qual_open_atom].
+  apply qual_ext.
+  - symmetry.
+    apply (set_swap_difference_fresh (LVBound k) (LVFree x) D
+      (dom (ρ : gmap logic_var V)));
+      [apply Hbound|exact Hfree].
+  - intros s1 s2 Hs. cbn [qual_prop qual_lvars].
+    pose proof (lstore_on_open_mlsubst_back_fresh k x D ρ
+      s2 s1 (Hbound k) Hfree ltac:(symmetry; exact Hs)) as Heq.
+    rewrite Heq. reflexivity.
+Qed.
+
+Lemma qual_msubst_store_open_atom_fresh σ k x q :
+  x ∉ dom (σ : StoreT) ->
+  qual_msubst_store σ (qual_open_atom k x q) =
+  qual_open_atom k x (qual_msubst_store σ q).
+Proof.
+  intros Hx.
+  unfold qual_msubst_store.
+  apply qual_mlsubst_open_atom_fresh.
+  - intros j Hj.
+    rewrite atom_store_to_lvar_store_dom in Hj.
+    unfold lvars_of_atoms in Hj.
+    apply elem_of_map in Hj as [a [Hbad _]]. discriminate.
+  - rewrite atom_store_to_lvar_store_dom.
+    unfold lvars_of_atoms.
+    intros Hbad. apply elem_of_map in Hbad as [a [Heq Ha]].
+    inversion Heq. subst. exact (Hx Ha).
+Qed.
 
 Definition qual_open_env (η : gmap nat atom) (q : qualifier) : qualifier :=
   map_fold (fun k x acc => qual_open_atom k x acc) q η.
@@ -414,7 +481,7 @@ Proof.
   apply (map_fold_insert_L (M:=gmap nat) (A:=atom) (B:=qualifier)
     (fun k x acc => qual_open_atom k x acc) q k x η).
   - intros i j xi xj acc Hij Hi Hj.
-    apply qual_open_commute_fvar; [exact Hij|].
+    apply (qual_open_commute_fvar _ _ _ _ _ Hij).
     intros Heq. subst xj.
     pose proof (open_env_values_inj_insert k x η Hfresh Havoid Hinj)
       as Hinj'.
@@ -549,7 +616,7 @@ Proof.
         + destruct (decide (k <= n)) as [Hkn|Hkn].
           * inversion Hv. lia.
           * inversion Hv. subst n.
-            specialize (Hlc k ltac:(apply lvars_bv_elem; exact HvD)).
+            specialize (Hlc k ltac:(rewrite lvars_bv_elem; exact HvD)).
             lia.
         + discriminate.
     }
@@ -615,7 +682,7 @@ Proof.
         rewrite decide_False in HbadD by
           (intros Heq; apply Hneq; symmetry; exact Heq).
         rewrite decide_True in HbadD by reflexivity.
-        specialize (Hbelow k ltac:(apply lvars_bv_elem; exact HbadD)).
+        specialize (Hbelow k ltac:(rewrite lvars_bv_elem; exact HbadD)).
         lia.
     }
     assert (Hback_eq : lstore_on_open_back k x D s1 = s2).

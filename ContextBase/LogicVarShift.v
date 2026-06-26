@@ -918,7 +918,7 @@ Proof.
     apply elem_of_map in Hv as [u [-> Hu]].
     destruct u as [n|a]; cbn [logic_var_shift_from].
     + destruct (decide (k <= n)) as [Hbad|_].
-      * exfalso. pose proof (Hbelow n ltac:(apply lvars_bv_elem; exact Hu)).
+      * exfalso. pose proof (Hbelow n ltac:(rewrite lvars_bv_elem; exact Hu)).
         lia.
       * exact Hu.
     + exact Hu.
@@ -928,7 +928,7 @@ Proof.
     exists v. split; [| exact Hv].
     destruct v as [n|a]; cbn [logic_var_shift_from].
     + destruct (decide (k <= n)) as [Hbad|_].
-      * exfalso. pose proof (Hbelow n ltac:(apply lvars_bv_elem; exact Hv)).
+      * exfalso. pose proof (Hbelow n ltac:(rewrite lvars_bv_elem; exact Hv)).
         lia.
       * reflexivity.
     + reflexivity.
@@ -940,6 +940,28 @@ Lemma lvars_shift_from_lc_at_id k D :
 Proof.
   intros Hlc.
   apply lvars_shift_from_below_id. exact Hlc.
+Qed.
+
+Lemma lvars_shift_from_lc k D :
+  lc_lvars D ->
+  lc_lvars (lvars_shift_from k D).
+Proof.
+  intros Hlc.
+  rewrite lvars_shift_from_lc_at_id; [exact Hlc|].
+  intros n Hn.
+  specialize (Hlc (LVBound n) ltac:(rewrite <- lvars_bv_elem; exact Hn)).
+  cbn [lc_logic_var_key] in Hlc. exfalso. exact Hlc.
+Qed.
+
+Lemma lvars_shift_from_lc_eq k D :
+  lc_lvars D ->
+  lvars_shift_from k D = D.
+Proof.
+  intros Hlc.
+  apply lvars_shift_from_lc_at_id.
+  intros n Hn.
+  specialize (Hlc (LVBound n) ltac:(rewrite <- lvars_bv_elem; exact Hn)).
+  cbn [lc_logic_var_key] in Hlc. exfalso. exact Hlc.
 Qed.
 
 Lemma lvars_open_shift_from_lc_at_fresh k x D :

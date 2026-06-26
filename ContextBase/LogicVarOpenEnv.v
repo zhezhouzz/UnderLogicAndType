@@ -200,6 +200,20 @@ Proof.
     rewrite IH. reflexivity.
 Qed.
 
+Lemma open_env_lift_by_two η :
+  open_env_lift_by 2 η = (kmap S (kmap S η) : gmap nat atom).
+Proof.
+  induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - rewrite open_env_lift_by_empty, !kmap_empty. reflexivity.
+  - rewrite open_env_lift_by_insert.
+    rewrite (kmap_insert (M1:=gmap nat) (M2:=gmap nat)
+      S (Inj0:=ltac:(intros ? ? ?; lia)) (A:=atom) η k x).
+    rewrite (kmap_insert (M1:=gmap nat) (M2:=gmap nat)
+      S (Inj0:=ltac:(intros ? ? ?; lia)) (A:=atom) (kmap S η) (S k) x).
+    replace (S (S k)) with (k + 2) by lia.
+    rewrite IH. reflexivity.
+Qed.
+
 Lemma open_env_lift_by_lookup_none d η k :
   η !! k = None ->
   open_env_lift_by d η !! (k + d) = None.

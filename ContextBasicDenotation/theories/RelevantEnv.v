@@ -18,28 +18,38 @@ Local Notation "m ⊨ φ" := (res_models m φ)
 Definition lty_env_restrict_lvars (Σ : lty_env) (D : lvset) : lty_env :=
   storeA_restrict Σ D.
 
+Notation "'context_tm_support' τ e" :=
+  (context_ty_lvars τ ∪ tm_lvars e)
+  (at level 10, τ at next level, e at next level, only parsing).
+
 Definition relevant_lvars (τ : context_ty) (e : tm) : lvset :=
   context_ty_lvars τ ∪ tm_lvars e.
 
 Definition relevant_env (Σ : lty_env) (τ : context_ty) (e : tm)
     : lty_env :=
-  lty_env_restrict_lvars Σ (relevant_lvars τ e).
+  lty_env_restrict_lvars Σ (context_ty_lvars τ ∪ tm_lvars e).
 
-Lemma relevant_lvars_fv τ e :
-  lvars_fv (relevant_lvars τ e) = fv_cty τ ∪ fv_tm e.
+Lemma lvars_fv_context_tm_support τ e :
+  lvars_fv (context_ty_lvars τ ∪ tm_lvars e) = fv_cty τ ∪ fv_tm e.
 Proof.
-  unfold relevant_lvars.
+  cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at value_lvars value_lvars_at].
   rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv.
   set_solver.
 Qed.
 
-Lemma lc_lvars_relevant_lvars τ e :
+Lemma relevant_lvars_fv τ e :
+  lvars_fv (relevant_lvars τ e) = fv_cty τ ∪ fv_tm e.
+Proof.
+  apply lvars_fv_context_tm_support.
+Qed.
+
+Lemma lc_lvars_context_tm_support τ e :
   lc_context_ty τ ->
   lc_tm e ->
-  lc_lvars (relevant_lvars τ e).
+  lc_lvars (context_ty_lvars τ ∪ tm_lvars e).
 Proof.
   intros Hτ He u Hu.
-  unfold relevant_lvars in Hu.
+  cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at value_lvars value_lvars_at] in Hu.
   apply elem_of_union in Hu as [Huτ | Hue].
   - pose proof (cty_lc_at_lvars_bv_empty 0 τ Hτ) as Hbv.
     destruct u as [k|a]; [|exact I].
@@ -52,12 +62,71 @@ Proof.
   - exact (tm_lvars_lc e He u Hue).
 Qed.
 
+Lemma lc_lvars_relevant_lvars τ e :
+  lc_context_ty τ ->
+  lc_tm e ->
+  lc_lvars (relevant_lvars τ e).
+Proof.
+  apply lc_lvars_context_tm_support.
+Qed.
+
+Lemma context_ty_lvars_lc_eq_atoms τ :
+  lc_context_ty τ ->
+  context_ty_lvars τ = lvars_of_atoms (fv_cty τ).
+Proof.
+  intros Hlc.
+  apply set_eq. intros v. split.
+  - intros Hv.
+    pose proof (cty_lc_at_lvars_bv_empty 0 τ Hlc) as Hbv.
+    destruct v as [k|a].
+    + exfalso.
+      assert (k ∈ lvars_bv (context_ty_lvars τ)).
+      { apply lvars_bv_elem. exact Hv. }
+      change (context_ty_lvars τ) with (context_ty_lvars_at 0 τ) in H.
+      rewrite Hbv in H.
+      exact (not_elem_of_empty k H).
+    + unfold lvars_of_atoms.
+      apply elem_of_map. exists a. split; [reflexivity|].
+      apply lvars_fv_elem in Hv.
+      rewrite context_ty_lvars_fv in Hv. exact Hv.
+  - intros Hv.
+    unfold lvars_of_atoms in Hv.
+    apply elem_of_map in Hv as [x [-> Hx]].
+    apply lvars_fv_elem.
+    rewrite context_ty_lvars_fv. exact Hx.
+Qed.
+
+Lemma lc_context_tm_support_eq_atoms τ e :
+  lc_context_ty τ ->
+  lc_tm e ->
+  context_ty_lvars τ ∪ tm_lvars e =
+  lvars_of_atoms (fv_cty τ ∪ fv_tm e).
+Proof.
+  intros Hτ He.
+  cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at value_lvars value_lvars_at].
+  rewrite (context_ty_lvars_lc_eq_atoms τ Hτ).
+  rewrite (tm_lvars_lc_eq_atoms e He).
+  unfold lvars_of_atoms.
+  apply set_eq. intros v. split; intros Hv.
+  - apply elem_of_union in Hv as [Hv|Hv].
+    + apply elem_of_map in Hv as [x [-> Hx]].
+      apply elem_of_map. exists x. split; [reflexivity|set_solver].
+    + apply elem_of_map in Hv as [x [-> Hx]].
+      apply elem_of_map. exists x. split; [reflexivity|set_solver].
+  - apply elem_of_map in Hv as [x [-> Hx]].
+    apply elem_of_union.
+    destruct (decide (x ∈ fv_cty τ)) as [Hxτ|Hxτ].
+    + left. apply elem_of_map. exists x. split; [reflexivity|exact Hxτ].
+    + right. apply elem_of_map. exists x. split; [reflexivity|set_solver].
+Qed.
+
 Lemma relevant_env_empty (Σ : lty_env) τ e :
   relevant_lvars τ e = (∅ : lvset) ->
   relevant_env Σ τ e = (∅ : lty_env).
 Proof.
   intros Hempty.
   unfold relevant_env, lty_env_restrict_lvars.
+  unfold relevant_lvars in Hempty.
   rewrite Hempty.
   apply storeA_restrict_empty_set.
 Qed.
@@ -72,7 +141,7 @@ Proof.
   rewrite storeA_restrict_dom in Hbad.
   apply elem_of_intersection in Hbad as [_ Hrel].
   apply lvars_fv_elem in Hrel.
-  rewrite relevant_lvars_fv in Hrel.
+  rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv in Hrel.
   set_solver.
 Qed.
 
@@ -102,6 +171,50 @@ Proof.
   change (relevant_env Σ (CTWand τx τr) e)
     with (relevant_env Σ (CTArrow τx τr) e).
   eapply relevant_env_arrow_fresh_free; eauto.
+Qed.
+
+Lemma soundness_relevant_env_arrow_value_fresh
+    (Δ : lty_env) τx τ v x :
+  x ∉ fv_value v ∪ fv_cty τx ∪ fv_cty τ ->
+  LVFree x ∉ dom (relevant_env Δ (CTArrow τx τ) (tret v) : lty_env).
+Proof.
+  intros Hfresh.
+  apply relevant_env_arrow_fresh_free; cbn [fv_tm fv_value]; set_solver.
+Qed.
+
+Lemma soundness_relevant_env_wand_value_fresh
+    (Δ : lty_env) τx τ v x :
+  x ∉ fv_value v ∪ fv_cty τx ∪ fv_cty τ ->
+  LVFree x ∉ dom (relevant_env Δ (CTWand τx τ) (tret v) : lty_env).
+Proof.
+  intros Hfresh.
+  apply relevant_env_wand_fresh_free; cbn [fv_tm fv_value]; set_solver.
+Qed.
+
+Lemma soundness_typed_bind_arrow_value_fresh
+    (Δ : lty_env) τx τ v x T :
+  x ∉ fv_value v ∪ fv_cty τx ∪ fv_cty τ ->
+  x ∉ lvars_fv
+    (dom (typed_lty_env_bind
+      (relevant_env Δ (CTArrow τx τ) (tret v)) T)).
+Proof.
+  intros Hfresh Hbad.
+  rewrite typed_lty_env_bind_lvars_fv_dom in Hbad.
+  apply lvars_fv_elem in Hbad.
+  eapply soundness_relevant_env_arrow_value_fresh; eauto.
+Qed.
+
+Lemma soundness_typed_bind_wand_value_fresh
+    (Δ : lty_env) τx τ v x T :
+  x ∉ fv_value v ∪ fv_cty τx ∪ fv_cty τ ->
+  x ∉ lvars_fv
+    (dom (typed_lty_env_bind
+      (relevant_env Δ (CTWand τx τ) (tret v)) T)).
+Proof.
+  intros Hfresh Hbad.
+  rewrite typed_lty_env_bind_lvars_fv_dom in Hbad.
+  apply lvars_fv_elem in Hbad.
+  eapply soundness_relevant_env_wand_value_fresh; eauto.
 Qed.
 
 Lemma lvars_of_atoms_empty :
@@ -168,38 +281,73 @@ Proof.
   - destruct u as [k|y].
     + rewrite lookup_insert_ne by congruence.
       unfold relevant_env, lty_env_restrict_lvars.
+      change (context_ty_lvars (CTArrow τx τ) ∪ tm_lvars (tret v))
+        with (relevant_lvars (CTArrow τx τ) (tret v)).
       rewrite storeA_restrict_lookup.
       destruct (decide
-        (LVBound k ∈ relevant_lvars (CTArrow τx τ) (tret v)))
-        as [_|Hbad].
-      * reflexivity.
-      * exfalso. apply Hbad.
-        unfold relevant_lvars in Hu |- *.
-        cbn [relevant_lvars tm_lvars tm_lvars_at value_lvars_at
-          lvar_value_keys context_ty_lvars context_ty_lvars_at] in Hu |- *.
-        better_set_solver.
+        (LVBound k ∈ relevant_lvars (CTArrow τx τ) (tret v))) as [Hin|Hbad].
+      { reflexivity. }
+      exfalso. apply Hbad.
+      unfold relevant_lvars in Hu |- *.
+      cbn [relevant_lvars tm_lvars tm_lvars_at value_lvars_at
+        lvar_value_keys context_ty_lvars context_ty_lvars_at] in Hu |- *.
+      better_set_solver.
     + destruct (decide (y = x)) as [->|Hyx].
       * rewrite lookup_insert.
         rewrite decide_True by reflexivity.
         exact HΣx.
       * rewrite lookup_insert_ne by congruence.
         unfold relevant_env, lty_env_restrict_lvars.
+        change (context_ty_lvars (CTArrow τx τ) ∪ tm_lvars (tret v))
+          with (relevant_lvars (CTArrow τx τ) (tret v)).
         rewrite storeA_restrict_lookup.
         destruct (decide
-          (LVFree y ∈ relevant_lvars (CTArrow τx τ) (tret v)))
-          as [_|Hbad].
-        -- reflexivity.
-        -- exfalso. apply Hbad.
-           unfold relevant_lvars in Hu |- *.
-           cbn [relevant_lvars tm_lvars tm_lvars_at value_lvars_at
-             lvar_value_keys context_ty_lvars context_ty_lvars_at] in Hu |- *.
-           apply elem_of_union_l.
-           apply elem_of_union_l.
-           apply elem_of_union in Hu as [Hyτx|Hyx_eq].
-           ++ exact Hyτx.
-           ++ apply elem_of_singleton in Hyx_eq.
-              inversion Hyx_eq. congruence.
+          (LVFree y ∈ relevant_lvars (CTArrow τx τ) (tret v))) as [Hin|Hbad].
+        { reflexivity. }
+        exfalso. apply Hbad.
+        unfold relevant_lvars in Hu |- *.
+        cbn [relevant_lvars tm_lvars tm_lvars_at value_lvars_at
+          lvar_value_keys context_ty_lvars context_ty_lvars_at] in Hu |- *.
+        apply elem_of_union_l.
+        apply elem_of_union_l.
+        apply elem_of_union in Hu as [Hyτx|Hyx_eq].
+        { exact Hyτx. }
+        apply elem_of_singleton in Hyx_eq.
+        inversion Hyx_eq. congruence.
   - reflexivity.
+Qed.
+
+Lemma insert_relevant_env_ret_value_restrict_eq Σ τ v y :
+  y ∉ lvars_fv (dom Σ) ∪ fv_cty τ ∪ fv_value v ->
+  lty_env_restrict_lvars
+    (<[LVFree y := erase_ty τ]>
+      (relevant_env Σ τ (tret v)))
+    (relevant_lvars τ (tret (vfvar y))) =
+  lty_env_restrict_lvars
+    (<[LVFree y := erase_ty τ]> Σ)
+    (relevant_lvars τ (tret (vfvar y))).
+Proof.
+  intros Hy.
+  unfold relevant_env, relevant_lvars, lty_env_restrict_lvars.
+  apply storeA_map_eq. intros lv.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (lv ∈ context_ty_lvars τ ∪ tm_lvars (tret (vfvar y))))
+    as [Hvrel|Hvrel]; [|reflexivity].
+  destruct (decide (lv = LVFree y)) as [->|Hvy].
+  - rewrite !lookup_insert.
+    destruct decide as [_|Hbad]; [reflexivity|contradiction].
+  - rewrite !lookup_insert_ne by congruence.
+    rewrite storeA_restrict_lookup.
+    destruct (decide (lv ∈ context_ty_lvars τ ∪ tm_lvars (tret v)))
+      as [Hvsrc|Hvsrc]; [reflexivity|].
+    exfalso.
+    cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at value_lvars value_lvars_at] in Hvrel, Hvsrc.
+    apply elem_of_union in Hvrel as [Hvτ|Hvy_lvars].
+    + apply Hvsrc. apply elem_of_union_l. exact Hvτ.
+    + cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys]
+        in Hvy_lvars.
+      apply elem_of_singleton in Hvy_lvars. subst lv.
+      contradiction.
 Qed.
 
 Lemma lty_env_restrict_open_one_bind_current_eq
@@ -222,6 +370,30 @@ Proof.
     + rewrite lty_env_open_one_typed_bind_lookup_current.
       symmetry. exact HΣx.
     + rewrite lty_env_open_one_typed_bind_lookup_free_ne by congruence.
+      reflexivity.
+Qed.
+
+Lemma lty_env_restrict_open_one_bind_as_insert
+    (Σ : lty_env) (D : lvset) x T :
+  lc_lvars D ->
+  lty_env_restrict_lvars
+    (lty_env_open_one 0 x (typed_lty_env_bind Σ T)) D =
+  lty_env_restrict_lvars (<[LVFree x := T]> Σ) D.
+Proof.
+  intros Hlc.
+  apply storeA_map_eq. intros v.
+  unfold lty_env_restrict_lvars.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ D)) as [Hv|Hv]; [|reflexivity].
+  destruct v as [k|y].
+  - exfalso. specialize (Hlc (LVBound k) Hv).
+    cbn [lc_logic_var_key] in Hlc. exact Hlc.
+  - destruct (decide (y = x)) as [->|Hyx].
+    + rewrite lty_env_open_one_typed_bind_lookup_current.
+      rewrite lookup_insert_eq. reflexivity.
+    + rewrite lty_env_open_one_typed_bind_lookup_free_ne by congruence.
+      rewrite lookup_insert_ne by
+        (intros Heq; apply Hyx; inversion Heq; reflexivity).
       reflexivity.
 Qed.
 
@@ -298,12 +470,55 @@ Proof.
   - assert (Hyrel :
         LVFree y ∈ relevant_lvars (cty_open 0 x τ)
           (tapp v1 (vfvar x))).
-    { unfold relevant_lvars. better_set_solver. }
+    {
+      unfold relevant_lvars.
+      apply elem_of_union_r. exact Hu.
+    }
     rewrite decide_True by exact Hyrel.
     destruct (decide (y = x)) as [->|Hyx].
     + rewrite lty_env_open_one_typed_bind_lookup_current.
       exact HΣx.
     + rewrite lty_env_open_one_typed_bind_lookup_free_ne by congruence.
+      reflexivity.
+Qed.
+
+Lemma lty_env_restrict_insert_relevant_tapp_eq
+    (Σ : lty_env) τ τx v1 x :
+  Σ !! LVFree x = Some (erase_ty τx) ->
+  lc_value v1 ->
+  lty_env_restrict_lvars Σ (tm_lvars (tapp v1 (vfvar x))) =
+  lty_env_restrict_lvars
+    (relevant_env
+      (<[LVFree x := erase_ty τx]> Σ)
+      (cty_open 0 x τ) (tapp v1 (vfvar x)))
+    (tm_lvars (tapp v1 (vfvar x))).
+Proof.
+  intros HΣx Hlc_v1.
+  apply storeA_map_eq. intros u.
+  unfold relevant_env, lty_env_restrict_lvars.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (u ∈ tm_lvars (tapp v1 (vfvar x))))
+    as [Hu|Hu]; [|reflexivity].
+  destruct u as [k|y].
+  - pose proof (tm_lvars_lc (tapp v1 (vfvar x))
+      ltac:(constructor; [exact Hlc_v1|constructor])) as Hlc_tm.
+    specialize (Hlc_tm (LVBound k) Hu).
+    cbn [lc_logic_var_key] in Hlc_tm. contradiction.
+  - assert (Hyrel :
+        LVFree y ∈ relevant_lvars (cty_open 0 x τ)
+          (tapp v1 (vfvar x))).
+    {
+      unfold relevant_lvars.
+      apply elem_of_union_r. exact Hu.
+    }
+    rewrite decide_True by exact Hyrel.
+    destruct (decide (y = x)) as [->|Hyx].
+    + rewrite lookup_insert.
+      destruct (decide (LVFree x = LVFree x)) as [_|Hneq].
+      * exact HΣx.
+      * contradiction.
+    + rewrite lookup_insert_ne by
+        (intros Heq; apply Hyx; inversion Heq; reflexivity).
       reflexivity.
 Qed.
 
@@ -518,8 +733,8 @@ Proof.
       unfold relevant_env, lty_env_restrict_lvars.
       apply storeA_restrict_lookup_some_2.
       * apply map_lookup_insert.
-      * unfold relevant_lvars.
-        cbn [tm_lvars tm_lvars_at value_lvars value_lvars_at].
+	      * unfold relevant_lvars.
+	        cbn [tm_lvars tm_lvars_at value_lvars value_lvars_at].
         set_solver.
     + rewrite lookup_insert_ne in Hv by congruence.
       rewrite lookup_empty in Hv. discriminate.
@@ -574,7 +789,7 @@ Proof.
   unfold relevant_env, lty_env_restrict_lvars,
     relevant_lvars in Hlookup |- *.
   apply storeA_restrict_lookup_some in Hlookup as [Hv HΣ].
-  apply storeA_restrict_lookup_some_2; [exact HΣ | set_solver].
+      apply (storeA_restrict_lookup_some_2 _ _ _ _ HΣ). set_solver.
 Qed.
 
 Lemma relevant_env_dom_mono_context
@@ -637,8 +852,12 @@ Lemma relevant_env_open_one k y Σ τ e :
     (cty_open k y τ) (open_tm k (vfvar y) e).
 Proof.
   intros Hy.
-  unfold relevant_env, lty_env_restrict_lvars, lty_env_open_one.
+  unfold relevant_env, lty_env_restrict_lvars.
+  change (context_ty_lvars (cty_open k y τ) ∪
+            tm_lvars (open_tm k (vfvar y) e))
+    with (relevant_lvars (cty_open k y τ) (open_tm k (vfvar y) e)).
   rewrite <- relevant_lvars_open by exact Hy.
+  unfold lty_env_open_one.
   symmetry. apply storeA_restrict_swap.
 Qed.
 
@@ -692,9 +911,9 @@ Proof.
         intros Hbad. apply Hhead.
         eapply lvars_fv_mono; [|exact Hbad].
         apply lvars_open_env_mono.
-        unfold relevant_lvars. set_solver.
-      * eapply open_env_fresh_for_lvars_mono; [|exact Hfreshη].
-        unfold relevant_lvars. set_solver.
+	        unfold relevant_lvars. set_solver.
+	      * eapply open_env_fresh_for_lvars_mono; [|exact Hfreshη].
+	        unfold relevant_lvars. set_solver.
 Qed.
 
 Lemma lty_env_restrict_lvars_closed Σ D :
@@ -831,6 +1050,32 @@ Proof.
   intros HxD.
   unfold lty_env_restrict_lvars.
   apply storeA_restrict_insert_notin. exact HxD.
+Qed.
+
+Lemma lty_env_restrict_lvars_insert_restrict_current Σ D x T :
+  LVFree x ∉ D ->
+  lty_env_restrict_lvars (<[LVFree x := T]> Σ)
+    (D ∪ {[LVFree x]}) =
+  lty_env_restrict_lvars
+    (<[LVFree x := T]> (lty_env_restrict_lvars Σ D))
+    (D ∪ {[LVFree x]}).
+Proof.
+  intros HxD.
+  unfold lty_env_restrict_lvars.
+  apply storeA_map_eq. intros v.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ D ∪ {[LVFree x]})) as [Hv|Hv]; [|reflexivity].
+  destruct (decide (v = LVFree x)) as [->|Hvx].
+  - rewrite !lookup_insert.
+    repeat (destruct decide as [_|Hbad]; [|contradiction]).
+    reflexivity.
+  - rewrite !lookup_insert_ne by congruence.
+    rewrite storeA_restrict_lookup.
+    destruct (decide (v ∈ D)) as [HvD|HvD]; [reflexivity|].
+    exfalso.
+    apply elem_of_union in Hv as [HvD'|Hx].
+    + exact (HvD HvD').
+    + apply elem_of_singleton in Hx. subst v. contradiction.
 Qed.
 
 Lemma relevant_env_insert_fresh Σ τ e x T :
@@ -978,6 +1223,54 @@ Proof.
   intros Hτ He.
   apply lty_restrict_insert_relevant_eq.
   eapply arrow_body_relevant_lvars_subset; eauto.
+Qed.
+
+Lemma wand_body_relevant_env_agree_insert_core
+    (Σsrc : lty_env) Ty y τx τr e_src e_body :
+  context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
+    context_ty_lvars_at 1 τr ->
+  tm_lvars e_body ∖ {[LVFree y]} ⊆ tm_lvars e_src ->
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]>
+      (relevant_env Σsrc (CTWand τx τr) e_src))
+    (relevant_lvars (cty_open 0 y τr) e_body) =
+  lty_env_restrict_lvars (<[LVFree y := Ty]> Σsrc)
+    (relevant_lvars (cty_open 0 y τr) e_body).
+Proof.
+  intros Hτ He.
+  change (relevant_env Σsrc (CTWand τx τr) e_src)
+    with (relevant_env Σsrc (CTArrow τx τr) e_src).
+  apply arrow_body_relevant_env_agree; assumption.
+Qed.
+
+Lemma wand_arg_relevant_env_agree_insert_core
+    (Σsrc : lty_env) Ty y τx τr e_src :
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]>
+      (relevant_env Σsrc (CTWand τx τr) e_src))
+    (relevant_lvars τx (tret (vfvar y))) =
+  lty_env_restrict_lvars (<[LVFree y := Ty]> Σsrc)
+    (relevant_lvars τx (tret (vfvar y))).
+Proof.
+  apply lty_restrict_insert_relevant_eq.
+  unfold relevant_lvars.
+  cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at
+    value_lvars_at lvar_value_keys].
+  set_solver.
+Qed.
+
+Lemma arrow_arg_relevant_env_agree_insert_core
+    (Σsrc : lty_env) Ty y τx τr e_src :
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]>
+      (relevant_env Σsrc (CTArrow τx τr) e_src))
+    (relevant_lvars τx (tret (vfvar y))) =
+  lty_env_restrict_lvars (<[LVFree y := Ty]> Σsrc)
+    (relevant_lvars τx (tret (vfvar y))).
+Proof.
+  change (relevant_env Σsrc (CTArrow τx τr) e_src)
+    with (relevant_env Σsrc (CTWand τx τr) e_src).
+  apply wand_arg_relevant_env_agree_insert_core.
 Qed.
 
 Lemma arrow_body_env_agree
@@ -1132,8 +1425,9 @@ Proof.
       rewrite !storeA_rekey_lookup by apply logic_var_shift_from_inj.
       unfold relevant_env, lty_env_restrict_lvars.
       rewrite storeA_restrict_lookup.
-      destruct (decide (LVBound k ∈ relevant_lvars
-        (CTWand τx τr) e_src)) as [Hrel|Hrel]; [reflexivity|].
+      destruct (decide (LVBound k ∈
+        context_ty_lvars (CTWand τx τr) ∪ tm_lvars e_src))
+        as [Hrel|Hrel]; [reflexivity|].
       exfalso. apply Hrel.
       subst X.
       unfold relevant_lvars in *.
@@ -1230,8 +1524,9 @@ Proof.
       rewrite !storeA_rekey_lookup by apply logic_var_shift_from_inj.
       unfold relevant_env, lty_env_restrict_lvars.
       rewrite storeA_restrict_lookup.
-      destruct (decide (LVFree z ∈ relevant_lvars
-        (CTWand τx τr) e_src)) as [Hrel|Hrel]; [reflexivity|].
+      destruct (decide (LVFree z ∈
+        context_ty_lvars (CTWand τx τr) ∪ tm_lvars e_src))
+        as [Hrel|Hrel]; [reflexivity|].
       exfalso. apply Hrel.
       subst X.
       unfold relevant_lvars in *.
@@ -1437,7 +1732,8 @@ Proof.
       rewrite !storeA_rekey_lookup by apply logic_var_shift_from_inj.
       unfold relevant_env, lty_env_restrict_lvars.
       rewrite storeA_restrict_lookup.
-      destruct (decide (LVBound k ∈ relevant_lvars (CTWand τx τr) e_src))
+      destruct (decide (LVBound k ∈
+        context_ty_lvars (CTWand τx τr) ∪ tm_lvars e_src))
         as [Hrel|Hrel]; [reflexivity|].
       exfalso. apply Hrel.
       subst X.
@@ -1512,7 +1808,8 @@ Proof.
       rewrite !storeA_rekey_lookup by apply logic_var_shift_from_inj.
       unfold relevant_env, lty_env_restrict_lvars.
       rewrite storeA_restrict_lookup.
-      destruct (decide (LVFree z ∈ relevant_lvars (CTWand τx τr) e_src))
+      destruct (decide (LVFree z ∈
+        context_ty_lvars (CTWand τx τr) ∪ tm_lvars e_src))
         as [Hrel|Hrel]; [reflexivity|].
       exfalso. apply Hrel.
       subst X.
@@ -1536,6 +1833,151 @@ Proof.
       { set_solver. }
 Qed.
 
+Lemma sum_branch_relevant_env_agree_open_one_core
+    (Σsrc : lty_env) Ty y τbranch τsum e_src :
+  context_ty_lvars τbranch ⊆ context_ty_lvars τsum ->
+  y ∉ fv_cty τbranch ->
+  lty_env_restrict_lvars
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind
+        (relevant_env Σsrc τsum e_src) Ty))
+    (relevant_lvars (cty_open 0 y (cty_shift 0 τbranch))
+      (tret (vfvar y))) =
+  lty_env_restrict_lvars
+    (lty_env_open_one 0 y (typed_lty_env_bind Σsrc Ty))
+    (relevant_lvars (cty_open 0 y (cty_shift 0 τbranch))
+      (tret (vfvar y))).
+Proof.
+  intros Hτsub Hyτ.
+  set (X := relevant_lvars (cty_open 0 y (cty_shift 0 τbranch))
+    (tret (vfvar y))).
+  apply storeA_map_eq. intros v.
+  unfold lty_env_restrict_lvars.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ X)) as [HvX|HvX]; [|reflexivity].
+  unfold lty_env_open_one, lvar_store_open_one.
+  replace v with (logic_var_open 0 y (logic_var_open 0 y v))
+    by exact (logic_var_open_involutive 0 y v).
+  rewrite !storeA_rekey_lookup by apply swap_inj.
+  unfold typed_lty_env_bind, lvar_store_bind.
+  set (u := logic_var_open 0 y v).
+  fold u.
+  destruct u as [k|z] eqn:Hu.
+  - destruct k as [|k].
+    + rewrite !lookup_insert_eq. reflexivity.
+    + cbn [insert].
+      rewrite !lookup_insert_ne by discriminate.
+      assert (Hv_eq : v = LVBound (S k)).
+      {
+        unfold u in Hu.
+        pose proof (f_equal (logic_var_open 0 y) Hu) as Hopen.
+        change (swap (LVBound 0) (LVFree y)
+          (swap (LVBound 0) (LVFree y) v) =
+          swap (LVBound 0) (LVFree y) (LVBound (S k))) in Hopen.
+        rewrite swap_involutive in Hopen.
+        unfold swap in Hopen.
+        repeat destruct decide; try lia; try congruence.
+      }
+      subst v.
+      unfold lty_env_shift, lvar_store_shift, lvar_store_shift_from.
+      replace (LVBound (S k)) with (logic_var_shift_from 0 (LVBound k))
+        by reflexivity.
+      rewrite !storeA_rekey_lookup by apply logic_var_shift_from_inj.
+      unfold relevant_env, lty_env_restrict_lvars.
+      rewrite storeA_restrict_lookup.
+      destruct (decide (LVBound k ∈ context_ty_lvars τsum ∪ tm_lvars e_src))
+        as [Hrel|Hrel]; [reflexivity|].
+      exfalso. apply Hrel.
+      subst X.
+      unfold relevant_lvars in *.
+      cbn [tm_lvars tm_lvars_at value_lvars_at] in *.
+      rewrite cty_open_vars in HvX.
+      unfold context_ty_open_lvars in HvX.
+      rewrite cty_shift_vars in HvX.
+      unfold context_ty_shift_lvars in HvX.
+      apply elem_of_union_l.
+      apply Hτsub.
+      apply elem_of_union in HvX as [Hopen|Hret].
+      2:{ set_solver. }
+      rewrite set_swap_elem in Hopen.
+      rewrite (swap_fresh (LVBound 0) (LVFree y) (LVBound (S k))) in Hopen
+        by congruence.
+      unfold lvars_shift_from in Hopen.
+      apply elem_of_map in Hopen as [w [Hwshift Hw]].
+      destruct w as [n|a]; cbn [logic_var_shift_from] in Hwshift;
+        repeat destruct decide; inversion Hwshift; subst; try lia.
+      exact Hw.
+  - destruct (decide (z = y)) as [->|Hzy].
+    + exfalso.
+      unfold u in Hu.
+      assert (Hv_eq : v = LVBound 0).
+      {
+        unfold u in Hu.
+        pose proof (f_equal (logic_var_open 0 y) Hu) as Hopen.
+        change (swap (LVBound 0) (LVFree y)
+          (swap (LVBound 0) (LVFree y) v) =
+          swap (LVBound 0) (LVFree y) (LVFree y)) in Hopen.
+        rewrite swap_involutive in Hopen.
+        unfold swap in Hopen.
+        repeat destruct decide; try lia; try congruence.
+      }
+      subst v.
+      subst X.
+      unfold relevant_lvars in *.
+      cbn [tm_lvars tm_lvars_at value_lvars_at] in *.
+      rewrite cty_open_vars in HvX.
+      unfold context_ty_open_lvars in HvX.
+      rewrite cty_shift_vars in HvX.
+      unfold context_ty_shift_lvars in HvX.
+      apply elem_of_union in HvX as [Hopen|Hret].
+      { rewrite set_swap_elem in Hopen.
+        rewrite swap_l in Hopen.
+        apply Hyτ.
+        change (y ∈ lvars_fv (context_ty_lvars τbranch)).
+        rewrite <- (lvars_shift_from_fv 0 (context_ty_lvars τbranch)).
+        apply lvars_fv_elem. exact Hopen. }
+      { set_solver. }
+    + rewrite !lookup_insert_ne by congruence.
+      assert (Hv_eq : v = LVFree z).
+      {
+        unfold u in Hu.
+        pose proof (f_equal (logic_var_open 0 y) Hu) as Hopen.
+        change (swap (LVBound 0) (LVFree y)
+          (swap (LVBound 0) (LVFree y) v) =
+          swap (LVBound 0) (LVFree y) (LVFree z)) in Hopen.
+        rewrite swap_involutive in Hopen.
+        unfold swap in Hopen.
+        repeat destruct decide; try lia; try congruence.
+      }
+      subst v.
+      unfold lty_env_shift, lvar_store_shift, lvar_store_shift_from.
+      replace (LVFree z) with (logic_var_shift_from 0 (LVFree z))
+        by reflexivity.
+      rewrite !storeA_rekey_lookup by apply logic_var_shift_from_inj.
+      unfold relevant_env, lty_env_restrict_lvars.
+      rewrite storeA_restrict_lookup.
+      destruct (decide (LVFree z ∈ context_ty_lvars τsum ∪ tm_lvars e_src))
+        as [Hrel|Hrel]; [reflexivity|].
+      exfalso. apply Hrel.
+      subst X.
+      unfold relevant_lvars in *.
+      cbn [tm_lvars tm_lvars_at value_lvars_at] in *.
+      rewrite cty_open_vars in HvX.
+      unfold context_ty_open_lvars in HvX.
+      rewrite cty_shift_vars in HvX.
+      unfold context_ty_shift_lvars in HvX.
+      apply elem_of_union in HvX as [Hopen|Hret].
+      { rewrite set_swap_elem in Hopen.
+        rewrite (swap_fresh (LVBound 0) (LVFree y) (LVFree z)) in Hopen
+          by congruence.
+        unfold lvars_shift_from in Hopen.
+        apply elem_of_map in Hopen as [w [Hwshift Hw]].
+        destruct w as [n|a]; cbn [logic_var_shift_from] in Hwshift;
+          repeat destruct decide; inversion Hwshift; subst; try lia.
+        apply elem_of_union_l. apply Hτsub. exact Hw. }
+      { set_solver. }
+Qed.
+
 Lemma arrow_arg_relevant_env_agree_open_one_core
     (Σsrc : lty_env) Ty y τx τr e_src :
   y ∉ fv_cty τx ->
@@ -1554,6 +1996,74 @@ Proof.
   change (relevant_env Σsrc (CTArrow τx τr) e_src)
     with (relevant_env Σsrc (CTWand τx τr) e_src).
   apply wand_arg_relevant_env_agree_open_one_core. exact Hyτx.
+Qed.
+
+Lemma arrow_arg_relevant_env_agree_inserted_body_irrel
+    (Σ : lty_env) Ty y τx τr e_src e_tgt :
+  y ∉ fv_cty τx ->
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]> (relevant_env Σ (CTArrow τx τr) e_src))
+    (context_ty_lvars τx ∪ tm_lvars (tret (vfvar y))) =
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]> (relevant_env Σ (CTArrow τx τr) e_tgt))
+    (context_ty_lvars τx ∪ tm_lvars (tret (vfvar y))).
+Proof.
+  intros Hyτx.
+  assert (Hyτx_lvar : LVFree y ∉ context_ty_lvars τx).
+  {
+    intros Hbad. apply Hyτx.
+    rewrite <- context_ty_lvars_fv.
+    apply lvars_fv_elem. exact Hbad.
+  }
+  unfold relevant_env, lty_env_restrict_lvars.
+  apply storeA_map_eq. intros v.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide
+    (v ∈ context_ty_lvars τx ∪ tm_lvars (tret (vfvar y)))) as [Hv|Hv];
+    [|reflexivity].
+  destruct (decide (v = LVFree y)) as [->|Hvy].
+  - rewrite !lookup_insert.
+    repeat destruct decide; try congruence; reflexivity.
+  - rewrite !lookup_insert_ne by (intros Heq; apply Hvy; symmetry; exact Heq).
+    rewrite !storeA_restrict_lookup.
+    destruct (decide
+      (v ∈ context_ty_lvars (CTArrow τx τr) ∪ tm_lvars e_src))
+      as [_|Hbad_src].
+    2:{
+      exfalso. apply Hbad_src.
+      cbn [context_ty_lvars context_ty_lvars_at].
+      cbn [tm_lvars tm_lvars_at value_lvars value_lvars_at] in Hv.
+      clear -Hv Hvy Hyτx_lvar. set_solver.
+    }
+    destruct (decide
+      (v ∈ context_ty_lvars (CTArrow τx τr) ∪ tm_lvars e_tgt))
+      as [_|Hbad_tgt].
+    2:{
+      exfalso. apply Hbad_tgt.
+      cbn [context_ty_lvars context_ty_lvars_at].
+      cbn [tm_lvars tm_lvars_at value_lvars value_lvars_at] in Hv.
+      clear -Hv Hvy Hyτx_lvar. set_solver.
+    }
+    reflexivity.
+Qed.
+
+Lemma wand_arg_relevant_env_agree_inserted_body_irrel
+    (Σ : lty_env) Ty y τx τr e_src e_tgt :
+  y ∉ fv_cty τx ->
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]> (relevant_env Σ (CTWand τx τr) e_src))
+    (context_ty_lvars τx ∪ tm_lvars (tret (vfvar y))) =
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]> (relevant_env Σ (CTWand τx τr) e_tgt))
+    (context_ty_lvars τx ∪ tm_lvars (tret (vfvar y))).
+Proof.
+  intros Hyτx.
+  change (relevant_env Σ (CTWand τx τr) e_src)
+    with (relevant_env Σ (CTArrow τx τr) e_src).
+  change (relevant_env Σ (CTWand τx τr) e_tgt)
+    with (relevant_env Σ (CTArrow τx τr) e_tgt).
+  apply arrow_arg_relevant_env_agree_inserted_body_irrel.
+  exact Hyτx.
 Qed.
 
 End RelevantEnv.
@@ -1578,13 +2088,14 @@ Notation "'rel[' Σ '|' τ ']' e" :=
   (at level 20, Σ at level 200, τ at level 200, e at level 20,
    format "rel[ Σ  |  τ ]  e").
 
-Ltac relevant_lvars_norm :=
+Ltac support_lvars_norm :=
   unfold relevant_lvars;
   type_open_env_syntax_norm;
   cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at
     value_lvars_at lvar_value_keys fv_tm fv_value];
   rewrite ?fv_tapp_tm, ?tm_shift_fv, ?cty_shift_fv;
-  rewrite ?relevant_lvars_fv, ?lvars_fv_union,
+  rewrite ?lvars_fv_context_tm_support, ?relevant_lvars_fv,
+    ?lvars_fv_union,
     ?context_ty_lvars_fv, ?tm_lvars_fv;
   rewrite ?lvars_at_depth_union, ?lvars_at_depth_empty;
   rewrite ?lvars_fv_empty, ?lvars_fv_singleton_bound,
@@ -1597,7 +2108,7 @@ Ltac relevant_lvars_norm :=
   try rewrite ?tm_lvars_at_shift_under by lia;
   rewrite ?tm_lvars_at_tret_bound0_under.
 
-Ltac relevant_lvars_norm_in H :=
+Ltac support_lvars_norm_in H :=
   unfold relevant_lvars in H;
   type_open_env_syntax_norm_in H;
   cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at
@@ -1605,6 +2116,7 @@ Ltac relevant_lvars_norm_in H :=
   rewrite ?fv_tapp_tm in H;
   rewrite ?tm_shift_fv in H;
   rewrite ?cty_shift_fv in H;
+  rewrite ?lvars_fv_context_tm_support in H;
   rewrite ?relevant_lvars_fv in H;
   rewrite ?lvars_fv_union in H;
   rewrite ?context_ty_lvars_fv in H;
@@ -1625,6 +2137,12 @@ Ltac relevant_lvars_norm_in H :=
   try rewrite ?context_ty_lvars_at_shift_under in H by lia;
   try rewrite ?tm_lvars_at_shift_under in H by lia;
   rewrite ?tm_lvars_at_tret_bound0_under in H.
+
+Ltac relevant_lvars_norm :=
+  support_lvars_norm.
+
+Ltac relevant_lvars_norm_in H :=
+  support_lvars_norm_in H.
 
 Ltac lty_env_open_bind_norm :=
   rewrite ?atom_env_to_lty_env_erase_ctx_comma_bind_open_one
@@ -1651,14 +2169,14 @@ Ltac lty_env_open_bind_norm_in H :=
 
 Ltac relevant_env_norm :=
   unfold relevant_env, lty_env_restrict_lvars;
-  relevant_lvars_norm;
+  support_lvars_norm;
   lty_env_open_bind_norm;
   store_normalize;
   rewrite ?storeA_restrict_dom.
 
 Ltac relevant_env_norm_in H :=
   unfold relevant_env, lty_env_restrict_lvars in H;
-  relevant_lvars_norm_in H;
+  support_lvars_norm_in H;
   lty_env_open_bind_norm_in H;
   store_normalize;
   rewrite ?storeA_restrict_dom in H.

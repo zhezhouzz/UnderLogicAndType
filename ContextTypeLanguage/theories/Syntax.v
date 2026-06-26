@@ -36,7 +36,8 @@ Inductive context_ty : Type :=
   | CTUnion (τ1 τ2 : context_ty)
   | CTSum   (τ1 τ2 : context_ty)
   | CTArrow (τx τ : context_ty)
-  | CTWand  (τx τ : context_ty).
+  | CTWand  (τx τ : context_ty)
+  | CTPersist (τ : context_ty).
 
 Inductive ctx : Type :=
   | CtxEmpty
@@ -86,6 +87,9 @@ Notation "τx '→' τ" := (CTArrow τx τ)
 Notation "τx '-∗' τ" := (CTWand τx τ)
   (at level 60, right associativity,
    format "τx  -∗  τ") : cty_scope.
+Notation "'□' τ" := (CTPersist τ)
+  (at level 30, right associativity,
+   format "□ τ") : cty_scope.
 
 Inductive ctx_hole : Type :=
   | CtxHole
@@ -111,6 +115,7 @@ Fixpoint context_ty_lvars_at (d : nat) (τ : context_ty) : lvset :=
   | CTSum τ1 τ2 => context_ty_lvars_at d τ1 ∪ context_ty_lvars_at d τ2
   | CTArrow τx τ
   | CTWand τx τ => context_ty_lvars_at d τx ∪ context_ty_lvars_at (S d) τ
+  | CTPersist τ => context_ty_lvars_at d τ
   end.
 
 Definition context_ty_lvars (τ : context_ty) : lvset :=
@@ -144,6 +149,7 @@ Fixpoint cty_depth (τ : context_ty) : nat :=
   | CTSum τ1 τ2
   | CTArrow τ1 τ2
   | CTWand τ1 τ2 => S (Nat.max (cty_depth τ1) (cty_depth τ2))
+  | CTPersist τ => S (cty_depth τ)
   end.
 
 Fixpoint ctx_dom (Γ : ctx) : aset :=
@@ -191,6 +197,7 @@ Fixpoint cty_open (k : nat) (x : atom) (τ : context_ty) : context_ty :=
   | CTSum τ1 τ2 => CTSum (cty_open k x τ1) (cty_open k x τ2)
   | CTArrow τx τ => CTArrow (cty_open k x τx) (cty_open (S k) x τ)
   | CTWand τx τ => CTWand (cty_open k x τx) (cty_open (S k) x τ)
+  | CTPersist τ => CTPersist (cty_open k x τ)
   end.
 
 #[global] Instance open_cty_atom_inst : Open atom context_ty := cty_open.
@@ -214,6 +221,7 @@ Fixpoint cty_shift (k : nat) (τ : context_ty) : context_ty :=
   | CTSum τ1 τ2 => CTSum (cty_shift k τ1) (cty_shift k τ2)
   | CTArrow τx τ => CTArrow (cty_shift k τx) (cty_shift (S k) τ)
   | CTWand τx τ => CTWand (cty_shift k τx) (cty_shift (S k) τ)
+  | CTPersist τ => CTPersist (cty_shift k τ)
   end.
 
 #[global] Instance shift_cty_inst : Shift context_ty := cty_shift.
@@ -241,6 +249,7 @@ Fixpoint context_ty_msubst_store
       CTArrow (context_ty_msubst_store σ τx) (context_ty_msubst_store σ τ)
   | CTWand τx τ =>
       CTWand (context_ty_msubst_store σ τx) (context_ty_msubst_store σ τ)
+  | CTPersist τ => CTPersist (context_ty_msubst_store σ τ)
   end.
 
 Fixpoint erase_ty (τ : context_ty) : ty :=
@@ -252,6 +261,7 @@ Fixpoint erase_ty (τ : context_ty) : ty :=
   | CTSum τ1 _ => erase_ty τ1
   | CTArrow τx τ => erase_ty τx →ₜ erase_ty τ
   | CTWand τx τ => erase_ty τx →ₜ erase_ty τ
+  | CTPersist τ => erase_ty τ
   end.
 
 Fixpoint lift_ty (s : ty) : context_ty :=
@@ -433,6 +443,10 @@ Proof.
     replace (S (d + k)) with (S d + k) by lia.
     rewrite IHτ2.
     symmetry. rewrite set_swap_union. reflexivity.
+  - change ({d + k ~> x} CTPersist τ) with
+      (cty_open (d + k) x (CTPersist τ)).
+    cbn [cty_open context_ty_lvars_at].
+    rewrite IHτ. reflexivity.
 Qed.
 
 Lemma cty_open_vars k x τ :
@@ -456,6 +470,7 @@ Proof.
   - reflexivity.
   - replace (S c + d) with (S (c + d)) by lia. reflexivity.
   - replace (S c + d) with (S (c + d)) by lia. reflexivity.
+  - rewrite IHτ. reflexivity.
 Qed.
 
 Lemma context_ty_lvars_depth τ d :
@@ -495,12 +510,23 @@ Proof.
   - rewrite !lvars_fv_union, IHτ1, IHτ2. reflexivity.
   - rewrite !lvars_fv_union, IHτ1, (IHτ2 (S d)), <- (IHτ2 1). reflexivity.
   - rewrite !lvars_fv_union, IHτ1, (IHτ2 (S d)), <- (IHτ2 1). reflexivity.
+  - rewrite IHτ. reflexivity.
 Qed.
 
 Lemma context_ty_lvars_fv τ :
   lvars_fv (context_ty_lvars τ) = fv_cty τ.
 Proof.
   apply context_ty_lvars_fv_at.
+Qed.
+
+Lemma context_ty_lvars_free_notin_of_fv x τ :
+  x ∉ fv_cty τ ->
+  LVFree x ∉ context_ty_lvars τ.
+Proof.
+  intros Hx Hbad.
+  apply lvars_fv_elem in Hbad.
+  rewrite context_ty_lvars_fv in Hbad.
+  exact (Hx Hbad).
 Qed.
 
 Lemma context_ty_lvars_over_fv b q :
@@ -534,6 +560,7 @@ Proof.
     rewrite IHτ2 by lia. reflexivity.
   - rewrite IHτ1 by exact Hkd.
     rewrite IHτ2 by lia. reflexivity.
+  - rewrite IHτ by exact Hkd. reflexivity.
 Qed.
 
 Lemma context_ty_lvars_at_shift d k τ :
@@ -558,6 +585,7 @@ Proof.
     replace (S (d + k)) with (S d + k) by lia.
     rewrite IHτ2.
     symmetry. apply lvars_shift_from_union.
+  - rewrite IHτ. reflexivity.
 Qed.
 
 Lemma cty_shift0_vars τ :
@@ -599,25 +627,25 @@ Qed.
 Lemma cty_open_preserves_erasure k x τ :
   erase_ty ({k ~> x} τ) = erase_ty τ.
 Proof.
-  induction τ in k |- *; simpl; try rewrite ?IHτ1, ?IHτ2; reflexivity.
+  induction τ in k |- *; simpl; try rewrite ?IHτ, ?IHτ1, ?IHτ2; reflexivity.
 Qed.
 
 Lemma cty_shift_preserves_erasure k τ :
   erase_ty (cty_shift k τ) = erase_ty τ.
 Proof.
-  induction τ in k |- *; simpl; try rewrite ?IHτ1, ?IHτ2; reflexivity.
+  induction τ in k |- *; simpl; try rewrite ?IHτ, ?IHτ1, ?IHτ2; reflexivity.
 Qed.
 
 Lemma cty_open_preserves_depth k x τ :
   cty_depth ({k ~> x} τ) = cty_depth τ.
 Proof.
-  induction τ in k |- *; simpl; try rewrite ?IHτ1, ?IHτ2; reflexivity.
+  induction τ in k |- *; simpl; try rewrite ?IHτ, ?IHτ1, ?IHτ2; reflexivity.
 Qed.
 
 Lemma cty_shift_preserves_depth k τ :
   cty_depth (cty_shift k τ) = cty_depth τ.
 Proof.
-  induction τ in k |- *; simpl; try rewrite ?IHτ1, ?IHτ2; reflexivity.
+  induction τ in k |- *; simpl; try rewrite ?IHτ, ?IHτ1, ?IHτ2; reflexivity.
 Qed.
 
 Lemma cty_open_shift_under_gen j k x τ :
@@ -627,7 +655,7 @@ Lemma cty_open_shift_under_gen j k x τ :
 Proof.
   induction τ in j, k |- *;
     cbn [cty_open cty_shift open_one open_cty_atom_inst]; intros Hjk;
-    try rewrite ?IHτ1, ?IHτ2 by lia; try reflexivity.
+    try rewrite ?IHτ, ?IHτ1, ?IHτ2 by lia; try reflexivity.
   - rewrite (qual_open_shift_from_under_gen (S j) (S k)) by lia. reflexivity.
   - rewrite (qual_open_shift_from_under_gen (S j) (S k)) by lia. reflexivity.
 Qed.
@@ -638,7 +666,7 @@ Lemma cty_open_commute_fvar i j x y τ :
   {i ~> x} ({j ~> y} τ) = {j ~> y} ({i ~> x} τ).
 Proof.
   induction τ in i, j |- *; cbn [cty_open open_one open_cty_atom_inst]; intros Hij Hxy;
-    try rewrite ?IHτ1, ?IHτ2 by lia; try reflexivity.
+    try rewrite ?IHτ, ?IHτ1, ?IHτ2 by lia; try reflexivity.
   - rewrite qual_open_commute_fvar by (try lia; exact Hxy). reflexivity.
   - rewrite qual_open_commute_fvar by (try lia; exact Hxy). reflexivity.
 Qed.
@@ -660,6 +688,7 @@ Fixpoint cty_vars_equiv (τ1 τ2 : context_ty) : Prop :=
   | CTArrow τ11 τ12, CTArrow τ21 τ22
   | CTWand τ11 τ12, CTWand τ21 τ22 =>
       cty_vars_equiv τ11 τ21 /\ cty_vars_equiv τ12 τ22
+  | CTPersist τ1, CTPersist τ2 => cty_vars_equiv τ1 τ2
   | _, _ => False
   end.
 
@@ -676,14 +705,16 @@ Proof.
   split.
   - intro τ. induction τ; cbn [cty_vars_equiv]; try split; eauto.
   - intros τ1 τ2. induction τ1 in τ2 |- *.
-    all: destruct τ2; cbn [cty_vars_equiv]; try tauto;
-      intros H; destruct H as [H1 H2]; split; try congruence;
-      try symmetry; eauto.
+    all: destruct τ2; cbn [cty_vars_equiv]; try tauto.
+    all: try (intros H; destruct H as [H1 H2]; split; try congruence;
+      try symmetry; eauto).
+    intros H. eauto.
   - intros τ1 τ2 τ3. induction τ1 in τ2, τ3 |- *.
-    all: destruct τ2, τ3; cbn [cty_vars_equiv]; try tauto;
-      intros Hxy Hyz; destruct Hxy as [Hxy1 Hxy2];
+    all: destruct τ2, τ3; cbn [cty_vars_equiv]; try tauto.
+    all: try (intros Hxy Hyz; destruct Hxy as [Hxy1 Hxy2];
       destruct Hyz as [Hyz1 Hyz2]; split; try congruence;
-      try etransitivity; eauto.
+      try etransitivity; eauto).
+    intros Hxy Hyz. eauto.
 Qed.
 
 #[global] Instance cty_vars_equiv_preorder : PreOrder cty_vars_equiv.
@@ -710,8 +741,10 @@ Lemma cty_vars_equiv_erase τ1 τ2 :
   erase_ty τ1 = erase_ty τ2.
 Proof.
   induction τ1 in τ2 |- *; destruct τ2; cbn [cty_vars_equiv erase_ty];
-    try tauto; intros H; destruct H as [H1 H2]; subst; eauto;
-    rewrite ?(IHτ1_1 _ H1), ?(IHτ1_2 _ H2); reflexivity.
+    try tauto.
+  all: try (intros H; destruct H as [H1 H2]; subst; eauto;
+    rewrite ?(IHτ1_1 _ H1), ?(IHτ1_2 _ H2); reflexivity).
+  intros H. apply IHτ1. exact H.
 Qed.
 
 Lemma cty_vars_equiv_open k x τ1 τ2 :
@@ -720,10 +753,12 @@ Lemma cty_vars_equiv_open k x τ1 τ2 :
 Proof.
   induction τ1 in k, τ2 |- *; destruct τ2;
     cbn [cty_vars_equiv cty_open open_one open_cty_atom_inst];
-    try tauto; intros H; destruct H as [H1 H2]; split; try congruence;
+    try tauto.
+  all: try (intros H; destruct H as [H1 H2]; split; try congruence;
     try (rewrite !qual_open_atom_vars, H2; reflexivity);
     try (apply IHτ1_1; exact H1);
-    try (apply IHτ1_2; exact H2).
+    try (apply IHτ1_2; exact H2)).
+  intros H. apply IHτ1. exact H.
 Qed.
 
 Lemma ctx_stale_eq_fv_dom Γ :

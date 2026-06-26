@@ -327,7 +327,7 @@ Proof.
         -- pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
            change (X ⊆ dom (σm : gmap atom V)). set_solver.
         -- transitivity (world_dom (my : WorldT)).
-           ++ apply (wfworld_store_dom my); exact Hσmy.
+	           ++ exact (wfworld_store_dom my _ Hσmy).
            ++ rewrite Hdom_my.
               pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
               set_solver.
@@ -376,7 +376,7 @@ Proof.
             dom (σmy : gmap atom V) = world_dom (m : WorldT) ∪ {[y]}).
         {
           transitivity (world_dom (my : WorldT)).
-          - apply (wfworld_store_dom my); exact Hσmy.
+	          - exact (wfworld_store_dom my _ Hσmy).
           - exact Hdom_my.
         }
         rewrite Hdomσmy. set_solver.
@@ -384,7 +384,7 @@ Proof.
             dom (σmy : gmap atom V) = world_dom (m : WorldT) ∪ {[y]}).
         {
           transitivity (world_dom (my : WorldT)).
-          - apply (wfworld_store_dom my); exact Hσmy.
+	          - exact (wfworld_store_dom my _ Hσmy).
           - exact Hdom_my.
         }
         change (dom (σmy : gmap atom V) =
@@ -398,7 +398,7 @@ Proof.
             dom (σmy : gmap atom V) = world_dom (m : WorldT) ∪ {[y]}).
         {
           transitivity (world_dom (my : WorldT)).
-          - apply (wfworld_store_dom my); exact Hσmy.
+	          - exact (wfworld_store_dom my _ Hσmy).
           - exact Hdom_my.
         }
         rewrite Hdomσmy. set_solver.
@@ -453,6 +453,118 @@ Proof.
   split; [reflexivity |].
   split; [reflexivity |].
   split; [exact Hext | exact Hproj].
+Qed.
+
+Lemma res_restrict_delete_extend_self (m : WfWorldT) x :
+  x ∈ world_dom (m : WorldT) ->
+  exists F : FiberExtensionT,
+    ext_in F = world_dom (m : WorldT) ∖ {[x]} /\
+    ext_out F = {[x]} /\
+    res_extend_by
+      (res_restrict m (world_dom (m : WorldT) ∖ {[x]})) F m.
+Proof.
+  intros Hx.
+  set (m0 := res_restrict m (world_dom (m : WorldT) ∖ {[x]})).
+  assert (Hx0 : x ∉ world_dom (m0 : WorldT)).
+  { subst m0. apply res_restrict_delete_notin. }
+  assert (Hdom_m : world_dom (m : WorldT) =
+      world_dom (m0 : WorldT) ∪ {[x]}).
+  { subst m0. apply res_restrict_delete_insert_dom. exact Hx. }
+  assert (Hrestrict_m : res_restrict m (world_dom (m0 : WorldT)) = m0).
+  { subst m0. apply res_restrict_self_dom. }
+  assert (Hdisj : world_dom (m0 : WorldT) ## {[x]}) by set_solver.
+  set (F := one_point_projected_extension
+    m0 m (world_dom (m0 : WorldT)) x Hx0 Hdisj Hdom_m).
+  assert (Happ : extension_applicable F m0).
+  {
+    constructor.
+    - subst F. simpl. set_solver.
+    - subst F. simpl. set_solver.
+  }
+  destruct (res_extend_by_exists m0 F Happ) as [n Hext].
+  pose proof (one_point_projected_extension_projection_eq
+    m0 m (world_dom (m0 : WorldT)) x Hx0 Hdisj Hdom_m
+    Hrestrict_m ltac:(set_solver) n Hext) as Hproj.
+  assert (Hn_dom : world_dom (n : WorldT) = world_dom (m : WorldT)).
+  {
+    pose proof (res_extend_by_dom m0 F n Hext) as Hdom_n.
+    subst F. simpl in Hdom_n.
+    rewrite Hdom_n. symmetry. exact Hdom_m.
+  }
+  assert (Hn_eq : n = m).
+  {
+    transitivity (res_restrict n (world_dom (m : WorldT))).
+    - symmetry. rewrite <- Hn_dom.
+      apply res_restrict_eq_of_le. apply raw_le_refl.
+    - rewrite <- Hdom_m in Hproj.
+      rewrite Hproj.
+      apply res_restrict_eq_of_le. apply raw_le_refl.
+  }
+  subst n.
+  exists F. split.
+  - subst F. simpl. set_solver.
+  - split; [subst F; reflexivity|exact Hext].
+Qed.
+
+Lemma res_extend_by_full_input_frame_restrict
+    (m0 m mz0 mz : WfWorldT) (F : FiberExtensionT) :
+  res_restrict m (world_dom (m0 : WorldT)) = m0 ->
+  ext_in F = world_dom (m0 : WorldT) ->
+  res_extend_by m0 F mz0 ->
+  res_extend_by m F mz ->
+  res_restrict mz (world_dom (mz0 : WorldT)) = mz0.
+Proof.
+  intros Hrestrict Hin Hext0 Hext.
+  pose proof (res_extend_by_projection_eq
+    m0 m F mz0 mz) as Hproj.
+  assert (Hbase_proj :
+      res_restrict m0 (ext_in F) = res_restrict m (ext_in F)).
+  {
+    rewrite Hin.
+    rewrite Hrestrict.
+    apply res_restrict_eq_of_le. apply raw_le_refl.
+  }
+  specialize (Hproj Hbase_proj Hext0 Hext).
+  pose proof (res_extend_by_dom m0 F mz0 Hext0) as Hdom_mz0.
+  unfold ext_in in Hin.
+  change (res_restrict mz0 (extA_in F ∪ extA_out F) =
+    res_restrict mz (extA_in F ∪ extA_out F)) in Hproj.
+  rewrite Hin in Hproj.
+  rewrite <- Hdom_mz0 in Hproj.
+  rewrite <- Hproj.
+  apply res_restrict_eq_of_le. apply raw_le_refl.
+Qed.
+
+Lemma res_extend_by_singleton_output_preserves_notin
+    (m mx : WfWorldT) (F : FiberExtensionT) x z :
+  x ∉ world_dom (m : WorldT) ->
+  x <> z ->
+  ext_out F = {[z]} ->
+  res_extend_by m F mx ->
+  x ∉ world_dom (mx : WorldT).
+Proof.
+  intros Hxm Hxz Hout Hext.
+  unfold ext_out in Hout.
+  pose proof (res_extend_by_dom m F mx Hext) as Hdom.
+  rewrite Hdom, Hout.
+  set_solver.
+Qed.
+
+Lemma res_extend_by_same_singleton_output_open_world_frame
+    (m0 m mz0 mz : WfWorldT) (F : FiberExtensionT) x z :
+  world_dom (m : WorldT) = world_dom (m0 : WorldT) ∪ {[x]} ->
+  x <> z ->
+  ext_out F = {[z]} ->
+  res_extend_by m0 F mz0 ->
+  res_extend_by m F mz ->
+  world_dom (mz : WorldT) = world_dom (mz0 : WorldT) ∪ {[x]}.
+Proof.
+  intros Hbase Hxz Hout Hext0 Hext.
+  unfold ext_out in Hout.
+  pose proof (res_extend_by_dom m0 F mz0 Hext0) as Hdom0.
+  pose proof (res_extend_by_dom m F mz Hext) as Hdom.
+  rewrite Hdom, Hdom0, Hout, Hbase.
+  set_solver.
 Qed.
 
 Local Lemma ext_rel_exists (F : FiberExtensionT) σ :

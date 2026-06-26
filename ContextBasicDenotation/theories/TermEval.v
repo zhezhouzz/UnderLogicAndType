@@ -6,6 +6,7 @@ From ContextBasicDenotation Require Import Notation StoreTyping.
 From ContextBasicDenotation Require Import TermSyntax.
 From ContextAlgebra Require Import ResourceAlgebra.
 From ContextQualifier Require Import Qualifier.
+From CoreLang Require Import StrongNormalization.
 
 Section TermDenotation.
 
@@ -133,6 +134,23 @@ Proof.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
 Qed.
 
+Lemma tm_eval_in_store_ret_value σ vx :
+  store_closed σ ->
+  lc_value vx ->
+  tm_eval_in_store σ (tret vx) (m{σ} vx).
+Proof.
+  intros Hclosed Hvx.
+  unfold tm_eval_in_store.
+  rewrite expr_eval_in_store_no_bvars_iff.
+  - rewrite lstore_free_part_lift_free.
+    rewrite subst_map_tm_eq_msubst.
+    rewrite msubst_ret.
+    apply value_reduction_any_ctx.
+    apply msubst_lc; [exact (proj2 Hclosed)|exact Hvx].
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+Qed.
+
 Lemma tm_eval_in_store_ret_value_inv σ vx v :
   store_closed σ ->
   lc_value vx ->
@@ -149,6 +167,22 @@ Proof.
   rewrite msubst_ret in Heval.
   pose proof (value_steps_self (m{σ} vx) (tret v) Heval) as Heq.
   inversion Heq. reflexivity.
+Qed.
+
+Lemma tm_eval_in_store_ret_fvar_inv σ x v :
+  store_closed σ ->
+  x ∈ dom σ ->
+  tm_eval_in_store σ (tret (vfvar x)) v ->
+  σ !! x = Some v.
+Proof.
+  intros Hclosed Hx Heval.
+  pose proof (tm_eval_in_store_ret_value_inv σ (vfvar x) v
+    Hclosed ltac:(constructor) Heval) as Heq.
+  destruct (σ !! x) as [u|] eqn:Hxlookup.
+  - rewrite (msubst_fvar_lookup_closed σ x u (proj1 Hclosed) Hxlookup)
+      in Heq.
+    inversion Heq. reflexivity.
+  - apply not_elem_of_dom in Hxlookup. contradiction.
 Qed.
 
 Lemma tm_eval_in_store_tapp_tm_fun_equiv σ e e' x v :
@@ -221,6 +255,25 @@ Lemma tm_eval_in_store_tapp_tm_arg_eq σ e vx1 vx2 v :
 Proof.
   intros Hclosed Hvx1 Hvx2 Heq.
   unfold tm_eval_in_store, expr_eval_in_store.
+  rewrite !lstore_instantiate_tm_no_bvars by
+    (try apply lc_lstore_lift_free;
+     rewrite ?lstore_free_part_lift_free; exact (proj1 Hclosed)).
+  rewrite !lstore_free_part_lift_free.
+  rewrite !subst_map_tm_eq_msubst.
+  rewrite !msubst_tapp_tm_lc_arg by
+    (exact Hvx1 || exact Hvx2 || exact (proj2 Hclosed)).
+	  rewrite Heq. reflexivity.
+Qed.
+
+Lemma tm_must_terminating_tapp_tm_arg_eq σ e vx1 vx2 :
+  store_closed σ ->
+  lc_value vx1 ->
+  lc_value vx2 ->
+  m{σ} vx1 = m{σ} vx2 ->
+  must_terminating (lstore_instantiate_tm (lstore_lift_free σ) (tapp_tm e vx1)) <->
+  must_terminating (lstore_instantiate_tm (lstore_lift_free σ) (tapp_tm e vx2)).
+Proof.
+  intros Hclosed Hvx1 Hvx2 Heq.
   rewrite !lstore_instantiate_tm_no_bvars by
     (try apply lc_lstore_lift_free;
      rewrite ?lstore_free_part_lift_free; exact (proj1 Hclosed)).
@@ -324,6 +377,92 @@ Proof.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
 Qed.
 
+Lemma tm_must_terminating_tapp_tm_lam_body
+    σ T e y vy :
+  store_closed σ ->
+  body_tm e ->
+  y ∉ fv_tm e ->
+  σ !! y = Some vy ->
+  must_terminating
+    (lstore_instantiate_tm (lstore_lift_free σ)
+      (tapp_tm (tret (vlam T e)) (vfvar y))) <->
+  must_terminating
+    (lstore_instantiate_tm (lstore_lift_free σ) (e ^^ y)).
+Proof.
+  intros Hclosed Hbody Hy Hσy.
+  rewrite !lstore_instantiate_tm_no_bvars.
+  2:{ apply lc_lstore_lift_free. }
+  2:{ rewrite lstore_free_part_lift_free. exact (proj1 Hclosed). }
+  2:{ apply lc_lstore_lift_free. }
+  2:{ rewrite lstore_free_part_lift_free. exact (proj1 Hclosed). }
+  rewrite !lstore_free_part_lift_free.
+  rewrite !subst_map_tm_eq_msubst.
+  rewrite msubst_tapp_tm_lc_arg by (constructor || exact (proj2 Hclosed)).
+  rewrite msubst_ret.
+  rewrite msubst_vlam.
+  rewrite (msubst_fvar_lookup_closed σ y vy)
+    by (exact (proj1 Hclosed) || exact Hσy).
+  change (m{σ} (e ^^ y)) with
+    (m{σ} (open_tm 0 (vfvar y) e)).
+  rewrite (msubst_open_lookup_tm σ e 0 y vy)
+    by (try exact (proj1 Hclosed);
+        try exact (proj2 Hclosed);
+        try exact Hσy;
+        try exact Hy).
+  replace (m{delete y σ} e) with (m{σ} e).
+  2:{
+    symmetry.
+    apply (msubst_agree tm (delete y σ) σ (fv_tm e) e).
+    - apply closed_env_delete. exact (proj1 Hclosed).
+    - exact (proj1 Hclosed).
+    - reflexivity.
+    - intros z Hz.
+      assert (z <> y) by set_solver.
+      assert (Hdel : delete y σ !! z = σ !! z).
+      { apply lookup_delete_ne. congruence. }
+      exact Hdel.
+  }
+  assert (Hbodyσ : body_tm (m{σ} e)).
+  {
+    exists (fv_tm e ∪ dom σ). intros z Hz.
+    change (lc_tm (open_tm 0 (vfvar z) (m{σ} e))).
+    assert (Hfreshz : m{σ} (vfvar z) = vfvar z).
+    { apply msubst_fvar_lookup_none_closed.
+      - exact (proj1 Hclosed).
+      - apply not_elem_of_dom. set_solver. }
+    rewrite <- Hfreshz.
+    change (lc_tm ({0 ~> m{σ} (vfvar z)} (m{σ} e))).
+    rewrite <- (msubst_open e 0 (vfvar z) σ)
+      by (exact (proj1 Hclosed) || exact (proj2 Hclosed) || constructor).
+    apply msubst_lc; [exact (proj2 Hclosed)|].
+    apply body_open_tm; [exact Hbody|constructor].
+  }
+  rewrite must_terminating_tapp_tm_ret_equiv.
+  destruct (must_terminating_lam_app_equiv T (m{σ} e) vy) as [Happ_body Hbody_app].
+  {
+    apply LC_app; [|eapply lc_env_lookup; eauto; exact (proj2 Hclosed)].
+    destruct Hbodyσ as [Lσ Hbodyσ].
+    exact (LC_lam T (m{σ} e) Lσ Hbodyσ).
+  }
+  split; [exact Happ_body|exact Hbody_app].
+Unshelve.
+  all: try solve
+    [ assumption
+    | apply lc_lstore_lift_free
+    | change (closed_env (lstore_to_store (lstore_lift_free σ)));
+      rewrite lstore_free_part_lift_free; exact (proj1 Hclosed)
+    | change (closed_env (lstore_free_part (lstore_lift_free σ)));
+      rewrite lstore_free_part_lift_free; exact (proj1 Hclosed)
+    | rewrite lstore_free_part_lift_free; exact (proj1 Hclosed)
+    | eapply lc_env_lookup; eauto; exact (proj2 Hclosed)
+    | destruct Hbodyσ as [Lσ Hbodyσ];
+      exact (LC_lam T (m{σ} e) Lσ Hbodyσ)
+    | apply LC_app;
+      [ destruct Hbodyσ as [Lσ Hbodyσ];
+        exact (LC_lam T (m{σ} e) Lσ Hbodyσ)
+      | eapply lc_env_lookup; eauto; exact (proj2 Hclosed) ] ].
+Qed.
+
 Lemma tm_eval_in_store_match_true_fvar σ x et ef v :
   store_closed σ ->
   lc_tm et ->
@@ -376,6 +515,64 @@ Proof.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
   - apply lc_lstore_lift_free.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+Qed.
+
+Lemma tm_must_terminating_match_true_fvar σ x et ef :
+  store_closed σ ->
+  lc_tm et ->
+  lc_tm ef ->
+  σ !! x = Some (vconst (cbool true)) ->
+  must_terminating
+    (lstore_instantiate_tm (lstore_lift_free σ)
+      (tmatch (vfvar x) et ef)) <->
+  must_terminating
+    (lstore_instantiate_tm (lstore_lift_free σ) et).
+Proof.
+  intros Hclosed Hlcet Hlcef Hx.
+  rewrite !lstore_instantiate_tm_no_bvars by
+    (apply lc_lstore_lift_free ||
+     rewrite lstore_free_part_lift_free; exact (proj1 Hclosed)).
+  rewrite !lstore_free_part_lift_free.
+  rewrite subst_map_tmatch.
+  change (subst_map σ (vfvar x)) with (m{σ} (vfvar x)).
+  rewrite (msubst_fvar_lookup_closed σ x (vconst (cbool true)))
+    by (exact (proj1 Hclosed) || exact Hx).
+  apply must_terminating_match_true_equiv.
+  apply LC_match.
+  - constructor.
+  - rewrite subst_map_tm_eq_msubst.
+    apply msubst_lc; [exact (proj2 Hclosed)|exact Hlcet].
+  - rewrite subst_map_tm_eq_msubst.
+    apply msubst_lc; [exact (proj2 Hclosed)|exact Hlcef].
+Qed.
+
+Lemma tm_must_terminating_match_false_fvar σ x et ef :
+  store_closed σ ->
+  lc_tm et ->
+  lc_tm ef ->
+  σ !! x = Some (vconst (cbool false)) ->
+  must_terminating
+    (lstore_instantiate_tm (lstore_lift_free σ)
+      (tmatch (vfvar x) et ef)) <->
+  must_terminating
+    (lstore_instantiate_tm (lstore_lift_free σ) ef).
+Proof.
+  intros Hclosed Hlcet Hlcef Hx.
+  rewrite !lstore_instantiate_tm_no_bvars by
+    (apply lc_lstore_lift_free ||
+     rewrite lstore_free_part_lift_free; exact (proj1 Hclosed)).
+  rewrite !lstore_free_part_lift_free.
+  rewrite subst_map_tmatch.
+  change (subst_map σ (vfvar x)) with (m{σ} (vfvar x)).
+  rewrite (msubst_fvar_lookup_closed σ x (vconst (cbool false)))
+    by (exact (proj1 Hclosed) || exact Hx).
+  apply must_terminating_match_false_equiv.
+  apply LC_match.
+  - constructor.
+  - rewrite subst_map_tm_eq_msubst.
+    apply msubst_lc; [exact (proj2 Hclosed)|exact Hlcet].
+  - rewrite subst_map_tm_eq_msubst.
+    apply msubst_lc; [exact (proj2 Hclosed)|exact Hlcef].
 Qed.
 
 Lemma tm_eval_in_store_tapp_tm_fix_unfold
@@ -455,6 +652,96 @@ Proof.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
   - apply lc_lstore_lift_free.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+Qed.
+
+Lemma tm_must_terminating_tapp_tm_fix_unfold
+    σ Tf vf y vy :
+  store_closed σ ->
+  body_val vf ->
+  σ !! y = Some vy ->
+  must_terminating
+    (lstore_instantiate_tm (lstore_lift_free σ)
+      (tapp_tm (tret (vfix Tf vf)) (vfvar y))) <->
+  must_terminating
+    (lstore_instantiate_tm (lstore_lift_free σ)
+      (tapp_tm (tret (open_value 0 (vfvar y) vf)) (vfix Tf vf))).
+Proof.
+  intros Hclosed Hbody Hσy.
+  assert (Hvy_lc : lc_value vy).
+  { eapply lc_env_lookup; [exact (proj2 Hclosed)|exact Hσy]. }
+  assert (Hbodyσ : body_val (m{σ} vf)).
+  {
+    exists (fv_value vf ∪ dom (σ : StoreT)). intros z Hz.
+    change (lc_value (open_value 0 (vfvar z) (m{σ} vf))).
+    assert (Hz_none : σ !! z = None).
+    { apply not_elem_of_dom. set_solver. }
+    assert (Hz_subst : m{σ} (vfvar z) = vfvar z).
+    { apply msubst_fvar_lookup_none_closed; [exact (proj1 Hclosed)|exact Hz_none]. }
+    rewrite <- Hz_subst.
+    change (lc_value ({0 ~> m{σ} (vfvar z)} (m{σ} vf))).
+    rewrite <- (msubst_open vf 0 (vfvar z) σ)
+      by (exact (proj1 Hclosed) || exact (proj2 Hclosed) || constructor).
+    apply msubst_lc; [exact (proj2 Hclosed)|].
+    apply body_open_value; [exact Hbody|constructor].
+  }
+  assert (Hfix_lc : lc_value (vfix Tf (m{σ} vf))).
+  { apply lc_fix_iff_body. exact Hbodyσ. }
+  assert (Hfix_orig_lc : lc_value (vfix Tf vf)).
+  { apply lc_fix_iff_body. exact Hbody. }
+  assert (Hopened_lc : lc_value (open_value 0 vy (m{σ} vf))).
+  { apply body_open_value; [exact Hbodyσ|exact Hvy_lc]. }
+  rewrite !lstore_instantiate_tm_no_bvars.
+  2:{ apply lc_lstore_lift_free. }
+  2:{ rewrite lstore_free_part_lift_free. exact (proj1 Hclosed). }
+  2:{ apply lc_lstore_lift_free. }
+  2:{ rewrite lstore_free_part_lift_free. exact (proj1 Hclosed). }
+  rewrite !lstore_free_part_lift_free.
+  assert (Hsrc_msubst :
+      m{σ} (tapp_tm (tret (vfix Tf vf)) (vfvar y)) =
+      tapp_tm (tret (vfix Tf (m{σ} vf))) vy).
+  {
+    rewrite msubst_tapp_tm_lc_arg
+      by (constructor || exact (proj2 Hclosed)).
+    rewrite msubst_ret, msubst_vfix.
+    rewrite (msubst_fvar_lookup_closed σ y vy)
+      by (exact (proj1 Hclosed) || exact Hσy).
+    reflexivity.
+  }
+  assert (Htgt_msubst :
+      m{σ} (tapp_tm (tret (open_value 0 (vfvar y) vf)) (vfix Tf vf)) =
+      tapp_tm (tret (open_value 0 vy (m{σ} vf)))
+        (vfix Tf (m{σ} vf))).
+  {
+    rewrite msubst_tapp_tm_lc_arg
+      by (exact Hfix_orig_lc || exact (proj2 Hclosed)).
+    rewrite msubst_ret, msubst_vfix.
+    change (m{σ} (open_value 0 y vf))
+      with (m{σ} ({0 ~> vfvar y} vf)).
+    rewrite (@msubst_open value open_value_inst subst_value_inst
+      MsubstOpen_value vf 0 (vfvar y) σ) by
+      (exact (proj1 Hclosed) || exact (proj2 Hclosed) || constructor).
+    rewrite (msubst_fvar_lookup_closed σ y vy)
+      by (exact (proj1 Hclosed) || exact Hσy).
+    reflexivity.
+  }
+  rewrite !subst_map_tm_eq_msubst.
+  rewrite Hsrc_msubst, Htgt_msubst.
+  rewrite !must_terminating_tapp_tm_ret_equiv.
+  apply must_terminating_fix_app_equiv.
+  apply LC_app; [exact Hfix_lc|exact Hvy_lc].
+Unshelve.
+  all: try solve
+    [ assumption
+    | exact Hfix_lc
+    | exact Hvy_lc
+    | exact Hopened_lc
+    | apply lc_lstore_lift_free
+    | change (closed_env (lstore_free_part (lstore_lift_free σ)));
+      rewrite lstore_free_part_lift_free; exact (proj1 Hclosed)
+    | rewrite lstore_free_part_lift_free; exact (proj1 Hclosed)
+    | eapply lc_env_lookup; eauto; exact (proj2 Hclosed)
+    | apply LC_app; [exact Hfix_lc|exact Hvy_lc]
+    | apply LC_app; [exact Hopened_lc|exact Hfix_lc] ].
 Qed.
 
 Lemma tm_eval_in_store_restrict_fv_subset σ e v X :
@@ -600,7 +887,7 @@ Proof.
               gmap atom value) !! z) =
             ((store_restrict σ X : gmap atom value) !! z)).
            apply map_lookup_insert_ne. congruence.
-        -- apply storeA_restrict_lookup_some_2; [exact Hσz|exact HzX].
+      -- apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσz HzX).
     + change ((((σ : gmap atom value) ∪ ({[x := vx]} : gmap atom value)) !! z) =
         ((<[x := vx]> (store_restrict σ X : gmap atom value) : gmap atom value) !! z)).
       transitivity (@None value).
@@ -625,7 +912,7 @@ Definition expr_total_on (e : tm) (m : LWorldT) : Prop :=
   tm_lvars e ⊆ worldA_dom m /\
   forall σ,
     worldA_stores m σ ->
-    exists v, expr_eval_in_store σ e v.
+    must_terminating (lstore_instantiate_tm σ e).
 
 (** Atom worlds use the same lstore semantics through the free-lvar lift. *)
 Definition expr_total_on_atom_world (e : tm) (m : WfWorldT) : Prop :=
@@ -661,6 +948,16 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma expr_strong_total_restrict_lvars e (σ : LStoreT) X :
+  tm_lvars e ⊆ X ->
+  must_terminating (lstore_instantiate_tm (storeA_restrict σ X) e) <->
+  must_terminating (lstore_instantiate_tm σ e).
+Proof.
+  intros HX.
+  rewrite lstore_instantiate_tm_restrict_lvars by exact HX.
+  reflexivity.
+Qed.
+
 Lemma expr_result_at_store_restrict_lvars e x (σ : LStoreT) X :
   tm_lvars e ∪ {[x]} ⊆ X ->
   expr_result_at_store e x σ ->
@@ -669,7 +966,7 @@ Proof.
   intros HX [Hx [v [Hlookup Heval]]].
   split; [exact Hx|].
   exists v. split.
-  - apply storeA_restrict_lookup_some_2; [exact Hlookup|set_solver].
+  - apply (storeA_restrict_lookup_some_2 _ _ _ _ Hlookup). set_solver.
   - apply (proj2 (expr_eval_in_store_restrict_lvars e σ X v ltac:(set_solver))).
     exact Heval.
 Qed.
@@ -700,7 +997,7 @@ Proof.
     + transitivity (Some u).
 	      * apply storeA_restrict_lookup_some_2; [|exact HzD].
 	        rewrite lstore_lift_free_lookup_free.
-	        apply storeA_restrict_lookup_some_2; [exact Hσy|exact HyD].
+  apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσy HyD).
       * symmetry. apply storeA_restrict_lookup_some_2; [|exact HzD].
         rewrite lstore_lift_free_lookup_free. exact Hσy.
     + transitivity (@None value).
@@ -708,7 +1005,42 @@ Proof.
 	        rewrite lstore_lift_free_lookup_free.
 	        apply storeA_restrict_lookup_none_l. exact Hσy.
       * symmetry. apply storeA_restrict_lookup_none_l.
-        rewrite lstore_lift_free_lookup_free. exact Hσy.
+	        rewrite lstore_lift_free_lookup_free. exact Hσy.
+Qed.
+
+Lemma tm_must_terminating_agree_on_fv σ1 σ2 e :
+  lc_tm e ->
+  store_restrict σ1 (fv_tm e) = store_restrict σ2 (fv_tm e) ->
+  must_terminating (lstore_instantiate_tm (lstore_lift_free σ1) e) <->
+  must_terminating (lstore_instantiate_tm (lstore_lift_free σ2) e).
+Proof.
+  intros Hlc Hagree.
+  assert (Hsub : tm_lvars e ⊆ tm_lvars e) by (intros z Hz; exact Hz).
+  transitivity
+    (must_terminating
+      (lstore_instantiate_tm
+        (storeA_restrict (lstore_lift_free σ1 : LStoreT) (tm_lvars e)) e)).
+  - symmetry. apply expr_strong_total_restrict_lvars. exact Hsub.
+  - transitivity
+      (must_terminating
+        (lstore_instantiate_tm
+          (storeA_restrict (lstore_lift_free σ2 : LStoreT) (tm_lvars e)) e)).
+    + assert (Hrestrict :
+        storeA_restrict (lstore_lift_free σ1 : LStoreT) (tm_lvars e) =
+        storeA_restrict (lstore_lift_free σ2 : LStoreT) (tm_lvars e)).
+      {
+        transitivity
+          (storeA_restrict
+            (lstore_lift_free (store_restrict σ1 (lvars_fv (tm_lvars e))) : LStoreT)
+            (tm_lvars e)).
+        - symmetry. apply lstore_lift_free_restrict_fv_lvars_eq.
+          apply tm_lvars_lc. exact Hlc.
+        - rewrite tm_lvars_fv. rewrite Hagree. rewrite <- tm_lvars_fv.
+          apply lstore_lift_free_restrict_fv_lvars_eq.
+          apply tm_lvars_lc. exact Hlc.
+      }
+      rewrite Hrestrict. reflexivity.
+    + apply expr_strong_total_restrict_lvars. exact Hsub.
 Qed.
 
 Lemma expr_result_at_world_lworld_on_lift e x
@@ -752,9 +1084,15 @@ Definition expr_result_output_world (e : tm) (x : atom) (σ : StoreT) : WfWorldT
 Proof.
   destruct (excluded_middle_informative (exists v, tm_eval_in_store σ e v))
     as [Hex | _].
-  - destruct (constructive_indefinite_description _ Hex) as [v _].
-    exact (exist _ (singleton_world ({[x := v]} : StoreT))
-      (wf_singleton_world ({[x := v]} : StoreT))).
+  - refine (exist _
+      {| worldA_dom := {[x]};
+         worldA_stores := fun σout =>
+           exists v, tm_eval_in_store σ e v /\
+             σout = ({[x := v]} : StoreT) |} _).
+    constructor.
+    + destruct (constructive_indefinite_description _ Hex) as [v Heval].
+      exists ({[x := v]} : StoreT). exists v. split; [exact Heval|reflexivity].
+    + intros σout [v [_ ->]]. apply dom_singleton_L.
   - exact (exist _ (singleton_world ({[x := inhabitant]} : StoreT))
       (wf_singleton_world ({[x := inhabitant]} : StoreT))).
 Defined.
@@ -768,22 +1106,21 @@ Proof.
   - intros σ Hσ. unfold expr_result_output_world.
     destruct (excluded_middle_informative (exists v, tm_eval_in_store σ e v))
       as [Hex | _].
-	    + destruct (constructive_indefinite_description _ Hex) as [v _].
-	      unfold world_dom, singleton_world. simpl.
-	      apply dom_singleton_L.
+	    + reflexivity.
 	    + unfold world_dom, singleton_world. simpl.
 	      apply dom_singleton_L.
   - intros σ Hσ. unfold expr_result_output_world.
     destruct (excluded_middle_informative (exists v, tm_eval_in_store σ e v))
       as [Hex | _].
-    + destruct (constructive_indefinite_description _ Hex) as [v _].
-      exists ({[x := v]} : StoreT). simpl. reflexivity.
+    + destruct Hex as [v Heval].
+      exists ({[x := v]} : StoreT).
+      exists v. split; [exact Heval|reflexivity].
     + exists ({[x := inhabitant]} : StoreT). simpl. reflexivity.
 Defined.
 
 Definition expr_total_qual (e : tm) : qualifier (V := value) :=
   tqual (tm_lvars e)
-    (fun s => exists v, expr_eval_in_store (lso_store s) e v).
+    (fun s => must_terminating (lstore_instantiate_tm (lso_store s) e)).
 
 Definition expr_total_formula (e : tm) : Formula :=
   FFiberAtom (expr_total_qual e).

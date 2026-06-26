@@ -109,7 +109,7 @@ Proof.
   intros Hx.
   rewrite !lstore_to_store_lookup.
   destruct ((s : gmap logic_var V) !! LVFree x) as [v|] eqn:Hs.
-  - apply storeA_restrict_lookup_some_2; [exact Hs|exact Hx].
+  - apply (storeA_restrict_lookup_some_2 _ _ _ _ Hs Hx).
   - apply storeA_restrict_lookup_none_l. exact Hs.
 Qed.
 
@@ -121,7 +121,7 @@ Proof.
   intros Hk.
   rewrite !lstore_bound_part_lookup.
   destruct ((s : gmap logic_var V) !! LVBound k) as [v|] eqn:Hs.
-  - apply storeA_restrict_lookup_some_2; [exact Hs|exact Hk].
+  - apply (storeA_restrict_lookup_some_2 _ _ _ _ Hs Hk).
   - apply storeA_restrict_lookup_none_l. exact Hs.
 Qed.
 
@@ -189,6 +189,44 @@ Proof.
   apply lstore_on_ext.
   unfold lstore_on_mlsubst_back. cbn [lso_store storeAO_store].
   rewrite Hs, Hρ. reflexivity.
+Qed.
+
+Lemma lstore_on_mlsubst_back_merge
+    D (ρ_outer ρ_inner : LStore)
+    (s_nested : LStoreOn
+      ((D ∖ dom (ρ_outer : gmap logic_var V))
+        ∖ dom (ρ_inner : gmap logic_var V)))
+    (s_merged : LStoreOn
+      (D ∖ dom (ρ_outer ∪ ρ_inner : gmap logic_var V))) :
+  dom (ρ_outer : gmap logic_var V) ##
+    dom (ρ_inner : gmap logic_var V) ->
+  lso_store s_nested = lso_store s_merged ->
+  lstore_on_mlsubst_back D ρ_outer
+    (lstore_on_mlsubst_back
+      (D ∖ dom (ρ_outer : gmap logic_var V)) ρ_inner s_nested) =
+  lstore_on_mlsubst_back D (ρ_outer ∪ ρ_inner) s_merged.
+Proof.
+  intros Hdisj Hs.
+  apply lstore_on_ext.
+  unfold lstore_on_mlsubst_back. cbn [lso_store storeAO_store].
+  change (((lso_store s_nested ∪
+      storeA_restrict ρ_inner (D ∖ dom (ρ_outer : gmap logic_var V))) ∪
+      storeA_restrict ρ_outer D : gmap logic_var V) =
+    (lso_store s_merged ∪
+      storeA_restrict (ρ_outer ∪ ρ_inner) D : gmap logic_var V)).
+  rewrite Hs.
+  rewrite <- (assoc_L (∪)
+    (lso_store s_merged)
+    (storeA_restrict ρ_inner (D ∖ dom (ρ_outer : gmap logic_var V)))
+    (storeA_restrict ρ_outer D)).
+  f_equal.
+  apply storeA_restrict_union_residual_l.
+  unfold storeA_compat, map_compat.
+  intros z v1 v2 Houter Hinner.
+  exfalso.
+  apply elem_of_dom_2 in Houter.
+  apply elem_of_dom_2 in Hinner.
+  set_solver.
 Qed.
 
 Definition lstore_on_rekey
@@ -554,7 +592,7 @@ Proof.
            { apply storeA_restrict_lookup_none_r. set_solver. }
            destruct ((ρ : LStore) !! LVFree x) as [v|] eqn:Hlook.
            ++ symmetry. apply map_lookup_union_Some_raw. right. split; [exact Hleft|].
-              apply storeA_restrict_lookup_some_2; [exact Hlook|exact HzD].
+              apply (storeA_restrict_lookup_some_2 _ _ _ _ Hlook HzD).
            ++ symmetry. apply map_lookup_union_None. split; [exact Hleft|].
               apply storeA_restrict_lookup_none_l. exact Hlook.
     + rewrite lookup_union_r.
