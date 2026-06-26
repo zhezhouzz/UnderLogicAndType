@@ -96,7 +96,20 @@ with basic_tm_has_ltype : lty_env -> tm -> ty -> Prop :=
 	        basic_tm_has_ltype
 	          (tree_node_branch_open_env Σ root left right)
 	          (open_tree_node_branch root left right enode) T) ->
-	      basic_tm_has_ltype Σ (tmatchtree v eleaf enode) T.
+	      basic_tm_has_ltype Σ (tmatchtree v eleaf enode) T
+	  | BTT_ListCons Σ hd tl :
+	      basic_value_has_ltype Σ hd (TBase TNat) ->
+	      basic_value_has_ltype Σ tl (TBase TList) ->
+	      basic_tm_has_ltype Σ (tcons hd tl) (TBase TList)
+	  | BTT_ListMatch Σ v T enil econs (L : aset) :
+	      basic_value_has_ltype Σ v (TBase TList) ->
+	      basic_tm_has_ltype Σ enil T ->
+	      (forall hd tl,
+	        hd ∉ L -> tl ∉ L ∪ {[hd]} ->
+	        basic_tm_has_ltype
+	          (list_cons_branch_open_env Σ hd tl)
+	          (open_list_cons_branch hd tl econs) T) ->
+	      basic_tm_has_ltype Σ (tmatchlist v enil econs) T.
 
 Scheme basic_value_has_ltype_ind' := Induction for basic_value_has_ltype Sort Prop
   with basic_tm_has_ltype_ind' := Induction for basic_tm_has_ltype Sort Prop.
@@ -330,6 +343,63 @@ Proof.
 		             subst a. contradiction.
 		        * rewrite elem_of_singleton in HaRight.
 		          subst a. contradiction.
+  - set_solver.
+  - set (hd := fresh_for
+      (L ∪ fv_tm econs ∪ lvars_fv (dom Σ))).
+    assert (Hhd : hd ∉ L ∪ fv_tm econs ∪ lvars_fv (dom Σ)).
+    { subst hd. apply fresh_for_not_in. }
+    set (tl := fresh_for
+      (L ∪ fv_tm econs ∪ lvars_fv (dom Σ) ∪ {[hd]})).
+    assert (Htl : tl ∉
+      L ∪ fv_tm econs ∪ lvars_fv (dom Σ) ∪ {[hd]}).
+    { subst tl. apply fresh_for_not_in. }
+    assert (HhdL : hd ∉ L) by set_solver.
+    assert (Htl_nested : tl ∉ L ∪ {[hd]}) by set_solver.
+    match goal with
+    | Hopen_typed : forall hd tl,
+        hd ∉ _ -> tl ∉ _ ∪ {[hd]} ->
+        lvars_of_atoms (fv_tm _) ⊆ _ |- _ =>
+        pose proof (Hopen_typed hd tl HhdL Htl_nested) as Hopened
+    end.
+    apply lvars_fv_mono in Hopened.
+    intros u Hu.
+    unfold lvars_of_atoms in Hu.
+    apply elem_of_map in Hu as [a [-> Ha]].
+    apply elem_of_union in Ha as [Ha|Ha].
+    + apply elem_of_union in Ha as [Ha|Ha].
+      * match goal with
+        | IH : lvars_of_atoms (fv_value _) ⊆ dom Σ |- _ => apply IH
+        end.
+        unfold lvars_of_atoms. apply elem_of_map.
+        exists a. split; [reflexivity|exact Ha].
+      * match goal with
+        | IH : lvars_of_atoms (fv_tm _) ⊆ dom Σ |- _ => apply IH
+        end.
+        unfold lvars_of_atoms. apply elem_of_map.
+        exists a. split; [reflexivity|exact Ha].
+    + apply lvars_fv_elem.
+      assert (HaOpen : a ∈ fv_tm (open_list_cons_branch hd tl econs)).
+      {
+        unfold open_list_cons_branch, open_list_cons_branch_value.
+        apply (open_fv_tm'
+          (open_tm 0 (vfvar hd) econs) (vfvar tl) 1).
+        apply (open_fv_tm' econs (vfvar hd) 0).
+        exact Ha.
+      }
+      assert (HaOpenLvars :
+        a ∈ lvars_fv
+          (lvars_of_atoms (fv_tm (open_list_cons_branch hd tl econs)))).
+      { rewrite lvars_fv_of_atoms. exact HaOpen. }
+      pose proof (Hopened a HaOpenLvars) as HaBranchΣ.
+      pose proof (list_cons_branch_open_env_lvars_fv_dom_subset
+        Σ hd tl a HaBranchΣ) as HaΣ.
+      assert (HhdFV : hd ∉ fv_tm econs) by set_solver.
+      assert (HtlFV : tl ∉ fv_tm econs) by set_solver.
+      apply elem_of_union in HaΣ as [HaΣ|HaTl].
+      * apply elem_of_union in HaΣ as [HaBase|HaHd].
+        -- exact HaBase.
+        -- rewrite elem_of_singleton in HaHd. subst a. contradiction.
+      * rewrite elem_of_singleton in HaTl. subst a. contradiction.
 Qed.
 
 Lemma basic_value_has_ltype_lvars Σ v T :
@@ -409,6 +479,19 @@ Proof.
   exact Hsub.
 Qed.
 
+Lemma list_cons_branch_open_env_mono
+    (Σ Σ' : lty_env) hd tl :
+  Σ ⊆ Σ' ->
+  list_cons_branch_open_env Σ hd tl ⊆
+  list_cons_branch_open_env Σ' hd tl.
+Proof.
+  intros Hsub.
+  unfold list_cons_branch_open_env, list_cons_branch_bound_env.
+  repeat apply lty_env_open_one_mono.
+  repeat apply typed_lty_env_bind_mono.
+  exact Hsub.
+Qed.
+
 Lemma basic_has_ltype_weaken_mutual :
   (forall Σ v T,
     basic_value_has_ltype Σ v T ->
@@ -440,6 +523,12 @@ Proof.
 	    + intros root left right Hroot Hleft Hright.
 	      eapply H1; [exact Hroot|exact Hleft|exact Hright|].
 	      apply tree_node_branch_open_env_mono. exact H2.
+  - eapply BTT_ListMatch with (L := L).
+    + eapply H; exact H2.
+    + eapply H0; exact H2.
+    + intros hd tl Hhd Htl.
+      eapply H1; [exact Hhd|exact Htl|].
+      apply list_cons_branch_open_env_mono. exact H2.
 Qed.
 
 Lemma basic_value_has_ltype_weaken Σ Σ' v T :
@@ -587,6 +676,23 @@ Proof.
 		      * exact Hroot_left.
 		      * exact Hroot_right.
 		      * exact Hleft_right.
+  - eapply LC_matchlist with (L := L ∪ lvars_fv (dom Σ)).
+    + eauto.
+    + eauto.
+    + intros hd tl Hhd Htl.
+      assert (HhdL : hd ∉ L) by set_solver.
+      assert (HtlL : tl ∉ L ∪ {[hd]}) by set_solver.
+      assert (HhdΣ : hd ∉ lvars_fv (dom Σ)) by set_solver.
+      assert (HtlΣ : tl ∉ lvars_fv (dom Σ)) by set_solver.
+      assert (Hhd_tl : hd <> tl).
+      { intro Heq. apply Htl. apply elem_of_union_r.
+        rewrite elem_of_singleton. symmetry. exact Heq. }
+      eapply H1; [exact HhdL|exact HtlL|].
+      apply list_cons_branch_open_env_lc_dom.
+      * exact H2.
+      * exact HhdΣ.
+      * exact HtlΣ.
+      * exact Hhd_tl.
 Qed.
 
 Lemma basic_value_has_ltype_lc Σ v T :
@@ -833,6 +939,65 @@ Proof.
            exact HzD.
 Qed.
 
+Lemma lty_env_restrict_list_cons_branch_open_env_body_subset
+    (Σ : lty_env) hd tl Dbody D :
+  hd <> tl ->
+  hd ∉ lvars_fv D ->
+  tl ∉ lvars_fv D ->
+  lvars_bv Dbody = ∅ ->
+  Dbody ⊆ D ∪ {[LVFree hd]} ∪ {[LVFree tl]} ->
+  storeA_restrict (list_cons_branch_open_env Σ hd tl) Dbody ⊆
+  list_cons_branch_open_env (storeA_restrict Σ D) hd tl.
+Proof.
+  intros Hhd_tl HhdD HtlD Hbv Hsub.
+  apply map_subseteq_spec. intros v U Hlook.
+  apply storeA_restrict_lookup_some in Hlook as [HvD Hlook].
+  destruct v as [k|z].
+  - exfalso.
+    assert (k ∈ lvars_bv Dbody) by (rewrite lvars_bv_elem; exact HvD).
+    rewrite Hbv in H. clear -H. set_solver.
+  - replace (list_cons_branch_open_env Σ hd tl !! LVFree z)
+      with ((<[LVFree tl := TBase TList]>
+        (<[LVFree hd := TBase TNat]> Σ)) !! LVFree z) in Hlook.
+    2:{ symmetry. apply list_cons_branch_open_env_lookup_free. exact Hhd_tl. }
+    replace (list_cons_branch_open_env (storeA_restrict Σ D) hd tl
+        !! LVFree z)
+      with ((<[LVFree tl := TBase TList]>
+        (<[LVFree hd := TBase TNat]> (storeA_restrict Σ D))) !! LVFree z).
+    2:{ symmetry. apply list_cons_branch_open_env_lookup_free. exact Hhd_tl. }
+    destruct (decide (z = tl)) as [->|Hztl].
+    + rewrite lookup_insert in Hlook.
+      destruct (decide (LVFree tl = LVFree tl)) as [_|Hbad] in Hlook;
+        [|congruence].
+      rewrite lookup_insert.
+      destruct (decide (LVFree tl = LVFree tl)) as [_|Hbad];
+        [exact Hlook|congruence].
+    + rewrite lookup_insert_ne in Hlook by (intros Heq; inversion Heq; congruence).
+      rewrite lookup_insert_ne by (intros Heq; inversion Heq; congruence).
+      destruct (decide (z = hd)) as [->|Hzhd].
+      * rewrite lookup_insert in Hlook.
+        destruct (decide (LVFree hd = LVFree hd)) as [_|Hbad] in Hlook;
+          [|congruence].
+        rewrite lookup_insert.
+        destruct (decide (LVFree hd = LVFree hd)) as [_|Hbad];
+          [exact Hlook|congruence].
+      * rewrite lookup_insert_ne in Hlook by (intros Heq; inversion Heq; congruence).
+        rewrite lookup_insert_ne by (intros Heq; inversion Heq; congruence).
+        apply (storeA_restrict_lookup_some_2 _ _ _ _ Hlook).
+        assert (HzD : LVFree z ∈ D).
+        {
+          specialize (Hsub _ HvD).
+          apply elem_of_union in Hsub as [Hsub|Htl].
+          - apply elem_of_union in Hsub as [HzD|Hhd].
+            + exact HzD.
+            + rewrite elem_of_singleton in Hhd. inversion Hhd. subst z.
+              contradiction.
+          - rewrite elem_of_singleton in Htl. inversion Htl. subst z.
+            contradiction.
+        }
+        exact HzD.
+Qed.
+
 Lemma lc_matchtree_iff_parts v eleaf enode :
   lc_tm (tmatchtree v eleaf enode) ->
   lc_value v /\
@@ -843,6 +1008,20 @@ Lemma lc_matchtree_iff_parts v eleaf enode :
 	      left ∉ L ∪ {[root]} ->
 	      right ∉ L ∪ {[root]} ∪ {[left]} ->
 	      lc_tm (open_tree_node_branch root left right enode).
+Proof.
+  intros Hlc. inversion Hlc; subst.
+  repeat split; eauto.
+Qed.
+
+Lemma lc_matchlist_iff_parts v enil econs :
+  lc_tm (tmatchlist v enil econs) ->
+  lc_value v /\
+  lc_tm enil /\
+	  exists L : aset,
+	    forall hd tl,
+	      hd ∉ L ->
+	      tl ∉ L ∪ {[hd]} ->
+	      lc_tm (open_list_cons_branch hd tl econs).
 Proof.
   intros Hlc. inversion Hlc; subst.
   repeat split; eauto.
@@ -1158,6 +1337,99 @@ Proof.
 	                     }
 	                     apply elem_of_union_l. apply elem_of_union_l.
 	                     apply elem_of_union_l. exact HaD.
+  - match goal with
+    | Hlc : lc_tm (tcons _ _) |- _ =>
+        inversion Hlc; subst; clear Hlc
+    end.
+    eapply BTT_ListCons.
+    + eapply H; eauto.
+      match goal with
+      | Hsub : tm_lvars (tcons _ _) ⊆ _ |- _ =>
+          cbn [tm_lvars tm_lvars_at] in Hsub; set_solver
+      end.
+    + eapply H0; eauto.
+      match goal with
+      | Hsub : tm_lvars (tcons _ _) ⊆ _ |- _ =>
+          cbn [tm_lvars tm_lvars_at] in Hsub; set_solver
+      end.
+  - match goal with
+    | Hlc : lc_tm (tmatchlist _ _ _) |- _ =>
+        apply lc_matchlist_iff_parts in Hlc as [Hlcv [Hlcnil [Llc Hlccons]]]
+    end.
+    eapply BTT_ListMatch with
+      (L := L ∪ Llc ∪ lvars_fv D ∪ lvars_fv (dom Σ) ∪ fv_tm econs).
+    + assert (Hv_sub : value_lvars v ⊆ D).
+      {
+        intros u Hu. apply H3.
+        cbn [tm_lvars tm_lvars_at].
+        apply elem_of_union_l. apply elem_of_union_l. exact Hu.
+      }
+      eapply H; [exact Hlcv|exact Hv_sub].
+    + assert (Hnil_sub : tm_lvars enil ⊆ D).
+      {
+        intros u Hu. apply H3.
+        cbn [tm_lvars tm_lvars_at].
+        apply elem_of_union_l. apply elem_of_union_r. exact Hu.
+      }
+      eapply H0; [exact Hlcnil|exact Hnil_sub].
+    + intros hd tl Hhd Htl.
+      assert (HhdL : hd ∉ L) by (clear -Hhd; set_solver).
+      assert (HtlL : tl ∉ L ∪ {[hd]}) by (clear -Htl; set_solver).
+      assert (HhdD : hd ∉ lvars_fv D) by (clear -Hhd; set_solver).
+      assert (HtlD : tl ∉ lvars_fv D) by (clear -Htl; set_solver).
+      assert (HhdΣ : hd ∉ lvars_fv (dom Σ)) by (clear -Hhd; set_solver).
+      assert (HtlΣ : tl ∉ lvars_fv (dom Σ)) by (clear -Htl; set_solver).
+      assert (Hhd_tl : hd <> tl).
+      {
+        intro Heq. apply Htl. apply elem_of_union_r.
+        rewrite elem_of_singleton. symmetry. exact Heq.
+      }
+      assert (HhdLlc : hd ∉ Llc) by (clear -Hhd; set_solver).
+      assert (HtlLlc : tl ∉ Llc ∪ {[hd]}) by (clear -Htl; set_solver).
+      assert (Hbranch_lc :
+        lc_tm (open_list_cons_branch hd tl econs)).
+      { eapply Hlccons; [exact HhdLlc|exact HtlLlc]. }
+      pose proof (H1 hd tl HhdL HtlL) as IHbranch.
+      eapply basic_tm_has_ltype_weaken.
+      * apply IHbranch.
+        -- exact Hbranch_lc.
+        -- reflexivity.
+      * eapply lty_env_restrict_list_cons_branch_open_env_body_subset.
+        -- exact Hhd_tl.
+        -- exact HhdD.
+        -- exact HtlD.
+        -- apply tm_lvars_no_bv_of_lc. exact Hbranch_lc.
+        -- intros u Hu.
+           rewrite (tm_lvars_lc_eq_atoms
+             (open_list_cons_branch hd tl econs)) in Hu.
+           2:{ exact Hbranch_lc. }
+           unfold lvars_of_atoms in Hu.
+           apply elem_of_map in Hu as [a [-> Ha0]].
+           unfold open_list_cons_branch, open_list_cons_branch_value in Ha0.
+           pose proof (open_fv_tm
+             (open_tm 0 (vfvar hd) econs) (vfvar tl) 1 a Ha0) as Ha1.
+           cbn [fv_value] in Ha1.
+           apply elem_of_union in Ha1 as [Ha1|Ha1].
+           ++ rewrite elem_of_singleton in Ha1. subst a.
+              apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+           ++ pose proof (open_fv_tm econs (vfvar hd) 0 a Ha1) as Ha2.
+              cbn [fv_value] in Ha2.
+              apply elem_of_union in Ha2 as [Ha2|Ha2].
+              ** rewrite elem_of_singleton in Ha2. subst a.
+                 apply elem_of_union_l. apply elem_of_union_r.
+                 apply elem_of_singleton. reflexivity.
+              ** assert (LVFree a ∈ D) as HaD.
+                 {
+                   match goal with
+                   | Hsub : tm_lvars (tmatchlist _ _ _) ⊆ D |- _ =>
+                       cbn [tm_lvars tm_lvars_at] in Hsub;
+                       apply Hsub
+                   end.
+                   apply elem_of_union_r.
+                   apply lvars_fv_elem.
+                   rewrite tm_lvars_at_fv. exact Ha2.
+                 }
+                 apply elem_of_union_l. apply elem_of_union_l. exact HaD.
 Qed.
 
 Lemma basic_value_has_ltype_restrict_lvars_lc Σ v T D :
@@ -1270,6 +1542,21 @@ Proof.
 	    2:{ clear -Hright. set_solver. }
 	    rewrite <- !atom_store_to_lvar_store_insert.
 	    exact Hbody.
+  - match goal with
+    | |- basic_tm_has_ltype (atom_env_to_lty_env ?Γ) _ _ =>
+        eapply BTT_ListMatch with (L := L ∪ dom Γ)
+    end; eauto.
+    intros hd tl Hhd Htl.
+    pose proof (H1 hd tl
+      ltac:(set_solver) ltac:(set_solver)) as Hbody.
+    rewrite (list_cons_branch_open_env_norm
+      (atom_env_to_lty_env Γ) hd tl).
+    2:{ apply atom_store_to_lvar_store_closed. }
+    2:{ rewrite atom_store_to_lvar_store_dom. clear -Hhd. set_solver. }
+    2:{ rewrite atom_store_to_lvar_store_dom. clear -Htl. set_solver. }
+    2:{ clear -Htl. set_solver. }
+    rewrite <- !atom_store_to_lvar_store_insert.
+    exact Hbody.
 Qed.
 
 Lemma basic_value_has_ltype_of_atom_env_typing Δ v T :
@@ -1348,6 +1635,24 @@ Proof.
 		      2:{ clear -Hright. set_solver. }
 		      rewrite <- !atom_store_to_lvar_store_insert.
 		      reflexivity.
+  - eapply TT_ListCons; eauto.
+  - eapply TT_ListMatch with (L := L ∪ dom Δ).
+    + eauto.
+    + eauto.
+    + intros hd tl Hhd Htl.
+      specialize (H1 hd tl
+        ltac:(set_solver) ltac:(set_solver)
+        (<[tl := TBase TList]>
+          (<[hd := TBase TNat]> Δ))).
+      apply H1.
+      rewrite (list_cons_branch_open_env_norm
+        (atom_env_to_lty_env Δ) hd tl).
+      2:{ apply atom_store_to_lvar_store_closed. }
+      2:{ rewrite atom_store_to_lvar_store_dom. clear -Hhd. set_solver. }
+      2:{ rewrite atom_store_to_lvar_store_dom. clear -Htl. set_solver. }
+      2:{ clear -Htl. set_solver. }
+      rewrite <- !atom_store_to_lvar_store_insert.
+      reflexivity.
 Qed.
 
 Lemma basic_tm_has_ltype_to_atom_env_typing Δ e T :
@@ -1491,6 +1796,12 @@ Proof.
     | IH : forall T2, basic_tm_has_ltype _ _ T2 -> _,
       Hleaf : basic_tm_has_ltype _ _ _ |- _ =>
         exact (IH _ Hleaf)
+    end.
+  - reflexivity.
+  - match goal with
+    | IH : forall T2, basic_tm_has_ltype _ _ T2 -> _,
+      Hnil : basic_tm_has_ltype _ _ _ |- _ =>
+        exact (IH _ Hnil)
     end.
 Qed.
 

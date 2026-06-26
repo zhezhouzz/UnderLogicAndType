@@ -101,6 +101,12 @@ Proof.
     | IH : forall i j x y, i <> j -> x <> y -> _ |- _ =>
         eapply IH; [lia|eassumption]
     end.
+  - f_equal; eauto.
+  - f_equal; eauto.
+    match goal with
+    | IH : forall i j x y, i <> j -> x <> y -> _ |- _ =>
+        eapply IH; [lia|eassumption]
+    end.
 Qed.
 
 Lemma open_value_commute_fresh v i j x y :
@@ -160,6 +166,20 @@ Proof.
   exact (Hyenode Hyopen).
 Qed.
 
+Lemma open_list_cons_branch_fv_fresh
+    econs hd tl y :
+  y <> hd ->
+  y <> tl ->
+  y ∉ fv_tm econs ->
+  y ∉ fv_tm (open_list_cons_branch hd tl econs).
+Proof.
+  intros Hyhd Hytl Hecons Hyopen.
+  unfold open_list_cons_branch, open_list_cons_branch_value in Hyopen.
+  apply (open_tm_fv_fresh_inv _ 1 tl y) in Hyopen; [|exact Hytl].
+  apply (open_tm_fv_fresh_inv _ 0 hd y) in Hyopen; [|exact Hyhd].
+  exact (Hecons Hyopen).
+Qed.
+
 Lemma close_open_commute_fresh_mutual :
   (forall v i j x y,
     i <> j ->
@@ -186,6 +206,12 @@ Proof.
   - f_equal. eauto.
   - f_equal; eauto.
   - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+    match goal with
+    | IH : forall i j x y, i <> j -> x <> y -> _ |- _ =>
+        eapply IH; [lia|eassumption]
+    end.
   - f_equal; eauto.
   - f_equal; eauto.
     match goal with
@@ -503,6 +529,58 @@ Proof.
 	      * intros HyΣ.
 	        apply H2. apply elem_of_union_l.
 	        apply lvars_fv_elem. exact HyΣ.
+  - eapply BTT_ListCons.
+    + eapply H; set_solver.
+    + eapply H0; set_solver.
+  - eapply BTT_ListMatch
+      with (L := L ∪ {[y]} ∪ fv_tm econs ∪ lvars_fv (dom Σ)).
+    + eapply H.
+      match goal with
+      | Hfresh : y ∉ lvars_fv (dom Σ) ∪ fv_tm (tmatchlist _ _ _) |- _ =>
+          cbn [fv_tm] in Hfresh; clear -Hfresh; set_solver
+      end.
+    + eapply H0.
+      match goal with
+      | Hfresh : y ∉ lvars_fv (dom Σ) ∪ fv_tm (tmatchlist _ _ _) |- _ =>
+          cbn [fv_tm] in Hfresh; clear -Hfresh; set_solver
+      end.
+    + intros hd tl Hhd Htl.
+      rewrite open_list_cons_branch_open_outer by constructor.
+      rewrite <- lty_env_open_one_list_cons_branch_open_env.
+      * eapply H1.
+        -- clear -Hhd. set_solver.
+        -- clear -Htl. set_solver.
+        --
+        assert (Hyenv :
+          y ∉ lvars_fv (dom (list_cons_branch_open_env Σ hd tl))).
+        {
+          intros Hybad.
+          apply list_cons_branch_open_env_lvars_fv_dom_subset in Hybad.
+          match goal with
+          | Hfresh : y ∉ lvars_fv (dom Σ) ∪ fv_tm (tmatchlist _ _ _) |- _ =>
+              cbn [fv_tm] in Hfresh; clear -Hybad Hfresh Hhd Htl; set_solver
+          end.
+        }
+        assert (Hybody :
+          y ∉ fv_tm (open_list_cons_branch hd tl econs)).
+        {
+          apply open_list_cons_branch_fv_fresh.
+          - clear -Hhd. set_solver.
+          - clear -Htl. set_solver.
+          - match goal with
+            | Hfresh : y ∉ lvars_fv (dom Σ) ∪ fv_tm (tmatchlist _ _ _) |- _ =>
+                cbn [fv_tm] in Hfresh; clear -Hfresh; set_solver
+            end.
+        }
+        intros Hybad.
+        apply elem_of_union in Hybad as [Hybad|Hybad].
+        { exact (Hyenv Hybad). }
+        { exact (Hybody Hybad). }
+      * clear -Hhd. set_solver.
+      * clear -Htl. set_solver.
+      * intros HyΣ.
+        apply H2. apply elem_of_union_l.
+        apply lvars_fv_elem. exact HyΣ.
 Qed.
 
 Lemma basic_tm_has_ltype_open_one_fresh k y Σ e T :
@@ -766,6 +844,54 @@ Proof.
 	        rewrite close_tm_open_commute_fresh in Hbody
 	          by (lia || clear -Hroot; set_solver).
 	        exact Hbody.
+    - eapply BTT_ListCons.
+      + eapply H; [|reflexivity].
+        match goal with
+        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+        end.
+      + eapply H0; [|reflexivity].
+        match goal with
+        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+        end.
+    - eapply BTT_ListMatch
+        with (L := L ∪ {[y]} ∪ lvars_fv (dom Σ0)).
+      + eapply H; [|reflexivity].
+        match goal with
+        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+        end.
+      + eapply H0; [|reflexivity].
+        match goal with
+        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+        end.
+      + intros hd tl Hhd Htl.
+        pose proof (H1 hd tl
+          ltac:(clear -Hhd; set_solver)
+          ltac:(clear -Htl; set_solver)
+          (k + 2) y
+          (list_cons_branch_open_env Σ0 hd tl)) as Hbody.
+        specialize (Hbody ltac:(
+          intros Hybad;
+          apply list_cons_branch_open_env_lvars_fv_dom_subset in Hybad;
+          match goal with
+          | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ =>
+              clear -Hybad Hfresh Hhd Htl; set_solver
+          end)).
+        specialize (Hbody ltac:(
+          symmetry; apply lty_env_open_one_list_cons_branch_open_env;
+          [clear -Hhd; set_solver
+          |clear -Htl; set_solver
+          |intros HyΣ;
+           match goal with
+           | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ =>
+               apply Hfresh; apply lvars_fv_elem; exact HyΣ
+           end])).
+        unfold open_list_cons_branch, open_list_cons_branch_value.
+        unfold open_list_cons_branch, open_list_cons_branch_value in Hbody.
+        rewrite close_tm_open_commute_fresh in Hbody
+          by (lia || clear -Htl; set_solver).
+        rewrite close_tm_open_commute_fresh in Hbody
+          by (lia || clear -Hhd; set_solver).
+        exact Hbody.
 	  }
   rewrite close_open_var_tm in Hclosed by set_solver.
   exact Hclosed.

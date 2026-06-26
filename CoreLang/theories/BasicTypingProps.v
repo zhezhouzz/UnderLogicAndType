@@ -57,6 +57,21 @@ Proof.
       (vfvar right) 2) as Hopen_right.
     simpl in Hopen_root, Hopen_left, Hopen_right.
     set_solver.
+  - intros Γ v T enil econs L Htyv IHv Hnil IHnil Hcons IHcons.
+    pose (hd := fresh_for (L ∪ fv_tm econs)).
+    assert (Hhd : hd ∉ L ∪ fv_tm econs)
+      by (subst hd; apply fresh_for_not_in).
+    pose (tl := fresh_for (L ∪ fv_tm econs ∪ {[hd]})).
+    assert (Htl : tl ∉ L ∪ fv_tm econs ∪ {[hd]})
+      by (subst tl; apply fresh_for_not_in).
+    specialize (IHcons hd tl ltac:(set_solver) ltac:(set_solver)).
+    rewrite !dom_insert in IHcons.
+    unfold open_list_cons_branch, open_list_cons_branch_value in IHcons.
+    pose proof (open_fv_tm' econs (vfvar hd) 0) as Hopen_hd.
+    pose proof (open_fv_tm'
+      (open_tm 0 (vfvar hd) econs) (vfvar tl) 1) as Hopen_tl.
+    simpl in Hopen_hd, Hopen_tl.
+    set_solver.
 Qed.
 
 Lemma basic_typing_contains_fv_value Γ v T :
@@ -121,9 +136,10 @@ Lemma basic_typing_bool_canonical_form v :
   v = vconst (cbool true) ∨ v = vconst (cbool false).
 Proof.
   intros Hty.
-  destruct (basic_typing_base_canonical_form v TBool Hty) as [[b|n|t] [-> Hbase]];
+  destruct (basic_typing_base_canonical_form v TBool Hty) as [[b|n|t|xs] [-> Hbase]];
     simpl in Hbase.
   - destruct b; auto.
+  - discriminate.
   - discriminate.
   - discriminate.
 Qed.
@@ -133,10 +149,11 @@ Lemma basic_typing_nat_canonical_form v :
   ∃ n, v = vconst (cnat n).
 Proof.
   intros Hty.
-  destruct (basic_typing_base_canonical_form v TNat Hty) as [[b|n|t] [-> Hbase]];
+  destruct (basic_typing_base_canonical_form v TNat Hty) as [[b|n|t|xs] [-> Hbase]];
     simpl in Hbase.
   - discriminate.
   - eauto.
+  - discriminate.
   - discriminate.
 Qed.
 
@@ -145,8 +162,22 @@ Lemma basic_typing_tree_canonical_form v :
   ∃ t, v = vconst (ctree t).
 Proof.
   intros Hty.
-  destruct (basic_typing_base_canonical_form v TTree Hty) as [[b|n|t] [-> Hbase]];
+  destruct (basic_typing_base_canonical_form v TTree Hty) as [[b|n|t|xs] [-> Hbase]];
     simpl in Hbase.
+  - discriminate.
+  - discriminate.
+  - eauto.
+  - discriminate.
+Qed.
+
+Lemma basic_typing_list_canonical_form v :
+  ∅ ⊢ᵥ v ⋮ TBase TList →
+  ∃ xs, v = vconst (clist xs).
+Proof.
+  intros Hty.
+  destruct (basic_typing_base_canonical_form v TList Hty) as [[b|n|t|xs] [-> Hbase]];
+    simpl in Hbase.
+  - discriminate.
   - discriminate.
   - discriminate.
   - eauto.
@@ -217,6 +248,22 @@ Proof.
   replace (swap x y (swap x y root)) with root by better_base_solver.
   replace (swap x y (swap x y left)) with left by better_base_solver.
   replace (swap x y (swap x y right)) with right by better_base_solver.
+  reflexivity.
+Qed.
+
+Lemma swap_list_branch_env_commute
+    (Γ : gmap atom ty) (x y hd tl : atom) :
+  <[tl := TBase TList]>
+    (<[hd := TBase TNat]>
+      (@storeA_swap ty atom _ _ x y Γ : gmap atom ty)) =
+  (@storeA_swap ty atom _ _ x y
+    (<[swap x y tl := TBase TList]>
+      (<[swap x y hd := TBase TNat]> Γ)) : gmap atom ty).
+Proof.
+  unfold storeA_swap.
+  rewrite !kmap_insert by apply swap_inj.
+  replace (swap x y (swap x y hd)) with hd by better_base_solver.
+  replace (swap x y (swap x y tl)) with tl by better_base_solver.
   reflexivity.
 Qed.
 
@@ -333,8 +380,40 @@ Proof.
           (vfvar right) 2) as Hopen_right.
         simpl in Hopen_root, Hopen_left, Hopen_right.
         set_solver.
-      }
-      rewrite Hagree by (simpl; set_solver). reflexivity.
+	      }
+	      rewrite Hagree by (simpl; set_solver). reflexivity.
+  - econstructor;
+      match goal with
+      | |- _ ⊢ᵥ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      end.
+  - eapply TT_ListMatch with (L := L ∪ fv_value v ∪ fv_tm enil ∪ fv_tm econs).
+    + match goal with
+      | IH : ∀ Γ', (∀ z, z ∈ fv_value v → Γ' !! z = _ !! z) → Γ' ⊢ᵥ v ⋮ _ |- _ =>
+          eapply IH; intros z Hz; apply Hagree; set_solver
+      end.
+    + match goal with
+      | IH : ∀ Γ', (∀ z, z ∈ fv_tm enil → Γ' !! z = _ !! z) → Γ' ⊢ₑ enil ⋮ _ |- _ =>
+          eapply IH; intros z Hz; apply Hagree; set_solver
+      end.
+    + intros hd tl Hhd Htl.
+      eapply H; [set_solver | set_solver |].
+      intros z Hz.
+      repeat rewrite lookup_insert.
+      repeat case_decide; subst; try reflexivity.
+      assert (Hzfv : z ∈ fv_tm econs).
+      {
+        unfold open_list_cons_branch, open_list_cons_branch_value in Hz.
+        pose proof (open_fv_tm econs (vfvar hd) 0) as Hopen_hd.
+        pose proof (open_fv_tm
+          (open_tm 0 (vfvar hd) econs) (vfvar tl) 1) as Hopen_tl.
+        simpl in Hopen_hd, Hopen_tl.
+        set_solver.
+	      }
+	      rewrite Hagree by (simpl; set_solver). reflexivity.
 Qed.
 
 Lemma basic_typing_swap_value Γ v T x y :
@@ -441,6 +520,25 @@ Proof.
 	              ** apply elem_of_union_l. apply elem_of_union_r.
 	                 rewrite !elem_of_singleton in Hin |- *.
 	                 apply (swap_inj x y) in Hin. exact Hin.
+		           ++ apply elem_of_union_r.
+		              rewrite !elem_of_singleton in Hin |- *.
+		              apply (swap_inj x y) in Hin. exact Hin.
+	    + econstructor; eauto.
+	    + eapply TT_ListMatch with (L := set_swap x y L).
+	      * eauto.
+	      * eauto.
+	      * intros hd tl Hhd Htl.
+	        change (<[tl := TBase TList]>
+	          (<[hd := TBase TNat]>
+	            (@storeA_swap ty atom _ _ x y Γ : gmap atom ty)) ⊢ₑ
+	            open_list_cons_branch hd tl (tm_swap_atom x y econs) ⋮ T).
+	        rewrite open_list_cons_branch_swap_atom.
+	        rewrite swap_list_branch_env_commute.
+	        apply H.
+	        -- intros Hin. apply Hhd. rewrite elem_of_set_swap. exact Hin.
+	        -- intros Hin. apply Htl.
+	           apply elem_of_union in Hin as [Hin|Hin].
+	           ++ apply elem_of_union_l. rewrite elem_of_set_swap. exact Hin.
 	           ++ apply elem_of_union_r.
 	              rewrite !elem_of_singleton in Hin |- *.
 	              apply (swap_inj x y) in Hin. exact Hin.
@@ -539,6 +637,25 @@ Proof.
 	              ** apply elem_of_union_l. apply elem_of_union_r.
 	                 rewrite !elem_of_singleton in Hin |- *.
 	                 apply (swap_inj x y) in Hin. exact Hin.
+		           ++ apply elem_of_union_r.
+		              rewrite !elem_of_singleton in Hin |- *.
+		              apply (swap_inj x y) in Hin. exact Hin.
+	    + econstructor; eauto.
+	    + eapply TT_ListMatch with (L := set_swap x y L).
+	      * eauto.
+	      * eauto.
+	      * intros hd tl Hhd Htl.
+	        change (<[tl := TBase TList]>
+	          (<[hd := TBase TNat]>
+	            (@storeA_swap ty atom _ _ x y Γ : gmap atom ty)) ⊢ₑ
+	            open_list_cons_branch hd tl (tm_swap_atom x y econs) ⋮ T).
+	        rewrite open_list_cons_branch_swap_atom.
+	        rewrite swap_list_branch_env_commute.
+	        apply H.
+	        -- intros Hin. apply Hhd. rewrite elem_of_set_swap. exact Hin.
+	        -- intros Hin. apply Htl.
+	           apply elem_of_union in Hin as [Hin|Hin].
+	           ++ apply elem_of_union_l. rewrite elem_of_set_swap. exact Hin.
 	           ++ apply elem_of_union_r.
 	              rewrite !elem_of_singleton in Hin |- *.
 	              apply (swap_inj x y) in Hin. exact Hin.
@@ -653,6 +770,38 @@ Proof.
           (open_tm 1 (vfvar left) (open_tm 0 (vfvar root) enode))
           (vfvar right) 2) as Hopen_right.
         simpl in Hopen_root, Hopen_left, Hopen_right.
+        set_solver.
+	      }
+	      rewrite Hagree by (simpl; set_solver). reflexivity.
+  - econstructor;
+      match goal with
+      | |- _ ⊢ᵥ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      end.
+  - eapply TT_ListMatch with (L := L ∪ fv_value v ∪ fv_tm enil ∪ fv_tm econs).
+    + match goal with
+      | IH : ∀ Γ', (∀ z, z ∈ fv_value v → Γ' !! z = _ !! z) → Γ' ⊢ᵥ v ⋮ _ |- _ =>
+          eapply IH; intros z Hz; apply Hagree; set_solver
+      end.
+    + match goal with
+      | IH : ∀ Γ', (∀ z, z ∈ fv_tm enil → Γ' !! z = _ !! z) → Γ' ⊢ₑ enil ⋮ _ |- _ =>
+          eapply IH; intros z Hz; apply Hagree; set_solver
+      end.
+    + intros hd tl Hhd Htl.
+      eapply H; [set_solver | set_solver |].
+      intros z Hz.
+      repeat rewrite lookup_insert.
+      repeat case_decide; subst; try reflexivity.
+      assert (Hzfv : z ∈ fv_tm econs).
+      {
+        unfold open_list_cons_branch, open_list_cons_branch_value in Hz.
+        pose proof (open_fv_tm econs (vfvar hd) 0) as Hopen_hd.
+        pose proof (open_fv_tm
+          (open_tm 0 (vfvar hd) econs) (vfvar tl) 1) as Hopen_tl.
+        simpl in Hopen_hd, Hopen_tl.
         set_solver.
       }
       rewrite Hagree by (simpl; set_solver). reflexivity.
@@ -803,6 +952,46 @@ Proof.
   - exact Hroot.
   - symmetry.
     apply subst_tree_node_branch_value; simpl; try set_solver; constructor.
+Qed.
+
+Lemma basic_typing_open_list_cons_branch_const
+    Γ hd tl n xs econs T :
+  hd ∉ fv_tm econs →
+  tl ∉ fv_tm econs →
+  hd <> tl →
+  <[tl := TBase TList]>
+    (<[hd := TBase TNat]> Γ)
+    ⊢ₑ open_list_cons_branch hd tl econs ⋮ T →
+  Γ ⊢ₑ open_list_cons_branch_value
+    (vconst (cnat n)) (vconst (clist xs)) econs ⋮ T.
+Proof.
+  intros Hhd_fv Htl_fv Hhd_tl Hbranch.
+  pose (vh := vconst (cnat n)).
+  pose (vt := vconst (clist xs)).
+  pose (Γhd := <[hd := TBase TNat]> Γ).
+  assert (Htl :
+    Γhd ⊢ₑ ({tl := vt} open_list_cons_branch hd tl econs) ⋮ T).
+  {
+    subst Γhd vt.
+    eapply subst_typing_insert_tm; [exact Hbranch | constructor].
+  }
+  assert (Hhd :
+    Γ ⊢ₑ ({hd := vh} ({tl := vt}
+      open_list_cons_branch hd tl econs)) ⋮ T).
+  {
+    subst Γhd vh.
+    eapply subst_typing_insert_tm; [exact Htl | constructor].
+  }
+  subst vh vt.
+  replace ({hd := vconst (cnat n)}
+    ({tl := vconst (clist xs)}
+      open_list_cons_branch hd tl econs)) with
+    (open_list_cons_branch_value
+      (vconst (cnat n)) (vconst (clist xs)) econs)
+    in Hhd.
+  - exact Hhd.
+  - symmetry.
+    apply subst_list_cons_branch_value; simpl; try set_solver; constructor.
 Qed.
 
 Lemma basic_typing_unique_value Γ v T1 T2 :
@@ -969,14 +1158,49 @@ Proof.
 	          eapply IH; [set_solver | set_solver | set_solver | |]
       end.
       * apply insert_tree_branch_subst_commute; set_solver.
-      * unfold open_tree_node_branch, open_tree_node_branch_value.
-        pose proof (open_fv_tm enode (vfvar root) 0) as Hopen_root.
+	      * unfold open_tree_node_branch, open_tree_node_branch_value.
+	        pose proof (open_fv_tm enode (vfvar root) 0) as Hopen_root.
+	        pose proof (open_fv_tm
+	          (open_tm 0 (vfvar root) enode) (vfvar left) 1) as Hopen_left.
+	        pose proof (open_fv_tm
+	          (open_tm 1 (vfvar left) (open_tm 0 (vfvar root) enode))
+	          (vfvar right) 2) as Hopen_right.
+	        simpl in Hopen_root, Hopen_left, Hopen_right.
+	        set_solver.
+  - econstructor.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value hd → Γ ⊢ᵥ hd ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value tl → Γ ⊢ᵥ tl ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+  - eapply TT_ListMatch with (L := L ∪ {[x]}).
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v → Γ ⊢ᵥ v ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm enil → Γ ⊢ₑ enil ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + intros hd tl Hhd Htl.
+      match goal with
+      | IH : ∀ hd tl : atom,
+          hd ∉ L →
+          tl ∉ L ∪ {[hd]} →
+          ∀ Γ, _ = <[x:=Tx]> Γ →
+            x ∉ fv_tm (open_list_cons_branch hd tl econs) →
+            Γ ⊢ₑ open_list_cons_branch hd tl econs ⋮ _ |- _ =>
+          eapply IH; [set_solver | set_solver | |]
+      end.
+      * apply insert_list_branch_subst_commute; set_solver.
+      * unfold open_list_cons_branch, open_list_cons_branch_value.
+        pose proof (open_fv_tm econs (vfvar hd) 0) as Hopen_hd.
         pose proof (open_fv_tm
-          (open_tm 0 (vfvar root) enode) (vfvar left) 1) as Hopen_left.
-        pose proof (open_fv_tm
-          (open_tm 1 (vfvar left) (open_tm 0 (vfvar root) enode))
-          (vfvar right) 2) as Hopen_right.
-        simpl in Hopen_root, Hopen_left, Hopen_right.
+          (open_tm 0 (vfvar hd) econs) (vfvar tl) 1) as Hopen_tl.
+        simpl in Hopen_hd, Hopen_tl.
         set_solver.
 Qed.
 
@@ -1074,13 +1298,48 @@ Proof.
 	          eapply IH; [set_solver | set_solver | set_solver | |]
       end.
       * apply insert_tree_branch_subst_commute; set_solver.
-      * unfold open_tree_node_branch, open_tree_node_branch_value.
-        pose proof (open_fv_tm enode (vfvar root) 0) as Hopen_root.
+	      * unfold open_tree_node_branch, open_tree_node_branch_value.
+	        pose proof (open_fv_tm enode (vfvar root) 0) as Hopen_root.
+	        pose proof (open_fv_tm
+	          (open_tm 0 (vfvar root) enode) (vfvar left) 1) as Hopen_left.
+	        pose proof (open_fv_tm
+	          (open_tm 1 (vfvar left) (open_tm 0 (vfvar root) enode))
+	          (vfvar right) 2) as Hopen_right.
+	        simpl in Hopen_root, Hopen_left, Hopen_right.
+	        set_solver.
+  - econstructor.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value hd → Γ ⊢ᵥ hd ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value tl → Γ ⊢ᵥ tl ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+  - eapply TT_ListMatch with (L := L ∪ {[x]}).
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v → Γ ⊢ᵥ v ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm enil → Γ ⊢ₑ enil ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + intros hd tl Hhd Htl.
+      match goal with
+      | IH : ∀ hd tl : atom,
+          hd ∉ L →
+          tl ∉ L ∪ {[hd]} →
+          ∀ Γ, _ = <[x:=Tx]> Γ →
+            x ∉ fv_tm (open_list_cons_branch hd tl econs) →
+            Γ ⊢ₑ open_list_cons_branch hd tl econs ⋮ _ |- _ =>
+          eapply IH; [set_solver | set_solver | |]
+      end.
+      * apply insert_list_branch_subst_commute; set_solver.
+      * unfold open_list_cons_branch, open_list_cons_branch_value.
+        pose proof (open_fv_tm econs (vfvar hd) 0) as Hopen_hd.
         pose proof (open_fv_tm
-          (open_tm 0 (vfvar root) enode) (vfvar left) 1) as Hopen_left.
-        pose proof (open_fv_tm
-          (open_tm 1 (vfvar left) (open_tm 0 (vfvar root) enode))
-          (vfvar right) 2) as Hopen_right.
-        simpl in Hopen_root, Hopen_left, Hopen_right.
+          (open_tm 0 (vfvar hd) econs) (vfvar tl) 1) as Hopen_tl.
+        simpl in Hopen_hd, Hopen_tl.
         set_solver.
 Qed.

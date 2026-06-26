@@ -15,7 +15,8 @@ Proof.
     [v e Hlc | op c c' Heval Hlc | s body v Hlc
     | Tf vf v Hlc | et ef Hlc | et ef Hlc
     | n left right Hlc | eleaf enode Hlc
-    | n left right eleaf enode Hlc].
+    | n left right eleaf enode Hlc
+    | n xs Hlc | enil econs Hlc | n xs enil econs Hlc].
   - split.
     + assumption.
     + apply body_open_tm.
@@ -73,14 +74,43 @@ Proof.
           ({right0 := vconst (ctree right)}
             open_tree_node_branch root left0 right0 enode))
         Hsubst_left ltac:(constructor)) as Hsubst_root.
-      replace (open_tree_node_branch_value
+	      replace (open_tree_node_branch_value
           (vconst (cnat n)) (vconst (ctree left)) (vconst (ctree right)) enode)
         with ({root := vconst (cnat n)}
           ({left0 := vconst (ctree left)}
           ({right0 := vconst (ctree right)}
               open_tree_node_branch root left0 right0 enode))).
-      exact Hsubst_root.
-      apply subst_tree_node_branch_value; simpl; try set_solver; constructor.
+	      exact Hsubst_root.
+	      apply subst_tree_node_branch_value; simpl; try set_solver; constructor.
+  - split; [assumption|constructor; constructor].
+  - split.
+    + assumption.
+    + by inversion Hlc; subst.
+  - split.
+    + assumption.
+    + inversion Hlc; subst.
+      pose (hd := fresh_for (L ∪ fv_tm econs)).
+      assert (Hhd : hd ∉ L ∪ fv_tm econs)
+        by (subst hd; apply fresh_for_not_in).
+      pose (tl := fresh_for (L ∪ fv_tm econs ∪ {[hd]})).
+      assert (Htl : tl ∉ L ∪ fv_tm econs ∪ {[hd]})
+        by (subst tl; apply fresh_for_not_in).
+      pose proof (H4 hd tl ltac:(set_solver) ltac:(set_solver))
+        as Hopen.
+      pose proof (subst_lc_tm tl (vconst (clist xs))
+        (open_list_cons_branch hd tl econs) Hopen ltac:(constructor))
+        as Hsubst_tl.
+      pose proof (subst_lc_tm hd (vconst (cnat n))
+        ({tl := vconst (clist xs)}
+          open_list_cons_branch hd tl econs)
+        Hsubst_tl ltac:(constructor)) as Hsubst_hd.
+      replace (open_list_cons_branch_value
+          (vconst (cnat n)) (vconst (clist xs)) econs)
+        with ({hd := vconst (cnat n)}
+          ({tl := vconst (clist xs)}
+              open_list_cons_branch hd tl econs)).
+      exact Hsubst_hd.
+      apply subst_list_cons_branch_value; simpl; try set_solver; constructor.
 Qed.
 
 Lemma step_regular e e' :
@@ -160,7 +190,7 @@ Proof.
   - my_set_solver.
   - my_set_solver.
   - my_set_solver.
-  - unfold open_tree_node_branch_value.
+	  - unfold open_tree_node_branch_value.
     pose proof (open_fv_tm enode (vconst (cnat n)) 0) as Hopen_root.
     pose proof (open_fv_tm
       (open_tm 0 (vconst (cnat n)) enode) (vconst (ctree left)) 1)
@@ -168,7 +198,16 @@ Proof.
     pose proof (open_fv_tm
       (open_tm 1 (vconst (ctree left)) (open_tm 0 (vconst (cnat n)) enode))
       (vconst (ctree right)) 2) as Hopen_right.
-    simpl in Hopen_root, Hopen_left, Hopen_right.
+	    simpl in Hopen_root, Hopen_left, Hopen_right.
+	    my_set_solver.
+  - my_set_solver.
+  - my_set_solver.
+  - unfold open_list_cons_branch_value.
+    pose proof (open_fv_tm econs (vconst (cnat n)) 0) as Hopen_hd.
+    pose proof (open_fv_tm
+      (open_tm 0 (vconst (cnat n)) econs) (vconst (clist xs)) 1)
+      as Hopen_tl.
+    simpl in Hopen_hd, Hopen_tl.
     my_set_solver.
 Qed.
 

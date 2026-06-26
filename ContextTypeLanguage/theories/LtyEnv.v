@@ -250,6 +250,15 @@ Lemma lty_env_open_one_under_three_binds k y (Σ : lty_env) T0 T1 T2 :
       (typed_lty_env_bind (lty_env_open_one k y Σ) T0) T1) T2.
 Proof. apply lvar_store_open_one_under_three_binds. Qed.
 
+Lemma lty_env_open_one_under_two_binds k y (Σ : lty_env) T0 T1 :
+  LVFree y ∉ dom Σ ->
+  lty_env_open_one (k + 2) y
+    (typed_lty_env_bind
+      (typed_lty_env_bind Σ T0) T1) =
+  typed_lty_env_bind
+    (typed_lty_env_bind (lty_env_open_one k y Σ) T0) T1.
+Proof. apply lvar_store_open_one_under_two_binds. Qed.
+
 Definition tree_node_branch_bound_env (Σ : lty_env) : lty_env :=
   typed_lty_env_bind
     (typed_lty_env_bind
@@ -263,6 +272,17 @@ Definition tree_node_branch_open_env
     (lty_env_open_one 1 left
       (lty_env_open_one 0 root
         (tree_node_branch_bound_env Σ))).
+
+Definition list_cons_branch_bound_env (Σ : lty_env) : lty_env :=
+  typed_lty_env_bind
+    (typed_lty_env_bind Σ (TBase TList))
+    (TBase TNat).
+
+Definition list_cons_branch_open_env
+    (Σ : lty_env) (hd tl : atom) : lty_env :=
+  lty_env_open_one 1 tl
+    (lty_env_open_one 0 hd
+      (list_cons_branch_bound_env Σ)).
 
 Lemma lty_env_open_one_commute_fresh_eq i j x y (Σ : lty_env) :
   i <> j ->
@@ -306,6 +326,16 @@ Proof.
   apply lty_env_open_one_under_three_binds. exact Hy.
 Qed.
 
+Lemma lty_env_open_one_list_cons_branch_bound_env k y (Σ : lty_env) :
+  LVFree y ∉ dom Σ ->
+  lty_env_open_one (k + 2) y (list_cons_branch_bound_env Σ) =
+  list_cons_branch_bound_env (lty_env_open_one k y Σ).
+Proof.
+  intros Hy.
+  unfold list_cons_branch_bound_env.
+  apply lty_env_open_one_under_two_binds. exact Hy.
+Qed.
+
 Lemma lty_env_open_one_tree_node_branch_open_env
     k y (Σ : lty_env) root left right :
   y <> root ->
@@ -328,6 +358,25 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma lty_env_open_one_list_cons_branch_open_env
+    k y (Σ : lty_env) hd tl :
+  y <> hd ->
+  y <> tl ->
+  LVFree y ∉ dom Σ ->
+  lty_env_open_one (k + 2) y
+    (list_cons_branch_open_env Σ hd tl) =
+  list_cons_branch_open_env (lty_env_open_one k y Σ) hd tl.
+Proof.
+  intros Hyhd Hytl HyΣ.
+  unfold list_cons_branch_open_env.
+  rewrite (lty_env_open_one_commute_fresh_eq (k + 2) 1 y tl)
+    by (lia || congruence).
+  rewrite (lty_env_open_one_commute_fresh_eq (k + 2) 0 y hd)
+    by (lia || congruence).
+  rewrite lty_env_open_one_list_cons_branch_bound_env by exact HyΣ.
+  reflexivity.
+Qed.
+
 Lemma tree_node_branch_open_env_lvars_fv_dom_subset
     (Σ : lty_env) root left right :
   lvars_fv (dom (tree_node_branch_open_env Σ root left right)) ⊆
@@ -347,6 +396,23 @@ Proof.
   set_solver.
 Qed.
 
+Lemma list_cons_branch_open_env_lvars_fv_dom_subset
+    (Σ : lty_env) hd tl :
+  lvars_fv (dom (list_cons_branch_open_env Σ hd tl)) ⊆
+  lvars_fv (dom Σ) ∪ {[hd]} ∪ {[tl]}.
+Proof.
+  intros x Hx.
+  unfold list_cons_branch_open_env in Hx.
+  rewrite !lty_env_open_one_dom in Hx.
+  apply lvars_fv_open_subset in Hx.
+  apply elem_of_union in Hx as [Hx|Hx]; [|set_solver].
+  apply lvars_fv_open_subset in Hx.
+  apply elem_of_union in Hx as [Hx|Hx]; [|set_solver].
+  unfold list_cons_branch_bound_env in Hx.
+  rewrite !typed_lty_env_bind_lvars_fv_dom in Hx.
+  set_solver.
+Qed.
+
 Lemma tree_node_branch_bound_env_lookup_free (Σ : lty_env) x :
   tree_node_branch_bound_env Σ !! LVFree x = Σ !! LVFree x.
 Proof.
@@ -354,10 +420,24 @@ Proof.
   rewrite !typed_lty_env_bind_lookup_free. reflexivity.
 Qed.
 
+Lemma list_cons_branch_bound_env_lookup_free (Σ : lty_env) x :
+  list_cons_branch_bound_env Σ !! LVFree x = Σ !! LVFree x.
+Proof.
+  unfold list_cons_branch_bound_env.
+  rewrite !typed_lty_env_bind_lookup_free. reflexivity.
+Qed.
+
 Lemma tree_node_branch_bound_env_lookup_bound0 (Σ : lty_env) :
   tree_node_branch_bound_env Σ !! LVBound 0 = Some (TBase TNat).
 Proof.
   unfold tree_node_branch_bound_env, typed_lty_env_bind, lvar_store_bind.
+  rewrite lookup_insert_eq. reflexivity.
+Qed.
+
+Lemma list_cons_branch_bound_env_lookup_bound0 (Σ : lty_env) :
+  list_cons_branch_bound_env Σ !! LVBound 0 = Some (TBase TNat).
+Proof.
+  unfold list_cons_branch_bound_env, typed_lty_env_bind, lvar_store_bind.
   rewrite lookup_insert_eq. reflexivity.
 Qed.
 
@@ -381,6 +461,15 @@ Proof.
   rewrite lookup_insert_eq. reflexivity.
 Qed.
 
+Lemma list_cons_branch_bound_env_lookup_bound1 (Σ : lty_env) :
+  list_cons_branch_bound_env Σ !! LVBound 1 = Some (TBase TList).
+Proof.
+  unfold list_cons_branch_bound_env, typed_lty_env_bind, lvar_store_bind.
+  rewrite lookup_insert_ne by discriminate.
+  rewrite lty_env_shift_lookup_bound_succ.
+  rewrite lookup_insert_eq. reflexivity.
+Qed.
+
 Lemma tree_node_branch_bound_env_lookup_bound2 (Σ : lty_env) :
   tree_node_branch_bound_env Σ !! LVBound 2 = Some (TBase TTree).
 Proof.
@@ -399,6 +488,18 @@ Proof.
   unfold tree_node_branch_bound_env, typed_lty_env_bind, lvar_store_bind.
   rewrite lookup_insert_ne by discriminate.
   rewrite lty_env_shift_lookup_bound_succ.
+  rewrite lookup_insert_ne by discriminate.
+  rewrite lty_env_shift_lookup_bound_succ.
+  rewrite lookup_insert_ne by discriminate.
+  rewrite lty_env_shift_lookup_bound_succ.
+  reflexivity.
+Qed.
+
+Lemma list_cons_branch_bound_env_lookup_bound_ge2 (Σ : lty_env) k :
+  list_cons_branch_bound_env Σ !! LVBound (S (S k)) =
+  Σ !! LVBound k.
+Proof.
+  unfold list_cons_branch_bound_env, typed_lty_env_bind, lvar_store_bind.
   rewrite lookup_insert_ne by discriminate.
   rewrite lty_env_shift_lookup_bound_succ.
   rewrite lookup_insert_ne by discriminate.
@@ -455,6 +556,38 @@ Proof.
     apply lty_env_closed_lookup_bound_none. exact Hclosed.
 Qed.
 
+Lemma list_cons_branch_open_env_lookup_bound_none
+    (Σ : lty_env) hd tl k :
+  lty_env_closed Σ ->
+  LVFree hd ∉ dom Σ ->
+  LVFree tl ∉ dom Σ ->
+  hd <> tl ->
+  list_cons_branch_open_env Σ hd tl !! LVBound k = None.
+Proof.
+  intros Hclosed Hhd Htl Hhd_tl.
+  unfold list_cons_branch_open_env.
+  destruct k as [|[|k]];
+    rewrite !lty_env_open_one_lookup.
+  - replace (logic_var_open 1 tl (LVBound 0)) with (LVBound 0)
+      by better_base_solver.
+    replace (logic_var_open 0 hd (LVBound 0)) with (LVFree hd)
+      by better_base_solver.
+    rewrite list_cons_branch_bound_env_lookup_free.
+    apply not_elem_of_dom. exact Hhd.
+  - replace (logic_var_open 1 tl (LVBound 1)) with (LVFree tl)
+      by better_base_solver.
+    replace (logic_var_open 0 hd (LVFree tl)) with (LVFree tl)
+      by better_base_solver.
+    rewrite list_cons_branch_bound_env_lookup_free.
+    apply not_elem_of_dom. exact Htl.
+  - replace (logic_var_open 1 tl (LVBound (S (S k))))
+      with (LVBound (S (S k))) by better_base_solver.
+    replace (logic_var_open 0 hd (LVBound (S (S k))))
+      with (LVBound (S (S k))) by better_base_solver.
+    rewrite list_cons_branch_bound_env_lookup_bound_ge2.
+    apply lty_env_closed_lookup_bound_none. exact Hclosed.
+Qed.
+
 Lemma tree_node_branch_open_env_lookup_free
     (Σ : lty_env) root left right z :
   root <> left ->
@@ -508,6 +641,40 @@ Proof.
         reflexivity.
 Qed.
 
+Lemma list_cons_branch_open_env_lookup_free
+    (Σ : lty_env) hd tl z :
+  hd <> tl ->
+  list_cons_branch_open_env Σ hd tl !! LVFree z =
+  (<[LVFree tl := TBase TList]>
+    (<[LVFree hd := TBase TNat]> Σ)) !! LVFree z.
+Proof.
+  intros Hhd_tl.
+  unfold list_cons_branch_open_env.
+  rewrite !lty_env_open_one_lookup.
+  destruct (decide (z = tl)) as [->|Hztl].
+  - replace (logic_var_open 1 tl (LVFree tl)) with (LVBound 1)
+      by better_base_solver.
+    replace (logic_var_open 0 hd (LVBound 1)) with (LVBound 1)
+      by better_base_solver.
+    rewrite list_cons_branch_bound_env_lookup_bound1.
+    rewrite lookup_insert_eq. reflexivity.
+  - rewrite lookup_insert_ne by (intros Heq; inversion Heq; congruence).
+    destruct (decide (z = hd)) as [->|Hzhd].
+    + replace (logic_var_open 1 tl (LVFree hd)) with (LVFree hd)
+        by better_base_solver.
+      replace (logic_var_open 0 hd (LVFree hd)) with (LVBound 0)
+        by better_base_solver.
+      rewrite list_cons_branch_bound_env_lookup_bound0.
+      rewrite lookup_insert_eq. reflexivity.
+    + rewrite lookup_insert_ne by (intros Heq; inversion Heq; congruence).
+      replace (logic_var_open 1 tl (LVFree z)) with (LVFree z)
+        by better_base_solver.
+      replace (logic_var_open 0 hd (LVFree z)) with (LVFree z)
+        by better_base_solver.
+      rewrite list_cons_branch_bound_env_lookup_free.
+      reflexivity.
+Qed.
+
 Lemma tree_node_branch_open_env_lc_dom
     (Σ : lty_env) root left right :
   lc_lvars (dom Σ) ->
@@ -532,6 +699,25 @@ Proof.
   - exact Hroot_left.
   - exact Hroot_right.
   - exact Hleft_right.
+Qed.
+
+Lemma list_cons_branch_open_env_lc_dom
+    (Σ : lty_env) hd tl :
+  lc_lvars (dom Σ) ->
+  hd ∉ lvars_fv (dom Σ) ->
+  tl ∉ lvars_fv (dom Σ) ->
+  hd <> tl ->
+  lc_lvars (dom (list_cons_branch_open_env Σ hd tl)).
+Proof.
+  intros Hlc Hhd Htl Hhd_tl [k|x] Hin; [|exact I].
+  exfalso.
+  apply elem_of_dom in Hin as [T Hlook].
+  rewrite (list_cons_branch_open_env_lookup_bound_none
+    Σ hd tl k) in Hlook; [discriminate|..].
+  - exact Hlc.
+  - intros Hdom. apply Hhd. apply lvars_fv_elem. exact Hdom.
+  - intros Hdom. apply Htl. apply lvars_fv_elem. exact Hdom.
+  - exact Hhd_tl.
 Qed.
 
 Lemma tree_node_branch_open_env_norm
@@ -591,6 +777,25 @@ Proof.
            rewrite lookup_insert_ne by (intros Heq; inversion Heq; congruence).
            rewrite lookup_insert_ne by (intros Heq; inversion Heq; congruence).
            reflexivity.
+Qed.
+
+Lemma list_cons_branch_open_env_norm
+    (Σ : lty_env) hd tl :
+  lty_env_closed Σ ->
+  LVFree hd ∉ dom Σ ->
+  LVFree tl ∉ dom Σ ->
+  hd <> tl ->
+  list_cons_branch_open_env Σ hd tl =
+  <[LVFree tl := TBase TList]>
+    (<[LVFree hd := TBase TNat]> Σ).
+Proof.
+  intros Hclosed Hhd Htl Hhd_tl.
+  apply map_eq. intros [k|z].
+  - rewrite (list_cons_branch_open_env_lookup_bound_none
+      Σ hd tl k); [|eassumption..].
+    rewrite !lookup_insert_ne by discriminate.
+    symmetry. apply lty_env_closed_lookup_bound_none. exact Hclosed.
+  - apply list_cons_branch_open_env_lookup_free. exact Hhd_tl.
 Qed.
 
 Lemma typed_lty_env_bind_open_env_lift η (Σ : lty_env) T :

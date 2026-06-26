@@ -104,7 +104,24 @@ Inductive head_step : tm → tm → Prop :=
       head_step
         (tmatchtree (vconst (ctree (tr_node n left right))) eleaf enode)
         (open_tree_node_branch_value
-          (vconst (cnat n)) (vconst (ctree left)) (vconst (ctree right)) enode).
+          (vconst (cnat n)) (vconst (ctree left)) (vconst (ctree right)) enode)
+
+  | HS_ListCons n xs :
+      lc_tm (tcons (vconst (cnat n)) (vconst (clist xs))) →
+      head_step
+        (tcons (vconst (cnat n)) (vconst (clist xs)))
+        (tret (vconst (clist (n :: xs))))
+
+  | HS_MatchListNil enil econs :
+      lc_tm (tmatchlist (vconst (clist [])) enil econs) →
+      head_step (tmatchlist (vconst (clist [])) enil econs) enil
+
+  | HS_MatchListCons n xs enil econs :
+      lc_tm (tmatchlist (vconst (clist (n :: xs))) enil econs) →
+      head_step
+        (tmatchlist (vconst (clist (n :: xs))) enil econs)
+        (open_list_cons_branch_value
+          (vconst (cnat n)) (vconst (clist xs)) econs).
 
 #[global] Hint Constructors head_step : core.
 
@@ -198,8 +215,8 @@ Proof.
   - inversion Hty; subst; eauto.
   - inversion Hty; subst. constructor; constructor.
   - inversion Hty; subst; eauto.
-  - inversion Hty; subst.
-    pose (root := fresh_for (L ∪ fv_tm enode)).
+	  - inversion Hty; subst.
+	    pose (root := fresh_for (L ∪ fv_tm enode)).
     assert (Hroot : root ∉ L ∪ fv_tm enode)
       by (subst root; apply fresh_for_not_in).
     pose (left0 := fresh_for (L ∪ fv_tm enode ∪ {[root]})).
@@ -208,9 +225,22 @@ Proof.
     pose (right0 := fresh_for (L ∪ fv_tm enode ∪ {[root]} ∪ {[left0]})).
     assert (Hright : right0 ∉ L ∪ fv_tm enode ∪ {[root]} ∪ {[left0]})
       by (subst right0; apply fresh_for_not_in).
-    eapply basic_typing_open_tree_node_branch_const
-      with (root := root) (left := left0) (right := right0);
-      [set_solver | set_solver | set_solver | set_solver | set_solver | set_solver |
+	    eapply basic_typing_open_tree_node_branch_const
+	      with (root := root) (left := left0) (right := right0);
+	      [set_solver | set_solver | set_solver | set_solver | set_solver | set_solver |
+	       eapply H7; set_solver].
+  - inversion Hty; subst. constructor; constructor.
+  - inversion Hty; subst; eauto.
+  - inversion Hty; subst.
+    pose (hd := fresh_for (L ∪ fv_tm econs)).
+    assert (Hhd : hd ∉ L ∪ fv_tm econs)
+      by (subst hd; apply fresh_for_not_in).
+    pose (tl := fresh_for (L ∪ fv_tm econs ∪ {[hd]})).
+    assert (Htl : tl ∉ L ∪ fv_tm econs ∪ {[hd]})
+      by (subst tl; apply fresh_for_not_in).
+    eapply basic_typing_open_list_cons_branch_const
+      with (hd := hd) (tl := tl);
+      [set_solver | set_solver | set_solver |
        eapply H7; set_solver].
 Qed.
 

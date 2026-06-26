@@ -904,6 +904,23 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma lvar_store_open_one_under_two_binds
+    k x (s : LVarStore) A0 A1 :
+  LVFree x ∉ dom s ->
+  lvar_store_open_one (k + 2) x
+    (lvar_store_bind (lvar_store_bind s A0) A1) =
+  lvar_store_bind
+    (lvar_store_bind (lvar_store_open_one k x s) A0) A1.
+Proof.
+  intros Hfresh.
+  replace (k + 2) with (S (k + 1)) by lia.
+  rewrite lvar_store_bind_open_under.
+  2:{ apply lvar_store_bind_free_notin. exact Hfresh. }
+  replace (k + 1) with (S k) by lia.
+  rewrite lvar_store_bind_open_under by exact Hfresh.
+  reflexivity.
+Qed.
+
 Lemma lvar_store_bind_open_current y (s : LVarStore) A :
   LVFree y ∉ dom s ->
   lvar_store_closed s ->

@@ -198,6 +198,9 @@ Proof.
     + eapply IHv; [exact Hneq|exact H0].
     + eapply IHv0; [exact Hneq|exact H1].
     + eapply (IHv1 (i + 3) (j + 3)); [lia|exact H2].
+  - inversion Heq; subst. f_equal; eauto.
+  - inversion Heq; subst. f_equal; eauto.
+    eapply (IHv1 (i + 2) (j + 2)); [lia|exact H2].
 Qed.
 
 Lemma open_rec_open_eq_tm u w (e : tm) i j :
@@ -235,6 +238,9 @@ Proof.
 	        eapply IH; [lia|eassumption]
 	    end.
     eapply (IHe3 (i + 3) (j + 3)); [lia|exact H2].
+  - inversion Heq. subst. f_equal; eauto.
+  - inversion Heq. subst. f_equal; eauto.
+    eapply (IHe3 (i + 2) (j + 2)); [lia|exact H2].
 Qed.
 
 Lemma open_rec_lc_mutual :
@@ -273,6 +279,26 @@ Proof.
 	    eapply open_rec_open_eq_tm with (j := 1) (w := vfvar left); [lia|].
 	    eapply open_rec_open_eq_tm with (j := 2) (w := vfvar right); [lia|].
 	    exact (H1 root left right Hroot Hleft_big Hright_nested (k + 3) u).
+  - simpl.
+    repeat match goal with
+    | H : ∀ k u, open_value k u ?v = ?v
+      |- context[open_value ?k ?u ?v] =>
+        rewrite (H k u)
+    | H : ∀ k u, open_tm k u ?e = ?e
+      |- context[open_tm ?k ?u ?e] =>
+        rewrite (H k u)
+    end.
+    f_equal.
+    pose (hd := fresh_for L).
+    pose (tl := fresh_for (L ∪ {[hd]})).
+    assert (Hhd : hd ∉ L) by (subst hd; apply fresh_for_not_in).
+    assert (Htl : tl ∉ L ∪ {[hd]})
+      by (subst tl; apply fresh_for_not_in).
+    unfold open_list_cons_branch in H1.
+    unfold open_list_cons_branch_value in H1.
+    eapply open_rec_open_eq_tm with (j := 0) (w := vfvar hd); [lia|].
+    eapply open_rec_open_eq_tm with (j := 1) (w := vfvar tl); [lia|].
+    exact (H1 hd tl Hhd Htl (k + 2) u).
 Qed.
 
 Lemma open_rec_lc_value v :
@@ -356,6 +382,15 @@ Proof.
 	      by (simpl; rewrite decide_False by set_solver; reflexivity).
 	    rewrite <- !subst_open_tm by eauto.
 	    apply H1; set_solver.
+  - eapply LC_matchlist with (L := L ∪ {[x]}); eauto.
+    intros hd tl Hhd Htl.
+    unfold open_list_cons_branch, open_list_cons_branch_value.
+    replace (vfvar hd) with (value_subst x u (vfvar hd))
+      by (simpl; rewrite decide_False by set_solver; reflexivity).
+    replace (vfvar tl) with (value_subst x u (vfvar tl))
+      by (simpl; rewrite decide_False by set_solver; reflexivity).
+    rewrite <- !subst_open_tm by eauto.
+    apply H1; set_solver.
 Qed.
 
 Lemma subst_lc_value x u v :

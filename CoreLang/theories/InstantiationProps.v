@@ -520,6 +520,48 @@ Proof.
     rewrite IH. reflexivity.
 Qed.
 
+Lemma msubst_tcons σ hd tl :
+  m{σ} (tcons hd tl) = tcons (m{σ} hd) (m{σ} tl).
+Proof.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ =>
+      map_fold (fun x vx acc => {x := vx} acc) (tcons hd tl) σ =
+      tcons
+        (map_fold (fun x vx acc => {x := vx} acc) hd σ)
+        (map_fold (fun x vx acc => {x := vx} acc) tl σ)) _ _ σ).
+  - reflexivity.
+  - intros x vx σ' Hfresh Hfold IH.
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) hd).
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) tl).
+    setoid_rewrite (Hfold tm (fun x vx acc => {x := vx} acc)
+      (tcons hd tl)).
+    rewrite IH. reflexivity.
+Qed.
+
+Lemma msubst_tmatchlist σ v enil econs :
+  m{σ} (tmatchlist v enil econs) =
+  tmatchlist (m{σ} v) (m{σ} enil) (m{σ} econs).
+Proof.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ =>
+      map_fold (fun x vx acc => {x := vx} acc)
+        (tmatchlist v enil econs) σ =
+      tmatchlist
+        (map_fold (fun x vx acc => {x := vx} acc) v σ)
+        (map_fold (fun x vx acc => {x := vx} acc) enil σ)
+        (map_fold (fun x vx acc => {x := vx} acc) econs σ)) _ _ σ).
+  - reflexivity.
+  - intros x vx σ' Hfresh Hfold IH.
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) v).
+    rewrite (Hfold tm (fun x vx acc => {x := vx} acc) enil).
+    rewrite (Hfold tm (fun x vx acc => {x := vx} acc) econs).
+    setoid_rewrite (Hfold tm (fun x vx acc => {x := vx} acc)
+      (tmatchlist v enil econs)).
+    rewrite IH. reflexivity.
+Qed.
+
 Lemma msubst_vlam σ s e :
   m{σ} (vlam s e) = vlam s (m{σ} e).
 Proof.
@@ -620,6 +662,24 @@ Proof.
   change (m{σ} (tmatchtree v eleaf enode) =
     tmatchtree (m{σ} v) (m{σ} eleaf) (m{σ} enode)).
   apply msubst_tmatchtree.
+Qed.
+
+Lemma subst_map_tcons σ hd tl :
+  subst_map σ (tcons hd tl) =
+  tcons (subst_map σ hd) (subst_map σ tl).
+Proof.
+  change (m{σ} (tcons hd tl) =
+    tcons (m{σ} hd) (m{σ} tl)).
+  apply msubst_tcons.
+Qed.
+
+Lemma subst_map_tmatchlist σ v enil econs :
+  subst_map σ (tmatchlist v enil econs) =
+  tmatchlist (subst_map σ v) (subst_map σ enil) (subst_map σ econs).
+Proof.
+  change (m{σ} (tmatchlist v enil econs) =
+    tmatchlist (m{σ} v) (m{σ} enil) (m{σ} econs)).
+  apply msubst_tmatchlist.
 Qed.
 
 Lemma msubst_fvar_lookup_closed σ x v :

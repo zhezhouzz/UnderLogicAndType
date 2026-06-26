@@ -944,20 +944,34 @@ Fixpoint tree_measure (t : tree) : nat :=
   | tr_node n lft rgt => S (n + tree_measure lft + tree_measure rgt)
   end.
 
+Fixpoint list_measure (xs : list nat) : nat :=
+  match xs with
+  | [] => 0
+  | n :: xs => S (n + list_measure xs)
+  end.
+
 Definition constant_measure_for_base (b : base_ty) (c : constant) : nat :=
   match b, c with
   | TNat, cnat n => n
   | TNat, cbool false => 0
   | TNat, cbool true => 1
   | TNat, ctree t => tree_measure t
+  | TNat, clist xs => list_measure xs
   | TBool, cbool false => 0
   | TBool, cbool true => 1
   | TBool, cnat n => n
   | TBool, ctree t => tree_measure t
+  | TBool, clist xs => list_measure xs
   | TTree, ctree t => tree_measure t
   | TTree, cnat n => n
   | TTree, cbool false => 0
   | TTree, cbool true => 1
+  | TTree, clist xs => list_measure xs
+  | TList, clist xs => list_measure xs
+  | TList, ctree t => tree_measure t
+  | TList, cnat n => n
+  | TList, cbool false => 0
+  | TList, cbool true => 1
   end.
 
 Definition constant_lt_for_base (b : base_ty) : constant -> constant -> Prop :=
