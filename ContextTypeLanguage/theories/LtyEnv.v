@@ -239,6 +239,17 @@ Lemma typed_lty_env_bind_open_current y (Σ : lty_env) T :
   <[LVFree y := T]> Σ.
 Proof. apply lvar_store_bind_open_current. Qed.
 
+Lemma lty_env_open_one_under_three_binds k y (Σ : lty_env) T0 T1 T2 :
+  LVFree y ∉ dom Σ ->
+  lty_env_open_one (k + 3) y
+    (typed_lty_env_bind
+      (typed_lty_env_bind
+        (typed_lty_env_bind Σ T0) T1) T2) =
+  typed_lty_env_bind
+    (typed_lty_env_bind
+      (typed_lty_env_bind (lty_env_open_one k y Σ) T0) T1) T2.
+Proof. apply lvar_store_open_one_under_three_binds. Qed.
+
 Lemma typed_lty_env_bind_open_env_lift η (Σ : lty_env) T :
   open_env_fresh_for_lvars η (dom Σ) ->
   lty_env_open_lvars ((kmap S η)) (typed_lty_env_bind Σ T) =
