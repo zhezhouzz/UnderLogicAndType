@@ -326,15 +326,25 @@ Proof.
         }
         rewrite Hagree by (simpl; set_solver). reflexivity.
   - econstructor; eauto.
-  - econstructor;
+  - eapply TT_BinOp; [eassumption| |];
+      match goal with
+      | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+          eapply IH; intros z Hz; apply Hagree; set_solver
+      end.
+  - eapply TT_App;
       match goal with
       | |- _ ⊢ᵥ _ ⋮ _ =>
           match goal with
           | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
               eapply IH; intros z Hz; apply Hagree; set_solver
           end
+      | |- _ ⊢ₑ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_tm _ → Γ' !! z = _ !! z) → Γ' ⊢ₑ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
       end.
-  - econstructor;
+  - eapply TT_Match;
       match goal with
       | |- _ ⊢ᵥ _ ⋮ _ =>
           match goal with
@@ -349,11 +359,8 @@ Proof.
       end.
   - econstructor;
       match goal with
-      | |- _ ⊢ᵥ _ ⋮ _ =>
-          match goal with
-          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
-              eapply IH; intros z Hz; apply Hagree; set_solver
-          end
+      | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+          eapply IH; intros z Hz; apply Hagree; set_solver
       end.
   - eapply TT_TreeMatch with (L := L ∪ fv_value v ∪ fv_tm eleaf ∪ fv_tm enode).
     + match goal with
@@ -489,11 +496,12 @@ Proof.
         rewrite kmap_insert by apply swap_inj.
         replace (swap x y (swap x y z)) with z by better_base_solver.
         reflexivity.
-    + econstructor; eauto.
-    + econstructor; eauto.
-    + econstructor; eauto.
-    + econstructor; eauto.
-    + eapply TT_TreeMatch with (L := set_swap x y L).
+	    + econstructor; eauto.
+	    + econstructor; eauto.
+	    + econstructor; eauto.
+	    + econstructor; eauto.
+	    + econstructor; eauto.
+	    + eapply TT_TreeMatch with (L := set_swap x y L).
       * eauto.
       * eauto.
       * intros root left right Hroot Hleft Hright.
@@ -610,6 +618,7 @@ Proof.
     + econstructor; eauto.
     + econstructor; eauto.
     + econstructor; eauto.
+    + econstructor; eauto.
     + eapply TT_TreeMatch with (L := set_swap x y L).
       * eauto.
       * eauto.
@@ -717,15 +726,17 @@ Proof.
         }
         rewrite Hagree by (simpl; set_solver). reflexivity.
   - econstructor; eauto.
-  - econstructor;
+  - eapply TT_BinOp; [eassumption| |];
       match goal with
-      | |- _ ⊢ᵥ _ ⋮ _ =>
-          match goal with
-          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
-              eapply IH; intros z Hz; apply Hagree; set_solver
-          end
+      | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+          eapply IH; intros z Hz; apply Hagree; set_solver
       end.
-  - econstructor;
+  - eapply TT_App;
+      match goal with
+      | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+          eapply IH; intros z Hz; apply Hagree; set_solver
+      end.
+  - eapply TT_Match;
       match goal with
       | |- _ ⊢ᵥ _ ⋮ _ =>
           match goal with
@@ -740,11 +751,8 @@ Proof.
       end.
   - econstructor;
       match goal with
-      | |- _ ⊢ᵥ _ ⋮ _ =>
-          match goal with
-          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
-              eapply IH; intros z Hz; apply Hagree; set_solver
-          end
+      | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+          eapply IH; intros z Hz; apply Hagree; set_solver
       end.
   - eapply TT_TreeMatch with (L := L ∪ fv_value v ∪ fv_tm eleaf ∪ fv_tm enode).
     + match goal with
@@ -1021,9 +1029,13 @@ Proof.
         specialize (IH x ltac:(set_solver));
         eapply IH; eapply Hopen; set_solver
     end.
-  - rewrite e in H2. simplify_eq. reflexivity.
+	  - rewrite e in H2. simplify_eq. reflexivity.
   - match goal with
-    | IH : ∀ T2, Γ ⊢ᵥ v1 ⋮ T2 → TArrow _ _ = T2,
+    | H1 : bin_op_type ?op = _, H2 : bin_op_type ?op = _ |- _ =>
+        rewrite H1 in H2; simplify_eq; reflexivity
+    end.
+			  - match goal with
+		    | IH : ∀ T2, Γ ⊢ᵥ v1 ⋮ T2 → TArrow _ _ = T2,
       Hfun : Γ ⊢ᵥ v1 ⋮ TArrow _ _ |- _ =>
         specialize (IH _ Hfun); simplify_eq; reflexivity
     end.
@@ -1057,6 +1069,10 @@ Proof.
         eapply IH; eapply Hopen; set_solver
     end.
   - rewrite e in H2. simplify_eq. reflexivity.
+  - match goal with
+    | H1 : bin_op_type ?op = _, H2 : bin_op_type ?op = _ |- _ =>
+        rewrite H1 in H2; simplify_eq; reflexivity
+    end.
   - match goal with
     | IH : ∀ T2, Γ ⊢ᵥ v1 ⋮ T2 → TArrow _ _ = T2,
       Hfun : Γ ⊢ᵥ v1 ⋮ TArrow _ _ |- _ =>
@@ -1099,31 +1115,32 @@ Proof.
     | IH : ∀ y : atom, y ∉ _ → ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm (e2 ^^ y) → Γ ⊢ₑ e2 ^^ y ⋮ _ |- _ =>
         eapply IH; [set_solver | |]
     end.
-    * rewrite insert_insert_ne by set_solver. reflexivity.
-    * pose proof (open_fv_tm e2 (vfvar y) 0) as Hfv.
-      simpl in Hfv. set_solver.
-  - econstructor.
+	    * rewrite insert_insert_ne by set_solver. reflexivity.
+	    * pose proof (open_fv_tm e2 (vfvar y) 0) as Hfv.
+	      simpl in Hfv. set_solver.
+  - eapply TT_BinOp; [eassumption| |];
+      match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value _ → Γ ⊢ᵥ _ ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+  - eapply TT_App;
+      match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value _ → Γ ⊢ᵥ _ ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+  - eapply TT_Match.
     + match goal with
-      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v1 → Γ ⊢ᵥ v1 ⋮ _ |- _ =>
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value _ → Γ ⊢ᵥ _ ⋮ _ |- _ =>
           eapply IH; [reflexivity | set_solver]
       end.
     + match goal with
-      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v2 → Γ ⊢ᵥ v2 ⋮ _ |- _ =>
-          eapply IH; [reflexivity | set_solver]
-      end.
-	  - econstructor.
-	    + match goal with
-	      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v → Γ ⊢ᵥ v ⋮ _ |- _ =>
-	          eapply IH; [reflexivity | set_solver]
-      end.
-    + match goal with
-      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm et → Γ ⊢ₑ et ⋮ _ |- _ =>
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm _ → Γ ⊢ₑ _ ⋮ _ |- _ =>
           eapply IH; [reflexivity | set_solver]
       end.
     + match goal with
-	      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm ef → Γ ⊢ₑ ef ⋮ _ |- _ =>
-	          eapply IH; [reflexivity | set_solver]
-	      end.
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm _ → Γ ⊢ₑ _ ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
   - econstructor.
     + match goal with
       | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value root → Γ ⊢ᵥ root ⋮ _ |- _ =>
@@ -1239,31 +1256,32 @@ Proof.
     | IH : ∀ y : atom, y ∉ _ → ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm (e2 ^^ y) → Γ ⊢ₑ e2 ^^ y ⋮ _ |- _ =>
         eapply IH; [set_solver | |]
     end.
-    * rewrite insert_insert_ne by set_solver. reflexivity.
-    * pose proof (open_fv_tm e2 (vfvar y) 0) as Hfv.
-      simpl in Hfv. set_solver.
-  - econstructor.
+	    * rewrite insert_insert_ne by set_solver. reflexivity.
+	    * pose proof (open_fv_tm e2 (vfvar y) 0) as Hfv.
+	      simpl in Hfv. set_solver.
+  - eapply TT_BinOp; [eassumption| |];
+      match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value _ → Γ ⊢ᵥ _ ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+  - eapply TT_App;
+      match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value _ → Γ ⊢ᵥ _ ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+  - eapply TT_Match.
     + match goal with
-      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v1 → Γ ⊢ᵥ v1 ⋮ _ |- _ =>
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value _ → Γ ⊢ᵥ _ ⋮ _ |- _ =>
           eapply IH; [reflexivity | set_solver]
       end.
     + match goal with
-      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v2 → Γ ⊢ᵥ v2 ⋮ _ |- _ =>
-          eapply IH; [reflexivity | set_solver]
-      end.
-	  - econstructor.
-	    + match goal with
-	      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v → Γ ⊢ᵥ v ⋮ _ |- _ =>
-	          eapply IH; [reflexivity | set_solver]
-      end.
-    + match goal with
-      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm et → Γ ⊢ₑ et ⋮ _ |- _ =>
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm _ → Γ ⊢ₑ _ ⋮ _ |- _ =>
           eapply IH; [reflexivity | set_solver]
       end.
     + match goal with
-	      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm ef → Γ ⊢ₑ ef ⋮ _ |- _ =>
-	          eapply IH; [reflexivity | set_solver]
-	      end.
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm _ → Γ ⊢ₑ _ ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
   - econstructor.
     + match goal with
       | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value root → Γ ⊢ᵥ root ⋮ _ |- _ =>

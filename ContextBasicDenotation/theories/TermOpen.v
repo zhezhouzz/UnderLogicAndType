@@ -173,19 +173,38 @@ Proof.
     apply H0.
     + set_solver.
     + set_solver.
-  - f_equal.
-    match goal with
-    | |- lstore_instantiate_value_split_at d _ _ ?v =
-         lstore_instantiate_value_split_at d _ _
-           (open_value (d + k) (vfvar y) ?v) =>
-        change (lstore_instantiate_value_at d
-          (lstore_swap (LVBound k) (LVFree y) σ) v =
-        lstore_instantiate_value_at d σ (open_value (d + k) (vfvar y) v))
-    end.
-    apply H; assumption.
-  - f_equal.
-    + match goal with
-      | |- lstore_instantiate_value_split_at d _ _ ?v =
+	  - f_equal.
+	    match goal with
+	    | |- lstore_instantiate_value_split_at d _ _ ?v =
+	         lstore_instantiate_value_split_at d _ _
+	           (open_value (d + k) (vfvar y) ?v) =>
+	        change (lstore_instantiate_value_at d
+	          (lstore_swap (LVBound k) (LVFree y) σ) v =
+	        lstore_instantiate_value_at d σ (open_value (d + k) (vfvar y) v))
+	    end.
+	    apply H; assumption.
+	  - f_equal.
+	    + match goal with
+	      | |- lstore_instantiate_value_split_at d _ _ ?v =
+	           lstore_instantiate_value_split_at d _ _
+	             (open_value (d + k) (vfvar y) ?v) =>
+	          change (lstore_instantiate_value_at d
+	            (lstore_swap (LVBound k) (LVFree y) σ) v =
+	          lstore_instantiate_value_at d σ (open_value (d + k) (vfvar y) v))
+	      end.
+	      apply H; set_solver.
+	    + match goal with
+	      | |- lstore_instantiate_value_split_at d _ _ ?v =
+	           lstore_instantiate_value_split_at d _ _
+	             (open_value (d + k) (vfvar y) ?v) =>
+	          change (lstore_instantiate_value_at d
+	            (lstore_swap (LVBound k) (LVFree y) σ) v =
+	          lstore_instantiate_value_at d σ (open_value (d + k) (vfvar y) v))
+	      end.
+	      apply H0; set_solver.
+	  - f_equal.
+	    + match goal with
+	      | |- lstore_instantiate_value_split_at d _ _ ?v =
            lstore_instantiate_value_split_at d _ _
              (open_value (d + k) (vfvar y) ?v) =>
           change (lstore_instantiate_value_at d

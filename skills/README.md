@@ -7,6 +7,11 @@ when the workflow changes.
 
 ## Current Discipline
 
+- On the current case-study/automation branch, only modify
+  `ProofAutomation/theories`, `CaseStudy/theories`, and this workflow note.
+  Do not edit the existing CoreLang, Denotation, ContextTyping, or Soundness
+  proofs.  New case-study typing convenience should live in the extended
+  ProofAutomation judgment and does not carry a fundamental theorem obligation.
 - Use a 50 second timeout for focused single-file checks.
 - Use `rocq compile -time` for repeated or unclear proof-time failures.
 - Stop after four timing/debugging loops and reassess the proof architecture.

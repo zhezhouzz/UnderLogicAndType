@@ -23,6 +23,18 @@ Definition prim_op_type (op : prim_op) : base_ty * base_ty :=
   | op_natGen => (TNat, TNat)
   end.
 
+Definition bin_op_type (op : bin_op) : base_ty * base_ty * base_ty :=
+  match op with
+  | bop_lt => (TNat, TNat, TBool)
+  | bop_le => (TNat, TNat, TBool)
+  | bop_gt => (TNat, TNat, TBool)
+  | bop_ge => (TNat, TNat, TBool)
+  | bop_plus => (TNat, TNat, TNat)
+  | bop_minus => (TNat, TNat, TNat)
+  | bop_and => (TBool, TBool, TBool)
+  | bop_or => (TBool, TBool, TBool)
+  end.
+
 (** ** Typing judgments *)
 
 (** We define two mutually-inductive relations and expose them via
@@ -59,6 +71,11 @@ with tm_has_type : gmap atom ty → tm → ty → Prop :=
       prim_op_type op = (arg_b, ret_b) →
       Γ ⊢ᵥ v ⋮ TBase arg_b →
       Γ ⊢ₑ (tprim op v) ⋮ TBase ret_b
+  | TT_BinOp Γ op v1 v2 arg1_b arg2_b ret_b :
+      bin_op_type op = (arg1_b, arg2_b, ret_b) →
+      Γ ⊢ᵥ v1 ⋮ TBase arg1_b →
+      Γ ⊢ᵥ v2 ⋮ TBase arg2_b →
+      Γ ⊢ₑ (tbinop op v1 v2) ⋮ TBase ret_b
   | TT_App Γ s1 s2 v1 v2 :
       Γ ⊢ᵥ v1 ⋮ (s1 →ₜ s2) →
       Γ ⊢ᵥ v2 ⋮ s1 →
@@ -302,11 +319,12 @@ Proof.
     rewrite <- subst_open_var_tm by eauto;
     eapply H; [set_solver | | exact Hv'];
     rewrite insert_insert_ne by set_solver; reflexivity.
-	  - econstructor; eauto.
-	  - econstructor; eauto.
-	  - econstructor; eauto.
-	  - econstructor; eauto.
-	  - eapply TT_TreeMatch with (L := L ∪ {[xsub]} ∪ dom Γ0); eauto.
+		  - econstructor; eauto.
+		  - econstructor; eauto.
+		  - econstructor; eauto.
+		  - econstructor; eauto.
+		  - econstructor; eauto.
+		  - eapply TT_TreeMatch with (L := L ∪ {[xsub]} ∪ dom Γ0); eauto.
 	    intros root left right Hroot Hleft Hright.
 	    unfold open_tree_node_branch, open_tree_node_branch_value.
 	    assert (Hlc_vx : lc_value vx) by exact (typing_value_lc _ _ _ Hv).
@@ -417,6 +435,7 @@ Proof.
     rewrite <- subst_open_var_tm by eauto;
     eapply H; [set_solver | | exact Hv'];
     rewrite insert_insert_ne by set_solver; reflexivity.
+	  - econstructor; eauto.
 	  - econstructor; eauto.
 	  - econstructor; eauto.
 	  - econstructor; eauto.

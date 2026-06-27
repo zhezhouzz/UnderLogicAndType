@@ -117,3 +117,23 @@ ContextTyping/theories/SoundnessFixSelf.v
 ContextTyping/theories/SoundnessFix.v
 ContextTyping/theories/SoundnessPersist.v
 ContextTyping/theories/Soundness.v
+
+-R ProofAutomation/theories ProofAutomation
+
+ProofAutomation/theories/CaseSyntax.v
+ProofAutomation/theories/CaseTypes.v
+ProofAutomation/theories/CaseBasicAutomation.v
+ProofAutomation/theories/BasicTypeInfer.v
+ProofAutomation/theories/ExtendedTyping.v
+ProofAutomation/theories/ExtendedSubsumption.v
+ProofAutomation/theories/ExtendedTypeInfer.v
+
+-R CaseStudy/theories CaseStudy
+
+CaseStudy/theories/MayMust.v
+CaseStudy/theories/Section1Intro.v
+CaseStudy/theories/Section2Typing.v
+CaseStudy/theories/Section3Logic.v
+CaseStudy/theories/Section4Extension.v
+CaseStudy/theories/BSTGenerator.v
+CaseStudy/theories/DisproveMerge.v

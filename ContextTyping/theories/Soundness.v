@@ -88,13 +88,17 @@ Proof.
   pose proof (context_typing_wf_basic_typing Σ Γ
     (tprim op (vfvar x))
     ({0 ~> x} (primop_result_ty (Φ op))) Hwf) as Hbasic.
-  inversion Hbasic as
-    [| |Γop op' v arg_b ret_b Hop_type Harg_basic| | | | | |]; subst; clear Hbasic.
-  inversion Harg_basic as [|Γv xv T Hlookup| |]; subst; clear Harg_basic.
+  inversion Hbasic; subst; clear Hbasic; try discriminate.
+  match goal with
+  | Harg_basic : _ ⊢ᵥ vfvar x ⋮ TBase ?arg_b,
+    Hop_type : prim_op_type op = (?arg_b, ?ret_b) |- _ =>
+      pose proof Hop_type as Hop_type0;
+      inversion Harg_basic as [|Γv xv T Hlookup| |]; subst; clear Harg_basic
+  end.
   pose proof (Φ_wf op) as Hsig.
   pose proof (wf_primop_erasure op (Φ op) Hsig) as Herasure.
   unfold primop_erasure_ok in Herasure.
-  rewrite Hop_type in Herasure.
+  rewrite Hop_type0 in Herasure.
   inversion Herasure. subst.
   unfold primop_arg_ty, over_ty.
   cbn [erase_ty].

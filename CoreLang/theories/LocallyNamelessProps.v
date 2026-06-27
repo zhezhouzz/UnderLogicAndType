@@ -54,6 +54,12 @@ Proof.
   split; inversion 1; subst; eauto.
 Qed.
 
+Lemma lc_binop_iff_values op v1 v2 :
+  lc_tm (tbinop op v1 v2) ↔ lc_value v1 ∧ lc_value v2.
+Proof.
+  split; inversion 1; subst; eauto.
+Qed.
+
 Lemma lc_app_iff_values v1 v2 :
   lc_tm (tapp v1 v2) ↔ lc_value v1 ∧ lc_value v2.
 Proof.
@@ -195,12 +201,54 @@ Proof.
   - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.
   - inversion Heq; subst. f_equal.
-    + eapply IHv; [exact Hneq|exact H0].
-    + eapply IHv0; [exact Hneq|exact H1].
-    + eapply (IHv1 (i + 3) (j + 3)); [lia|exact H2].
+    + match goal with
+      | IH : forall i j, i <> j ->
+          open_value i u (open_value j w ?v) = open_value j w ?v ->
+          open_value i u ?v = ?v |- open_value _ _ ?v = ?v =>
+          eapply IH; [exact Hneq|eassumption]
+      end.
+    + match goal with
+      | IH : forall i j, i <> j ->
+          open_value i u (open_value j w ?v) = open_value j w ?v ->
+          open_value i u ?v = ?v |- open_value _ _ ?v = ?v =>
+          eapply IH; [exact Hneq|eassumption]
+      end.
+    + match goal with
+      | IH : forall i j, i <> j ->
+          open_value i u (open_value j w ?v) = open_value j w ?v ->
+          open_value i u ?v = ?v |- open_value _ _ ?v = ?v =>
+          eapply IH; [exact Hneq|eassumption]
+      end.
   - inversion Heq; subst. f_equal; eauto.
+    match goal with
+    | IH : forall i j, i <> j ->
+        open_tm i ?u0 (open_tm j ?w0 ?e) = open_tm j ?w0 ?e ->
+        open_tm i ?u0 ?e = ?e |- open_tm _ _ ?e = ?e =>
+        eapply (IH (i + 3) (j + 3)); [lia|eassumption]
+    end.
   - inversion Heq; subst. f_equal; eauto.
-    eapply (IHv1 (i + 2) (j + 2)); [lia|exact H2].
+    all: match goal with
+    | IH : forall i j, i <> j ->
+        open_tm i ?u0 (open_tm j ?w0 ?e) = open_tm j ?w0 ?e ->
+        open_tm i ?u0 ?e = ?e |- open_tm _ _ ?e = ?e =>
+        eapply (IH (i + 2) (j + 2)); [lia|eassumption]
+    | IH : forall i j, i <> j ->
+        open_value i ?u0 (open_value j ?w0 ?v) = open_value j ?w0 ?v ->
+        open_value i ?u0 ?v = ?v |- open_value _ _ ?v = ?v =>
+        eapply IH; [exact Hneq|eassumption]
+    | IH : forall i j, i <> j ->
+        open_tm i ?u0 (open_tm j ?w0 ?e) = open_tm j ?w0 ?e ->
+        open_tm i ?u0 ?e = ?e |- open_tm _ _ ?e = ?e =>
+        eapply IH; [exact Hneq|eassumption]
+    end.
+    all: try lia; try eassumption; try reflexivity.
+  - inversion Heq; subst. f_equal; eauto.
+    match goal with
+    | IH : forall i j, i <> j ->
+        open_tm i ?u0 (open_tm j ?w0 ?e) = open_tm j ?w0 ?e ->
+        open_tm i ?u0 ?e = ?e |- open_tm _ _ ?e = ?e =>
+        eapply (IH (i + 2) (j + 2)); [lia|eassumption]
+    end.
 Qed.
 
 Lemma open_rec_open_eq_tm u w (e : tm) i j :
@@ -225,22 +273,21 @@ Proof.
   - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.
   - inversion Heq. subst. f_equal; eauto.
-    repeat match goal with
+  - inversion Heq. subst. f_equal; eauto.
+    match goal with
     | IH : forall i j, i <> j ->
-        open_value i u (open_value j w ?v) = open_value j w ?v ->
-        open_value i u ?v = ?v
-        |- open_value ?ii u ?v = ?v =>
-        eapply IH; [lia|eassumption]
-	    | IH : forall i j, i <> j ->
-	        open_tm i u (open_tm j w ?e) = open_tm j w ?e ->
-	        open_tm i u ?e = ?e
-	        |- open_tm ?ii u ?e = ?e =>
-	        eapply IH; [lia|eassumption]
-	    end.
-    eapply (IHe3 (i + 3) (j + 3)); [lia|exact H2].
+        open_tm i ?u0 (open_tm j ?w0 ?e) = open_tm j ?w0 ?e ->
+        open_tm i ?u0 ?e = ?e |- open_tm _ _ ?e = ?e =>
+        eapply (IH (i + 3) (j + 3)); [lia|eassumption]
+    end.
   - inversion Heq. subst. f_equal; eauto.
   - inversion Heq. subst. f_equal; eauto.
-    eapply (IHe3 (i + 2) (j + 2)); [lia|exact H2].
+    match goal with
+    | IH : forall i j, i <> j ->
+        open_tm i ?u0 (open_tm j ?w0 ?e) = open_tm j ?w0 ?e ->
+        open_tm i ?u0 ?e = ?e |- open_tm _ _ ?e = ?e =>
+        eapply (IH (i + 2) (j + 2)); [lia|eassumption]
+    end.
 Qed.
 
 Lemma open_rec_lc_mutual :

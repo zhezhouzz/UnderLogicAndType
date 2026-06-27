@@ -13,6 +13,7 @@ Bind Scope core_scope with base_ty.
 Bind Scope core_scope with ty.
 Bind Scope core_scope with constant.
 Bind Scope core_scope with prim_op.
+Bind Scope core_scope with bin_op.
 Bind Scope core_scope with value.
 Bind Scope core_scope with tm.
 
@@ -122,3 +123,20 @@ Notation "'boolGen' v" := (tprim op_boolGen v)
   (at level 30, v at level 30, format "boolGen  v") : core_scope.
 Notation "'natGen' v" := (tprim op_natGen v)
   (at level 30, v at level 30, format "natGen  v") : core_scope.
+
+Notation "v1 '<#' v2" := (tbinop bop_lt v1 v2)
+  (at level 40, left associativity, format "v1  <#  v2") : core_scope.
+Notation "v1 '<=#' v2" := (tbinop bop_le v1 v2)
+  (at level 40, left associativity, format "v1  <=#  v2") : core_scope.
+Notation "v1 '>#' v2" := (tbinop bop_gt v1 v2)
+  (at level 40, left associativity, format "v1  >#  v2") : core_scope.
+Notation "v1 '>=#' v2" := (tbinop bop_ge v1 v2)
+  (at level 40, left associativity, format "v1  >=#  v2") : core_scope.
+Notation "v1 '+#' v2" := (tbinop bop_plus v1 v2)
+  (at level 50, left associativity, format "v1  +#  v2") : core_scope.
+Notation "v1 '-#' v2" := (tbinop bop_minus v1 v2)
+  (at level 50, left associativity, format "v1  -#  v2") : core_scope.
+Notation "v1 '&&#' v2" := (tbinop bop_and v1 v2)
+  (at level 40, left associativity, format "v1  &&#  v2") : core_scope.
+Notation "v1 '||#' v2" := (tbinop bop_or v1 v2)
+  (at level 40, left associativity, format "v1  ||#  v2") : core_scope.

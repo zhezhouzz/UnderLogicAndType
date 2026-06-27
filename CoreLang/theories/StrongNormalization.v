@@ -187,20 +187,27 @@ Proof.
     + discriminate Hbad.
     + destruct Hcan as [e' Hstep_tlet].
       pose proof (step_regular1 _ _ Hstep_tlet) as Hlc_tlet.
-      destruct e1 as
-        [v|e1a e1b|op v|v1 v2|v et ef|root lft rgt|v el en
-        |hd tl|v enil econs].
+	      destruct e1 as
+	        [v|e1a e1b|op v|op v1 v2|v1 v2|v et ef|root lft rgt|v el en
+	        |hd tl|v enil econs].
       * left.
         apply lc_lete_iff_body in Hlc_tlet as [Hret _].
         apply lc_ret_iff_value in Hret.
         apply result_tm_tret. exact Hret.
-      * right. split.
-        -- inversion Hstep_tlet; subst.
-           ++ inversion H; subst; try discriminate.
-           ++ unfold can_step; eauto.
-        -- intros e1' Hstep1.
-           apply IH with (e2 := e2).
-           apply Hnext. apply Step_let; assumption.
+	      * right. split.
+	        -- inversion Hstep_tlet; subst.
+	           ++ inversion H; subst; try discriminate.
+	           ++ unfold can_step; eauto.
+	        -- intros e1' Hstep1.
+	           apply IH with (e2 := e2).
+	           apply Hnext. apply Step_let; assumption.
+	      * right. split.
+	        -- inversion Hstep_tlet; subst.
+	           ++ inversion H; subst; try discriminate.
+	           ++ unfold can_step; eauto.
+	        -- intros e1' Hstep1.
+	           apply IH with (e2 := e2).
+	           apply Hnext. apply Step_let; assumption.
       * right. split.
         -- inversion Hstep_tlet; subst.
            ++ inversion H; subst; try discriminate.
@@ -432,12 +439,20 @@ Proof.
   - destruct Hres as [v [Hbad _]]. discriminate Hbad.
   - destruct Hcan as [e' Hstep_tlet].
     pose proof (step_regular1 _ _ Hstep_tlet) as Hlc_tlet.
-    destruct e1 as
-      [v|e1a e1b|op v|v1 v2|v et ef|root lft rgt|v el en
-      |hd tl|v enil econs].
+	    destruct e1 as
+	      [v|e1a e1b|op v|op v1 v2|v1 v2|v et ef|root lft rgt|v el en
+	      |hd tl|v enil econs].
     + apply lc_lete_iff_body in Hlc_tlet as [Hret _].
       apply lc_ret_iff_value in Hret.
       apply must_terminating_tret. exact Hret.
+	    + apply Must_step.
+	      * inversion Hstep_tlet; subst.
+	        -- inversion H; subst; try discriminate.
+	        -- unfold can_step. eauto.
+	      * intros e1' Hstep1.
+	        eapply IH.
+	        -- apply Step_let; [exact Hstep1|exact Hlc_tlet].
+	        -- reflexivity.
     + apply Must_step.
       * inversion Hstep_tlet; subst.
         -- inversion H; subst; try discriminate.

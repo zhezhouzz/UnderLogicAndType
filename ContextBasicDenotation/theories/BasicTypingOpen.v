@@ -97,6 +97,7 @@ Proof.
   - f_equal; eauto.
   - f_equal; eauto.
   - f_equal; eauto.
+  - f_equal; eauto.
     match goal with
     | IH : forall i j x y, i <> j -> x <> y -> _ |- _ =>
         eapply IH; [lia|eassumption]
@@ -204,6 +205,7 @@ Proof.
   - f_equal. eauto.
   - f_equal; eauto; lia.
   - f_equal. eauto.
+  - f_equal; eauto.
   - f_equal; eauto.
   - f_equal; eauto.
   - f_equal; eauto.
@@ -463,11 +465,15 @@ Proof.
 	        apply lvars_fv_open_subset in Hbad.
 	        rewrite lvar_store_bind_lvars_fv_dom in Hbad.
 	        set_solver.
-	  - eapply BTT_Op.
-	    + exact e.
-	    + eapply H; set_solver.
-	  - eapply BTT_App.
-	    + eapply H; set_solver.
+		  - eapply BTT_Op.
+		    + exact e.
+		    + eapply H; set_solver.
+		  - eapply BTT_BinOp.
+		    + exact e.
+		    + eapply H; set_solver.
+		    + eapply H0; set_solver.
+		  - eapply BTT_App.
+		    + eapply H; set_solver.
 	    + eapply H0; set_solver.
 	  - eapply BTT_Match.
 	    + eapply H; set_solver.
@@ -760,14 +766,24 @@ Proof.
           change (e2 ^^ x) with (open_tm 0 (vfvar x) e2) in Hbody.
           rewrite close_tm_open_commute_fresh in Hbody by (lia || set_solver).
           exact Hbody.
-    - eapply BTT_Op.
-      + exact e.
-      + eapply H; [|reflexivity].
-        match goal with
-        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
-        end.
-    - eapply BTT_App.
-      + eapply H; [|reflexivity].
+	    - eapply BTT_Op.
+	      + exact e.
+	      + eapply H; [|reflexivity].
+	        match goal with
+	        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+	        end.
+	    - eapply BTT_BinOp.
+	      + exact e.
+	      + eapply H; [|reflexivity].
+	        match goal with
+	        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+	        end.
+	      + eapply H0; [|reflexivity].
+	        match goal with
+	        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+	        end.
+	    - eapply BTT_App.
+	      + eapply H; [|reflexivity].
         match goal with
         | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
         end.

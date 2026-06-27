@@ -12,7 +12,8 @@ Lemma head_step_regular e e' :
 Proof.
   intros Hstep.
   destruct Hstep as
-    [v e Hlc | op c c' Heval Hlc | s body v Hlc
+    [v e Hlc | op c c' Heval Hlc
+    | op c1 c2 c' Heval Hlc | s body v Hlc
     | Tf vf v Hlc | et ef Hlc | et ef Hlc
     | n left right Hlc | eleaf enode Hlc
     | n left right eleaf enode Hlc
@@ -23,6 +24,7 @@ Proof.
       * by apply lc_lete_iff_body in Hlc as [_ Hbody].
       * apply lc_lete_iff_body in Hlc as [Hret _].
         by apply lc_ret_iff_value.
+  - split; [assumption|constructor; constructor].
   - split; [assumption|constructor; constructor].
   - split.
     + assumption.
@@ -182,9 +184,10 @@ Lemma head_step_fv_subset e e' :
   fv_tm e' ⊆ fv_tm e.
 Proof.
   intros Hstep. destruct Hstep; simpl.
-  - pose proof (open_fv_tm e v 0) as Hopen. my_set_solver.
+	  - pose proof (open_fv_tm e v 0) as Hopen. my_set_solver.
+	  - my_set_solver.
   - my_set_solver.
-  - pose proof (open_fv_tm body v 0) as Hopen. my_set_solver.
+	  - pose proof (open_fv_tm body v 0) as Hopen. my_set_solver.
   - pose proof (open_fv_value vf v 0) as Hopen. my_set_solver.
   - my_set_solver.
   - my_set_solver.

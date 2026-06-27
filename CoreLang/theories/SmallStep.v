@@ -49,6 +49,48 @@ Proof.
   rewrite <- Hret. constructor.
 Qed.
 
+Inductive bin_step : bin_op → constant → constant → constant → Prop :=
+  | Bin_lt n m :
+      bin_step bop_lt (cnat n) (cnat m) (cbool (n <? m))
+  | Bin_le n m :
+      bin_step bop_le (cnat n) (cnat m) (cbool (n <=? m))
+  | Bin_gt n m :
+      bin_step bop_gt (cnat n) (cnat m) (cbool (m <? n))
+  | Bin_ge n m :
+      bin_step bop_ge (cnat n) (cnat m) (cbool (m <=? n))
+  | Bin_plus n m :
+      bin_step bop_plus (cnat n) (cnat m) (cnat (n + m))
+  | Bin_minus n m :
+      bin_step bop_minus (cnat n) (cnat m) (cnat (n - m))
+  | Bin_and b1 b2 :
+      bin_step bop_and (cbool b1) (cbool b2) (cbool (andb b1 b2))
+  | Bin_or b1 b2 :
+      bin_step bop_or (cbool b1) (cbool b2) (cbool (orb b1 b2)).
+
+#[global] Hint Constructors bin_step : core.
+
+Lemma bin_step_preserves_base op c1 c2 c' arg1_b arg2_b ret_b :
+  bin_op_type op = (arg1_b, arg2_b, ret_b) →
+  bin_step op c1 c2 c' →
+  base_ty_of_const c1 = arg1_b /\
+  base_ty_of_const c2 = arg2_b /\
+  base_ty_of_const c' = ret_b.
+Proof.
+  intros Hop Hstep.
+  inversion Hstep; subst; simpl in Hop; inversion Hop; subst; simpl; auto.
+Qed.
+
+Lemma bin_step_result_has_type op c1 c2 c' arg1_b arg2_b ret_b :
+  bin_op_type op = (arg1_b, arg2_b, ret_b) →
+  bin_step op c1 c2 c' →
+  ∅ ⊢ᵥ vconst c' ⋮ TBase ret_b.
+Proof.
+  intros Hop Hstep.
+  destruct (bin_step_preserves_base op c1 c2 c' arg1_b arg2_b ret_b Hop Hstep)
+    as [_ [_ Hret]].
+  rewrite <- Hret. constructor.
+Qed.
+
 (** ** Head reduction *)
 
 (** [head_step e e'] is the *head* (redex) reduction.
@@ -65,6 +107,11 @@ Inductive head_step : tm → tm → Prop :=
       prim_step op c c' →
       lc_tm (tprim op (vconst c)) →
       head_step (tprim op (vconst c)) (tret (vconst c'))
+
+  | HS_BinOp op c1 c2 c' :
+      bin_step op c1 c2 c' →
+      lc_tm (tbinop op (vconst c1) (vconst c2)) →
+      head_step (tbinop op (vconst c1) (vconst c2)) (tret (vconst c'))
 
   (** [tapp (vlam s body) v  →  body[0 ↦ v]] *)
   | HS_Beta s body v :
@@ -178,6 +225,19 @@ Proof.
     simplify_eq; reflexivity.
 Qed.
 
+Lemma bin_step_preserves_type op c1 c2 c' arg1_b arg2_b ret_b :
+  bin_step op c1 c2 c' →
+  bin_op_type op = (arg1_b, arg2_b, ret_b) →
+  base_ty_of_const c1 = arg1_b →
+  base_ty_of_const c2 = arg2_b →
+  base_ty_of_const c' = ret_b.
+Proof.
+  intros Hstep Hsig Harg1 Harg2.
+  destruct (bin_step_preserves_base op c1 c2 c' arg1_b arg2_b ret_b Hsig Hstep)
+    as [_ [_ Hret]].
+  exact Hret.
+Qed.
+
 Lemma head_step_preserves_type Γ e e' T :
   Γ ⊢ₑ e ⋮ T → head_step e e' → Γ ⊢ₑ e' ⋮ T.
 Proof.
@@ -197,6 +257,12 @@ Proof.
     inversion H6; subst.
     replace ret_b with (base_ty_of_const c') by
       (eapply prim_step_preserves_type; eauto; reflexivity).
+    constructor; constructor.
+  - inversion Hty; subst.
+    inversion H7; subst.
+    inversion H8; subst.
+    replace ret_b with (base_ty_of_const c') by
+      (eapply bin_step_preserves_type; eauto; reflexivity).
     constructor; constructor.
   - inversion Hty; subst.
     inversion H3; subst.

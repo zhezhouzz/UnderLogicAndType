@@ -69,13 +69,18 @@ with basic_tm_has_ltype : lty_env -> tm -> ty -> Prop :=
           (lty_env_open_one 0 x (typed_lty_env_bind Σ T1))
           (e2 ^^ x) T2) ->
       basic_tm_has_ltype Σ (tlete e1 e2) T2
-  | BTT_Op Σ op v arg_b ret_b :
-      prim_op_type op = (arg_b, ret_b) ->
-      basic_value_has_ltype Σ v (TBase arg_b) ->
-      basic_tm_has_ltype Σ (tprim op v) (TBase ret_b)
-  | BTT_App Σ s1 s2 v1 v2 :
-      basic_value_has_ltype Σ v1 (s1 →ₜ s2) ->
-      basic_value_has_ltype Σ v2 s1 ->
+	  | BTT_Op Σ op v arg_b ret_b :
+	      prim_op_type op = (arg_b, ret_b) ->
+	      basic_value_has_ltype Σ v (TBase arg_b) ->
+	      basic_tm_has_ltype Σ (tprim op v) (TBase ret_b)
+	  | BTT_BinOp Σ op v1 v2 arg1_b arg2_b ret_b :
+	      bin_op_type op = (arg1_b, arg2_b, ret_b) ->
+	      basic_value_has_ltype Σ v1 (TBase arg1_b) ->
+	      basic_value_has_ltype Σ v2 (TBase arg2_b) ->
+	      basic_tm_has_ltype Σ (tbinop op v1 v2) (TBase ret_b)
+	  | BTT_App Σ s1 s2 v1 v2 :
+	      basic_value_has_ltype Σ v1 (s1 →ₜ s2) ->
+	      basic_value_has_ltype Σ v2 s1 ->
       basic_tm_has_ltype Σ (tapp v1 v2) s2
 	  | BTT_Match Σ v T et ef :
 	      basic_value_has_ltype Σ v (TBase TBool) ->
@@ -218,11 +223,12 @@ Proof.
 		      * apply elem_of_difference in HaΣ as [HaΣ _]. exact HaΣ.
 		      * destruct (decide (0 ∈ lvars_bv (dom (typed_lty_env_bind Σ T1))));
 		          set_solver.
-  - set_solver.
-  - set_solver.
-  - set_solver.
-  - set_solver.
-		  - set (root := fresh_for
+	  - set_solver.
+	  - set_solver.
+	  - set_solver.
+	  - set_solver.
+	  - set_solver.
+			  - set (root := fresh_for
 	      (L ∪ fv_tm enode ∪ lvars_fv (dom Σ))).
 	    assert (Hroot : root ∉ L ∪ fv_tm enode ∪ lvars_fv (dom Σ)).
 	    { subst root. apply fresh_for_not_in. }
@@ -1115,18 +1121,36 @@ Proof.
            apply body_open_tm; [exact Hbody2|constructor].
         -- eapply tm_lvars_open_body_subset_lc; [exact Hbody2|].
            cbn [tm_lvars tm_lvars_at] in H2. set_solver.
-  - match goal with
-    | Hlc : lc_tm (tprim _ _) |- _ => apply lc_prim_iff_value in Hlc
-    end.
-    eapply BTT_Op.
-    + match goal with
-      | Hop : prim_op_type _ = _ |- _ => exact Hop
-      end.
-    +
-    eapply H; eauto.
-  - match goal with
-    | Hlc : lc_tm (tapp _ _) |- _ =>
-        apply lc_app_iff_values in Hlc as [Hlc1 Hlc2]
+	  - match goal with
+	    | Hlc : lc_tm (tprim _ _) |- _ => apply lc_prim_iff_value in Hlc
+	    end.
+	    eapply BTT_Op.
+	    + match goal with
+	      | Hop : prim_op_type _ = _ |- _ => exact Hop
+	      end.
+	    +
+	    eapply H; eauto.
+	  - match goal with
+	    | Hlc : lc_tm (tbinop _ _ _) |- _ =>
+	        apply lc_binop_iff_values in Hlc as [Hlc1 Hlc2]
+	    end.
+	    eapply BTT_BinOp.
+	    + match goal with
+	      | Hop : bin_op_type _ = _ |- _ => exact Hop
+	      end.
+	    + eapply H; eauto.
+	      match goal with
+	      | Hsub : tm_lvars (tbinop _ _ _) ⊆ _ |- _ =>
+	          cbn [tm_lvars tm_lvars_at] in Hsub; set_solver
+	      end.
+	    + eapply H0; eauto.
+	      match goal with
+	      | Hsub : tm_lvars (tbinop _ _ _) ⊆ _ |- _ =>
+	          cbn [tm_lvars tm_lvars_at] in Hsub; set_solver
+	      end.
+	  - match goal with
+	    | Hlc : lc_tm (tapp _ _) |- _ =>
+	        apply lc_app_iff_values in Hlc as [Hlc1 Hlc2]
     end.
     eapply BTT_App.
     + eapply H; eauto.
@@ -1605,13 +1629,14 @@ Proof.
     specialize (H x ltac:(set_solver) (<[x := sx]> Δ)).
     exact (H (lvar_store_open_bind_atom_store Δ sx x ltac:(set_solver))).
   - eapply TT_Ret. eauto.
-  - eapply TT_Let with (L := L ∪ dom Δ).
-    + eauto.
-    + intros x Hx.
-      specialize (H0 x ltac:(set_solver) (<[x := T1]> Δ)).
-      exact (H0 (lvar_store_open_bind_atom_store Δ T1 x ltac:(set_solver))).
-  - eapply TT_Op; eauto.
-  - eapply TT_App; eauto.
+	  - eapply TT_Let with (L := L ∪ dom Δ).
+	    + eauto.
+	    + intros x Hx.
+	      specialize (H0 x ltac:(set_solver) (<[x := T1]> Δ)).
+	      exact (H0 (lvar_store_open_bind_atom_store Δ T1 x ltac:(set_solver))).
+	  - eapply TT_Op; eauto.
+	  - eapply TT_BinOp; eauto.
+	  - eapply TT_App; eauto.
   - eapply TT_Match; eauto.
   - eapply TT_TreeNode; eauto.
   - eapply TT_TreeMatch with (L := L ∪ dom Δ).
@@ -1775,14 +1800,19 @@ Proof.
         assert (Hy : y ∉ L1 ∪ L2) by (subst y; apply fresh_for_not_in);
         exact (IH2 y ltac:(set_solver) _ (Hbody y ltac:(set_solver)))
     end.
-  - match goal with
-    | Hop1 : prim_op_type ?op = (?a1, ?r1),
-      Hop2 : prim_op_type ?op = (?a2, ?r2) |- _ =>
-        rewrite Hop1 in Hop2; inversion Hop2; reflexivity
-    end.
-  - match goal with
-    | IH : forall T2, basic_value_has_ltype _ _ T2 -> _,
-      Hfun : basic_value_has_ltype _ _ (_ →ₜ _) |- _ =>
+	  - match goal with
+	    | Hop1 : prim_op_type ?op = (?a1, ?r1),
+	      Hop2 : prim_op_type ?op = (?a2, ?r2) |- _ =>
+	        rewrite Hop1 in Hop2; inversion Hop2; reflexivity
+	    end.
+	  - match goal with
+	    | Hop1 : bin_op_type ?op = (?a1, ?a2, ?r1),
+	      Hop2 : bin_op_type ?op = (?b1, ?b2, ?r2) |- _ =>
+	        rewrite Hop1 in Hop2; inversion Hop2; reflexivity
+	    end.
+	  - match goal with
+	    | IH : forall T2, basic_value_has_ltype _ _ T2 -> _,
+	      Hfun : basic_value_has_ltype _ _ (_ →ₜ _) |- _ =>
         pose proof (IH _ Hfun) as Heq
     end.
     inversion Heq. reflexivity.
