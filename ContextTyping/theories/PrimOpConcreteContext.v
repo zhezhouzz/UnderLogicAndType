@@ -52,38 +52,6 @@ Definition concrete_primop_sig (op : prim_op) : primop_sig :=
 
 Definition concrete_Φ : primop_ctx := concrete_primop_sig.
 
-Local Ltac primop_rewrite_tm_support :=
-  repeat match goal with
-  | |- context [lvars_at_depth ?d (tm_lvars ?e)] =>
-      rewrite (tm_lvars_depth e d)
-  | H : context [lvars_at_depth ?d (tm_lvars ?e)] |- _ =>
-      rewrite (tm_lvars_depth e d) in H
-  end.
-
-Local Ltac primop_unfold_formula_lvars_atoms :=
-  unfold ty_guard_formula, context_ty_wf_formula, basic_world_formula,
-    expr_basic_typing_formula, expr_total_formula, expr_result_formula,
-    expr_result_formula_at, expr_result_atom_formula, FFiberAtom;
-  cbn [formula_lvars_at];
-  unfold context_ty_wf_qual, basic_world_qual,
-    expr_basic_typing_qual, expr_total_qual, expr_result_qual;
-  cbn [qual_dom qual_vars qual_lvars].
-
-Local Ltac primop_normalize_denot_formula_lvars :=
-  primop_unfold_formula_lvars_atoms;
-  repeat rewrite ?lvars_at_depth_union;
-  primop_rewrite_tm_support;
-  rewrite ?context_ty_lvars_depth;
-  rewrite ?tm_lvars_at_shift_under by lia;
-  rewrite ?context_ty_lvars_at_shift_under by lia;
-  rewrite ?lvars_at_depth_shift_under by lia;
-  rewrite ?value_lvars_at_bound0_under;
-  rewrite ?tm_lvars_at_tret_bound0_under;
-  rewrite ?lvars_at_depth_dom_singleton_bound0_succ;
-  rewrite ?lvars_at_depth_singleton_bound0_succ;
-  rewrite ?lvars_at_depth_empty;
-  cbn [context_ty_lvars_at tm_lvars_at value_lvars_at].
-
 Lemma primop_result_ty_eq op :
   primop_result_ty (concrete_Φ op) =
   match op with

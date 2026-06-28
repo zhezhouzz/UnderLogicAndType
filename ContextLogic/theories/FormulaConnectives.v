@@ -1475,29 +1475,3 @@ Proof.
 Qed.
 
 End FormulaConnectives.
-
-Ltac normalize_models_ands_in H :=
-  repeat rewrite res_models_and_iff in H.
-
-Ltac normalize_models_ands_goal :=
-  repeat rewrite res_models_and_iff.
-
-Ltac destruct_models_formula_hyps :=
-  repeat match goal with
-  | H : res_models _ (FAnd _ _) |- _ =>
-      rewrite res_models_and_iff in H; destruct H
-  | H : res_models _ _ /\ _ |- _ =>
-      destruct H
-  | H : _ /\ res_models _ _ |- _ =>
-      destruct H
-  end.
-
-Ltac split_models_formula_goal :=
-  repeat match goal with
-  | |- res_models _ (FAnd _ _) =>
-      rewrite res_models_and_iff; split
-  | |- res_models _ _ /\ _ =>
-      split
-  | |- _ /\ res_models _ _ =>
-      split
-  end.

@@ -1,668 +1,335 @@
-Ltac Inventory and Cleanup Analysis
-===================================
+Ltac Inventory Cleanup Status
+=============================
 
 Scope
 -----
 
-This report scans all `.v` files for `Ltac` and `Tactic Notation`
-definitions and classifies them by intent, current use, and cleanup
-opportunity.  The scan is textual, so notation variants such as
-`better_set_solver !` and `better_set_solver !!` are counted separately; the
-counts below should be read as a guide, not as proof of semantic importance.
+This file tracks the Ltac cleanup pass requested for the current branch.  It is
+kept as a live status document: completed cleanup is recorded here, and the only
+remaining items are deliberately deferred because they are low-value, interactive
+helpers, or require broader proof-style migration that could increase compile
+time.
 
-High-level summary
-------------------
+Current snapshot
+----------------
 
-- Approximate tactic/notation definitions found: 235.
-- The tactic stack is already naturally layered:
-  1. pure stdpp/set/map/store solvers;
-  2. locally nameless binder/freshness support;
-  3. syntax/open/fv/erase/relevant-env normalizers;
-  4. semantic regular extraction tactics;
-  5. case-specific proof scripts for soundness, fix, persist, const, arrow/wand.
-- The most-used tactics are the expected solver layer:
-  - `better_set_solver`: about 448 textual hits across 41 files.
-  - `my_set_solver`: about 68 hits.
-  - `better_base_solver`: about 53 hits.
-  - `models_fuel_irrel`: about 44 hits.
-  - `better_map_solver`: about 27 hits.
-- The biggest cleanup opportunities are not in the pure solver layer.  They are
-  in duplicate local tactics, underused locally nameless tactics, and multiple
-  overlapping open/relevant-env normalizers.
+- Initial scan: 235 `Ltac` / `Tactic Notation` definitions.
+- After cleanup: 191 definitions.
+- Removed in this pass: 44 unused wrappers, stale normalizers, or old-route
+  proof-search helpers.
+- Current zero-use tactics left: 6, all intentionally deferred.
 
-Important convention for future cleanup
----------------------------------------
+Completed cleanup
+-----------------
 
-Do not replace precise, deterministic normalization with a giant global solver.
-The healthy shape should be:
+1. Low-level alias cleanup
 
-1. run regular extraction for repo-specific hypotheses;
-2. run syntax/open/relevant-env normalization at the source boundary;
-3. call a small set/map/store solver only on the residual stdpp goal.
+- Removed unused store aliases:
+  - `store_norm`
+  - `store_solver`
+- Removed unused type/env aliases:
+  - `type_env_norm`
+  - `mopen_norm`
 
-This is especially important for compile time: `better_set_solver` is powerful
-but not cheap, and `fast_set_solver !!` should be preferred when it suffices.
+Reason: these names had no call sites and duplicated the real public tactics
+(`store_normalize`, `better_store_solver`, `type_open_env_syntax_norm`).
 
-Current tactic families
------------------------
+2. Relevant-env / basic-denotation stale helpers
 
-1. Pure stdpp / set / map layer
-
-- Files:
-  - `ContextBase/Tactics.v`
-  - `ContextBase/BaseTactics.v`
-- Main tactics:
-  - `fast_set_solver`, `fast_set_solver !`, `fast_set_solver !!`
-  - `set_normalize`, `better_set_solver`, `better_set_solver !`,
-    `better_set_solver !!`
-  - `map_normalize`, `better_map_solver`, `better_map_solver !`,
-    `better_map_solver !!`
-  - `base_swap_normalize`, `base_open_env_normalize`,
-    `better_base_solver`
-- Intent:
-  - normalize common stdpp set/map/base expressions;
-  - prune irrelevant hypotheses before calling the heavier solver;
-  - provide a stable low-level backend for higher-level regular tactics.
-- Current state:
-  - This is the most used tactic family and should remain low-level.
-  - `set_normalize_step`, `map_normalize_step`, and similar step tactics look
-    low-use only because they are implementation internals.
-- Recommendations:
-  - Keep this layer stable.
-  - Prefer adding small deterministic rewrite lemmas here only when they are
-    truly pure stdpp/base facts.
-  - Do not add repo-specific regular extraction here.
-
-2. Locally nameless layer
-
-- File:
-  - `LocallyNameless/Tactics.v`
-- Main tactics:
-  - binder/freshness:
-    `collect_stales`, `auto_exists_L`, `pose_fresh_from`,
-    `auto_pose_fv`, `pose_fresh_fv`, `specialize_with`
-  - cofinite constructors:
-    `econstructor_L`, `auto_specialization`,
-    `econstructor_L_specialized`
-  - binder cleanup:
-    `crush_binders`, `ln_simpl`, `smart_ln_simpl`
-  - variable-decide cleanup:
-    `var_dec_solver`, `var_dec_simpl`, `var_dec_set_solver`
-  - old apply helpers:
-    `apply_eq`, `eapply_eq`, `auto_apply`, `auto_eapply`,
-    `auto_apply_eq`, `auto_eapply_eq`
-- Intent:
-  - automate locally nameless cofinite quantification and freshness picking.
-- Current state:
-  - `collect_stales` is used, but not enough.  It is the right source of
-    "names already in the proof state" and should replace ad hoc `L := ∅` or
-    hand-built stale sets in open/fresh proofs.
-  - `econstructor_L` and `econstructor_L_specialized` are underused relative
-    to the number of cofinite constructors in the repo.
-  - `pose_fresh_from` and `pose_fresh_fv` appear unused.  They may be old
-    routes, but their idea is still useful if wrapped by a deterministic
-    binder-intro tactic.
-  - `auto_apply_eq` / `auto_eapply_eq` appear unused.  They are likely old
-    proof-search helpers and should not be expanded further.
-- Recommendations:
-  - Add a small "LN opening boundary" tactic for proof scripts that:
-    1. calls `collect_stales`;
-    2. chooses the opened name from existing syntax names when possible;
-    3. applies `econstructor_L` / `econstructor_L_specialized`.
-  - Replace manual cofinite boilerplate in BasicTyping/Open/Soundness with this
-    tactic, but only where timing stays stable.
-  - Mark `auto_apply_eq` and `auto_eapply_eq` as removal candidates if no
-    external use appears.
-
-3. Store/resource layer
-
-- File:
-  - `ContextStore/Store.v`
-- Main tactics:
-  - `store_set_normalize`, `store_restrict_normalize`,
-    `store_insert_normalize`, `store_lookup_normalize`,
-    `store_key_normalize`, `store_normalize`
-  - `store_finish`, `store_restrict_lookup_split`, `better_store_solver`
-  - aliases: `store_norm`, `store_solver`
-- Intent:
-  - normalize store restriction, insertion, lookup, and key-domain side goals.
-- Current state:
-  - `store_normalize` and `better_store_solver` are used.
-  - `store_norm` and `store_solver` aliases have no direct use.  They are
-    harmless, but they duplicate names without adding meaning.
-- Recommendations:
-  - Keep the core normalizer and solver.
-  - Either start using `store_norm`/`store_solver` consistently as public names,
-    or remove the aliases after confirming no downstream user imports them.
-
-4. Formula syntax and semantics layer
-
-- Files:
-  - `ContextLogic/theories/FormulaSyntaxRegular.v`
-  - `ContextLogic/theories/FormulaSemantics.v`
-  - `ContextLogic/theories/FormulaConnectives.v`
-  - `ContextLogic/theories/FormulaConnectivesHigher.v`
-  - `ContextLogic/theories/FormulaFiberwise.v`
-- Main tactics:
-  - syntax:
-    `formula_fv_syntax_norm`, `formula_open_syntax_norm`,
-    `formula_open_env_syntax_norm`, `formula_msubst_syntax_norm`,
-    `formula_syntax_norm`, plus `_in` variants
-  - semantics:
-    `models_fuel_finish`, `models_fuel_irrel`,
-    `models_fuel_irrel_auto`, `formula_scope_syntax_norm`,
-    `formula_semantics_norm`, `formula_scope_solve`
-  - connectives:
-    `normalize_models_ands_in`, `normalize_models_ands_goal`,
-    `destruct_models_formula_hyps`, `split_models_formula_goal`,
-    `use_models_impl`
-  - fiberwise:
-    `formula_regular_fiber_dom`, `formula_regular`
-- Intent:
-  - keep formula syntax normalization separate from semantic proof steps;
-  - normalize `res_models` connective shapes;
-  - provide reusable fiberwise regular facts.
-- Current state:
-  - Formula syntax normalizers are used mostly indirectly from Denotation.
-  - Several connective tactics are currently unused:
-    `normalize_models_ands_in`, `normalize_models_ands_goal`,
-    `destruct_models_formula_hyps`, `split_models_formula_goal`.
-  - `formula_semantics_norm` / `_in` are unused.  They may be intended as a
-    public boundary normalizer but the current proofs mostly call more local
-    tactics.
-  - `formula_scope_solve` and
-    `pose_formula_scoped_forall_open_from_dom` appear unused.
-- Recommendations:
-  - Decide whether connective tactics are a public style.  If yes, use them in
-    the few large formula proofs; if no, remove them.
-  - Keep formula syntax normalizers as the source of truth for formula-level
-    open/fv/msubst normalization.
-  - If `formula_semantics_norm` is retained, make Denotation call it through one
-    public boundary tactic instead of duplicating formula-open rewrites.
-
-5. Core language and type-language syntax layer
-
-- Files:
-  - `CoreLang/theories/InstantiationProps.v`
-  - `CoreLang/theories/LocallyNamelessProps.v`
-  - `CoreLang/theories/LocallyNamelessExtra.v`
-  - `ContextTypeLanguage/theories/SyntaxRegular.v`
-  - `ContextTypeLanguage/theories/TypeOpen.v`
-  - `ContextTypeLanguage/theories/LtyEnv.v`
-- Main tactics:
-  - core:
-    `fold_msubst`, `rewrite_msubst_insert`, `msubst_simp`,
-    `crush_nat_decides`, local `solve_open_swap_bvar`
-  - type syntax:
-    `cty_lvars_syntax_norm`, `cty_fv_syntax_norm`,
-    `cty_open_syntax_norm`, `cty_shift_syntax_norm`,
-    `cty_erase_syntax_norm`, `ctx_syntax_norm`,
-    `type_syntax_norm`, `cty_depth_norm`, `cty_depth_solve`
-  - type open-env:
-    `qual_open_env_syntax_norm`, `cty_open_env_syntax_norm`,
-    `type_open_env_syntax_norm`, `mopen_norm`
-  - environments:
-    `type_env_norm`
-- Intent:
-  - normalize LN open/shift/fv/erase/depth and type environment opening.
-- Current state:
-  - `cty_depth_solve`, `cty_fv_syntax_norm`, `type_open_env_syntax_norm` are
-    meaningfully used.
-  - `mopen_norm`, `type_lvars_norm`, `type_env_norm` appear unused.
-  - Several syntax normalizers have `_in` variants that are rarely called. This
-    is normal for public APIs but should be checked against actual call sites.
-- Recommendations:
-  - Keep the syntax normalizer family but document the intended public entry:
-    likely `type_syntax_norm` and `type_open_env_syntax_norm`.
-  - Avoid ad hoc `change`/`rewrite` of `cty_open`/`cty_shift` in upper layers;
-    upper layers should call these normalizers.
-  - Remove or inline `mopen_norm` if no future proof path uses it.
-
-6. Relevant-env and basic denotation support
-
-- Files:
-  - `ContextBasicDenotation/theories/RelevantEnvRegular.v`
-  - `ContextBasicDenotation/theories/BasicTypingOpen.v`
-  - `ContextBasicDenotation/theories/TermSyntax.v`
-- Main tactics:
-  - `support_lvars_norm`, `relevant_lvars_norm`,
-    `lty_env_open_bind_norm`, `relevant_env_norm`,
-    `relevant_env_set`, `closed_side_solve`
-  - local child-open tactics in `BasicTypingOpen.v`
-  - `fold_lstore_instantiate_at`
-- Intent:
-  - normalize direct support sets, relevant environment restriction, and child
-    binder environments.
-- Current state:
-  - `support_lvars_norm` and `relevant_env_norm` are the right conceptual
-    layer, but `relevant_lvars_norm` is now partly legacy because
-    `relevant_lvars` was being pushed toward notation/direct support.
-  - `relevant_env_set` and `closed_side_solve` are unused.
-  - `fold_lstore_instantiate_at` is unused.
-- Recommendations:
-  - Prefer `support_lvars_norm` as the public support-set normalizer.
-  - Keep `relevant_env_norm` only as compatibility around the direct
-    `lty_env_restrict_lvars` shape.
-  - Remove `relevant_env_set`, `closed_side_solve`, and
-    `fold_lstore_instantiate_at` if they are not part of a planned proof path.
-
-7. Denotation layer
-
-- Files:
-  - `Denotation/theories/TypeDenoteRegular.v`
-  - `Denotation/theories/ResultFirstOpen.v`
-  - `Denotation/theories/DenotationSetMapFacts.v`
-  - `Denotation/theories/Context.v`
-  - plus local tactics in `TypeEquiv*`, `TypePersist*`, `ConstDenote*`
-- Main tactics:
-  - open normalization:
-    `open_syntax_norm`, `denotation_result_first_open_norm`,
-    `denotation_open_norm`, `ty_denote_open_one_norm`
-  - result-first:
-    `result_first_open_norm`, `result_first_open_norm_in`
-  - formula-lvar support:
-    `rewrite_tm_support`, `unfold_formula_lvars_atoms`,
-    `normalize_denot_formula_lvars`, `solve_lvars_element`
-  - context:
-    `ctx_erasure_under_norm`, `ctx_erasure_set`
-  - regular/resource:
-    `denotation_set_norm`, `denotation_regular_res_extend_*`,
-    `denotation_regular`
-  - local families:
-    const guard/scope tactics, arrow/wand shift-side tactics, persist freshness
-    tactics.
-- Intent:
-  - expose normalized denotation boundary shapes;
-  - keep result-first Arrow/Wand/Persist proofs readable;
-  - extract resource-extension facts.
-- Current state:
-  - There is overlap between:
-    `denotation_result_first_open_norm` and `result_first_open_norm`.
-  - `result_first_open_norm` and `_in` currently have no textual callers. This
-    suggests either the public normalizer is in the wrong file, or call sites
-    already use `denotation_result_first_open_norm`.
-  - `ty_denote_open_one_norm` and `_in` appear unused.
-  - `denotation_set_solve`, `denotation_store_norm` are unused.
-  - `soundness_fresh_norm` / `soundness_fresh_solve` live in Denotation facts,
-    but their names and purpose are Soundness-oriented.  This is a layering
-    smell unless they are pure enough to be renamed.
-  - `persist_eta_fresh_from`, `persist_outer_fresh_from`,
-    `persist_lvar_fresh_from` are duplicated in
-    `TypePersistWandForward.v` and `TypePersistWandReverse.v`.
-  - `arrow_expr_result_shift0_side`, `wand_expr_result_shift0_side`, and
-    `expr_result_shift0_side` have the same flavor and should be a shared
-    side-condition tactic or, better, a small lemma.
-- Recommendations:
-  - Pick one public result-first normalizer:
-    either move `result_first_open_norm` into `TypeDenoteRegular` and use it
-    everywhere, or remove it if `denotation_result_first_open_norm` is the real
-    public entry.
-  - Move duplicated persist freshness tactics to a shared Persist support file.
-  - Move arrow/wand/body shift0 side tactics to one common Denotation helper.
-  - Rename or move `soundness_fresh_*` so the layer name matches the content.
-  - Prefer regular lemmas over local tactics for facts like resource extension
-    domain/base/input/output; then keep `denotation_regular` as a thin
-    deterministic extractor.
-
-8. Soundness layer
-
-- Files:
-  - `ContextTyping/theories/TypingRegular.v`
-  - `ContextTyping/theories/SoundnessCaseTactics.v`
-  - `ContextTyping/theories/SoundnessFix*.v`
-  - `ContextTyping/theories/PrimOpConcreteContext.v`
-- Main tactics:
-  - `soundness_regular_observed_world`,
-    `soundness_regular_lc`,
-    `soundness_regular_obs_subset`,
-    `soundness_regular`
-  - `soundness_intro_entailment`,
-    `soundness_pose_entailment_once`,
-    `soundness_pose_entailments`,
-    `soundness_unfold_ty_denotes`,
-    `soundness_case_start`
-  - fix-specific union tactics:
-    `fix_base_build_union`, `fix_base_singleton_side`,
-    `fix_union_left`, `fix_union_right`, `fix_build_union`,
-    `fix_union_side`, `fix_self_*`
-  - primop formula-lvar tactics:
-    `primop_rewrite_tm_support`,
-    `primop_unfold_formula_lvars_atoms`,
-    `primop_normalize_denot_formula_lvars`
-- Intent:
-  - give each soundness case a shared opening and regular-extraction prelude;
-  - avoid re-proving LC/FV/observed-world facts;
-  - simplify fix self-reference resource set manipulation.
-- Current state:
-  - `soundness_case_start` is a good direction: it captures the shared
-    beginning of fundamental cases.
-  - `soundness_regular_lc`, `soundness_regular_obs_subset`, and
-    `soundness_regular_observed_world` are low textual-use because they are
-    composed by `soundness_regular`; that is good.
-  - Fix union tactics are local and effective, but similar across
-    `SoundnessFixBase.v`, `SoundnessFix.v`, and `SoundnessFixSelf.v`.
-  - Primop formula-lvar tactics duplicate Denotation's
-    `rewrite_tm_support` / `unfold_formula_lvars_atoms` idea.
-- Recommendations:
-  - Keep `soundness_case_start` as the public case prelude and expand it only
-    with deterministic, cheap steps.
-  - Move reusable fix union facts/tactics to a shared `SoundnessFixRegular` or
-    `SoundnessSetMapFacts` file if they remain used in multiple fix files.
-  - Replace primop-specific lvar tactics with the Denotation-level support
-    normalizer unless there is a primop-specific rewrite that truly belongs in
-    `PrimOpConcreteContext.v`.
-
-Likely unused tactics
----------------------
-
-These have zero non-definition textual hits in the scan.  Some are internal
-APIs that may be intentionally exported, but they should be reviewed.
-
-- `ContextBase/Prelude.v`
-  - `pick_fresh`
-- `ContextBasicDenotation/theories/RelevantEnvRegular.v`
+- Removed:
   - `relevant_env_set`
   - `closed_side_solve`
-- `ContextBasicDenotation/theories/TermSyntax.v`
   - `fold_lstore_instantiate_at`
-- `ContextLogic/theories/FormulaConnectives.v`
+
+Reason: no call sites.  New proof scripts should normalize support/relevant-env
+at source with the existing syntax and support normalizers, not keep old
+wrapper tactics around.
+
+3. Formula connective and semantics dead tactics
+
+- Removed:
   - `normalize_models_ands_in`
   - `normalize_models_ands_goal`
   - `destruct_models_formula_hyps`
   - `split_models_formula_goal`
-- `ContextLogic/theories/FormulaSemantics.v`
   - `formula_semantics_norm`
   - `formula_semantics_norm_in`
+  - `formula_scope_syntax_norm`
+  - `formula_scope_syntax_norm_in`
+  - `formula_scope_step`
   - `formula_scope_solve`
   - `pose_formula_scoped_forall_open_from_dom`
   - local `project_formula_child`
-- `ContextStore/Store.v`
-  - aliases `store_norm`, `store_solver`
-- `ContextTypeLanguage/theories/LtyEnv.v`
-  - `type_env_norm`
-- `ContextTypeLanguage/theories/SyntaxRegular.v`
-  - `type_lvars_norm`
-  - `cty_depth_norm_in`
-- `ContextTypeLanguage/theories/TypeOpen.v`
-  - `mopen_norm`
-- `ContextTyping/theories/PrimOpConcreteContext.v`
-  - `primop_normalize_denot_formula_lvars`
-- `CoreLang/theories/InstantiationProps.v`
+
+Reason: no call sites.  The connective tactics were a parallel style that the
+repo never adopted.  The scope tactics were old broad normalizers; current
+proofs use concrete scoped lemmas directly.
+
+4. Core substitution old-route helpers
+
+- Removed:
   - `gen_closed_env`
   - `gen_lc_env`
   - `rewrite_msubst_insert`
   - `msubst_simp`
-- `Denotation/theories/ConstDenote.v`
-  - `solve_const_forall_open_scope`
-- `Denotation/theories/Context.v`
-  - `ctx_erasure_set`
-- `Denotation/theories/DenotationSetMapFacts.v`
-  - `denotation_set_solve`
-  - `denotation_store_norm`
-- `Denotation/theories/ResultFirstOpen.v`
+  - `fold_msubst`
+
+Reason: no call sites.  These were broad environment/substitution proof-search
+helpers.  Keeping them would encourage old automation style rather than small
+regular lemmas.
+
+5. Denotation open/result-first wrappers
+
+- Removed:
   - `result_first_open_norm`
   - `result_first_open_norm_in`
-- `Denotation/theories/TypeDenoteRegular.v`
   - `ty_denote_open_one_norm`
   - `ty_denote_open_one_norm_in`
-- `Denotation/theories/TypeEquivArrow.v`
-  - local `arrow_expr_result_shift0_side`
-- `Denotation/theories/TypeEquivWand.v`
-  - local `wand_expr_result_shift0_side`
-  - local `wand_fresh_from_disjoint`
-- `LocallyNameless/Tactics.v`
-  - `inv_lc`
-  - `invclear`
-  - `destruct_hyp_disj`
-  - `pose_fresh_from`
-  - `pose_fresh_fv`
+  - `denotation_open_norm`
+  - `denotation_open_norm_in`
+  - `open_syntax_norm`
+  - `open_syntax_norm_in`
+
+Reason: no call sites after the earlier normalization refactor.  These wrappers
+were too broad and could hide unnormalized `formula_open`/`lty_env_open_one`
+shapes.  The active boundary tactic remains
+`denotation_result_first_open_norm` / `_in`, which is used by current proofs.
+
+6. Denotation set/store wrappers
+
+- Removed:
+  - `denotation_set_solve`
+  - `denotation_store_norm`
+
+Reason: no call sites.  The useful pieces are `denotation_set_norm`,
+`soundness_fresh_solve`, and the `denotation_regular_res_extend_*` extractors.
+
+7. Primop/const/context local dead tactics
+
+- Removed:
+  - `primop_rewrite_tm_support`
+  - `primop_unfold_formula_lvars_atoms`
+  - `primop_normalize_denot_formula_lvars`
+  - `solve_const_forall_open_scope`
+  - `ctx_erasure_set`
+
+Reason: no call sites.  Primop support now uses actual lemmas/proof scripts
+rather than a local lvar-normalizer wrapper.
+
+8. Arrow/Wand stale local side tactics
+
+- Removed:
+  - `arrow_expr_result_shift0_side`
+  - `wand_expr_result_shift0_side`
+  - `wand_fresh_from_disjoint`
+
+Reason: no call sites.  These were local side-condition tactics from earlier
+Arrow/Wand proof routes.
+
+9. Old locally nameless broad apply wrappers
+
+- Removed:
   - `auto_apply_eq`
   - `auto_eapply_eq`
 
-Underused but probably important
---------------------------------
+Reason: no call sites and broad proof-search flavor.  The remaining
+`auto_apply` / `auto_eapply` names are kept because they still form the base of
+that local helper family.
+
+Current zero-use tactics intentionally deferred
+-----------------------------------------------
+
+These remain after the cleanup pass:
+
+- `ContextBase/Prelude.v`
+  - `pick_fresh`
+- `LocallyNameless/Tactics.v`
+  - `destruct_hyp_disj`
+  - `invclear`
+  - `inv_lc`
+  - `pose_fresh_from`
+  - `pose_fresh_fv`
+
+Why deferred:
+
+- They are interactive or locally-nameless toolbox helpers.
+- Deleting them would not simplify current proof scripts.
+- `pose_fresh_from` / `pose_fresh_fv` may become obsolete after a future
+  cofinite-boundary tactic is built around `collect_stales`, but that should be
+  done as a real migration, not as dead-code deletion.
+
+Underused but important tactics
+-------------------------------
+
+These should not be deleted.  They are the right direction for future proof
+cleanup:
 
 - `collect_stales`
-  - Current use is low relative to the number of cofinite/open proofs.
-  - This should be the default way to build forbidden sets for binder openings.
-
+  - Use this to build forbidden sets for cofinite/open proofs.
+  - Avoid hand-written `L := ∅` or manually assembled stale sets.
 - `auto_exists_L`
-  - Should be used when a proof goal asks for a cofinite set and the current
-    script currently chooses one by hand.
-
+  - Useful when a proof goal asks for a cofinite set.
 - `econstructor_L` / `econstructor_L_specialized`
-  - These encode the intended cofinite-constructor pattern.
-  - They are likely the right tool for basic typing and LN regularity proofs.
-
+  - Encodes the constructor-with-fresh-name pattern.
+  - Should be considered in BasicTyping/Open and Soundness proofs before
+    writing custom fresh-name boilerplate.
 - `soundness_case_start`
-  - This is the right abstraction for large fundamental-case lemmas.
-  - Further shared first-step proof code should be added here only when it is
-    deterministic and cheap.
-
+  - Good shared prelude for fundamental cases.
+  - Expand only with deterministic, cheap steps.
 - `denotation_regular`
-  - Current usage is low, but the idea is right: extract repo-specific resource
-    facts before handing set/map goals to stdpp.
-  - It should be extended through regular lemmas, not by adding broad proof
-    search.
+  - Useful idea: extract repo-specific resource facts before calling stdpp.
+  - Extend by adding regular lemmas, not by broad proof search.
 
-Tactics that look like old-route leftovers
-------------------------------------------
+Remaining medium-risk cleanup opportunities
+-------------------------------------------
 
-- `relevant_lvars_norm`
-  - Still used, but conceptually legacy after moving toward direct support
-    expressions and notation-style relevant envs.
-  - Keep as compatibility for now; prefer `support_lvars_norm` in new proofs.
+These are not simple dead-code deletion.  Do them only with timing checks.
 
-- `result_first_open_norm`
-  - Duplicates Denotation's result-first open normalizer but is unused.
-  - Either make it the public entry and replace callers, or delete it.
+1. Adopt locally nameless boundary automation
 
-- `auto_apply_eq` / `auto_eapply_eq`
-  - No usage and broad proof-search flavor.
-  - Candidate for removal after checking no out-of-repo dependency.
+- Target: cofinite/open proofs in CoreLang, ContextBasicDenotation, and
+  Soundness.
+- Method:
+  - use `collect_stales` and `auto_exists_L`;
+  - use `econstructor_L` / `econstructor_L_specialized` when the constructor
+    shape matches.
+- Risk:
+  - if the tactic opens too broadly, proof checking may slow down.
 
-- `formula_semantics_norm`
-  - Could be a good public tactic, but currently unused.
-  - If not adopted soon, it should be removed to avoid a misleading API.
+2. Consolidate Persist freshness tactics
 
-Merge candidates
-----------------
+- Current duplicate local tactic names still exist in:
+  - `Denotation/theories/TypePersistWandForward.v`
+  - `Denotation/theories/TypePersistWandReverse.v`
+- They are used, so this is not dead code.
+- Candidate action:
+  - move `persist_eta_fresh_from`, `persist_outer_fresh_from`, and
+    `persist_lvar_fresh_from` into a shared TypePersist support file.
+- Risk:
+  - low, but should be done with local timing because these files are proof
+    dense.
 
-1. Result-first open normalization
+3. Consolidate Fix union tactics
 
-- Current overlap:
-  - `Denotation/theories/TypeDenoteRegular.v`:
-    `denotation_result_first_open_norm`
-  - `Denotation/theories/ResultFirstOpen.v`:
-    `result_first_open_norm`
-- Suggested direction:
-  - keep one public tactic name;
-  - make the other a short compatibility alias temporarily, then remove it.
-
-2. Persist fresh-side tactics
-
-- Current duplicates:
-  - `TypePersistWandForward.v`:
-    `persist_eta_fresh_from`, `persist_outer_fresh_from`,
-    `persist_lvar_fresh_from`
-  - `TypePersistWandReverse.v`:
-    same names and same role.
-- Suggested direction:
-  - move to a shared `TypePersistRegular.v` or `TypePersistBase.v` section.
-
-3. Arrow/Wand/body `expr_result` shift side tactics
-
-- Current similar tactics:
-  - `TypeEquivBody.v`: `expr_result_shift0_side`
-  - `TypeEquivArrow.v`: `arrow_expr_result_shift0_side`
-  - `TypeEquivWand.v`: `wand_expr_result_shift0_side`
-- Suggested direction:
-  - replace with one lemma/tactic in a TypeEquiv support file.
-  - Prefer a lemma if the side condition has a stable shape.
-
-4. Fix union tactics
-
-- Current similar tactics:
+- Current local tactic families:
   - `SoundnessFixBase.v`: `fix_base_build_union`,
     `fix_base_singleton_side`
   - `SoundnessFix.v`: `fix_union_left`, `fix_union_right`,
     `fix_build_union`, `fix_union_side`
   - `SoundnessFixSelf.v`: `fix_self_in_union`,
     `fix_self_break_union`, `fix_self_notin_union`
-- Suggested direction:
-  - keep the soundness-specific ones in ContextTyping, but centralize the
-    repeated set-union forms.
-
-5. Formula-lvar support normalization
-
-- Current related tactics:
-  - Denotation: `rewrite_tm_support`,
-    `unfold_formula_lvars_atoms`, `normalize_denot_formula_lvars`
-  - Primop: `primop_rewrite_tm_support`,
-    `primop_unfold_formula_lvars_atoms`,
-    `primop_normalize_denot_formula_lvars`
-- Suggested direction:
-  - primop should reuse Denotation support normalization unless the term shape
-    is genuinely primop-specific.
-
-Downshift candidates
---------------------
-
-- Pure set/store/resource facts currently embedded in Denotation/Soundness
-  local tactics should be moved downward only if they mention no Denotation or
-  Soundness definitions.
-- `denotation_regular_res_extend_*` may be partly resource-level, but because
-  the names mention result extension, first check whether they depend on
-  `res_extend_by`.  If yes, keep them in the lowest folder that defines that
-  concept.
-- `soundness_fresh_norm` and `soundness_fresh_solve` are in
-  `DenotationSetMapFacts.v`.  If they mention only stdpp and atom freshness,
-  rename and move them lower; if they mention context typing definitions, move
-  them up to ContextTyping.
-
-Removal candidates
-------------------
-
-Low-risk candidates after one more call-site check:
-
-- unused aliases:
-  - `store_norm`
-  - `store_solver`
-- unused old proof-search helpers:
-  - `auto_apply_eq`
-  - `auto_eapply_eq`
-- unused old normalizers:
-  - `mopen_norm`
-  - `type_env_norm`
-  - `fold_lstore_instantiate_at`
-- unused connective helper tactics if not adopted:
-  - `normalize_models_ands_in`
-  - `normalize_models_ands_goal`
-  - `destruct_models_formula_hyps`
-  - `split_models_formula_goal`
-
-Do not remove yet without checking:
-
-- `pick_fresh`
-  - It may be intentionally exported as a user-facing helper even though the
-    current repo does not call it.
-- `formula_semantics_norm`
-  - It could become the right public boundary tactic if adopted.
-- `relevant_lvars_norm`
-  - Still has current callers and is a compatibility route.
-
-Recommended next iteration
---------------------------
-
-1. Locally nameless adoption pass
-
-- Target files:
-  - `ContextBasicDenotation/theories/BasicTypingOpen.v`
-  - CoreLang LN regular/open files
-  - Soundness files that manually pick fresh names
-- Action:
-  - replace hand-built forbidden sets with `collect_stales` / `auto_exists_L`;
-  - use `econstructor_L` or `econstructor_L_specialized` where it directly
-    matches the proof shape.
+- They are used and local.
+- Candidate action:
+  - extract shared set-union facts/tactics only if repeated proof patterns
+    remain visible.
 - Risk:
-  - can increase proof-search time if the tactic opens too broadly; keep it
-    deterministic.
+  - medium.  A broader fix solver could slow down these already-sensitive
+    soundness files.
 
-2. Result-first normalizer merge
+4. Formula syntax normalizer API
 
-- Target files:
-  - `Denotation/theories/TypeDenoteRegular.v`
-  - `Denotation/theories/ResultFirstOpen.v`
-  - Arrow/Wand/Persist soundness files.
-- Action:
-  - pick one public result-first open normalizer;
-  - remove or alias the duplicate.
+- The formula syntax normalizer family remains:
+  - `formula_fv_syntax_norm`
+  - `formula_open_syntax_norm`
+  - `formula_open_env_syntax_norm`
+  - `formula_msubst_syntax_norm`
+  - `formula_syntax_norm`
+- Most individual pieces are low textual-use because they are composed by
+  higher-level normalizers.
+- Candidate action:
+  - keep one documented public entry per syntax layer;
+  - avoid exposing new broad Denotation wrappers around them.
 - Risk:
-  - this touches many proofs; do after a timing baseline.
+  - low if only documentation/import cleanup, higher if call sites are changed.
 
-3. Local duplicate tactic cleanup
+5. `relevant_lvars_norm` compatibility
 
-- Target files:
-  - `TypePersistWandForward.v`
-  - `TypePersistWandReverse.v`
-  - `TypeEquivArrow.v`
-  - `TypeEquivWand.v`
-  - `TypeEquivBody.v`
-  - `SoundnessFix*.v`
-- Action:
-  - move duplicate fresh/shift/union side tactics to shared local support
-    files, or turn them into small lemmas.
+- `relevant_lvars_norm` is still used, but conceptually legacy after the move
+  toward direct support expressions.
+- Candidate action:
+  - prefer `support_lvars_norm` in new proofs;
+  - migrate old callers only when touching those proofs for another reason.
 - Risk:
-  - low if done one family at a time.
+  - low to medium.  It can affect normalization timing and proof readability.
 
-4. Remove dead wrappers
+Current tactic families to keep
+-------------------------------
 
-- Action:
-  - after all local cleanup, delete zero-use tactics that are not public API.
-  - If a name might be public, leave a short comment saying why it remains.
-- Risk:
-  - out-of-repo users are unknown; for this repo, `rg` says they are unused.
+1. Pure stdpp / set / map
 
-Appendix: per-file tactic definition counts
--------------------------------------------
+- `fast_set_solver`, `better_set_solver`, `set_normalize`
+- `map_normalize`, `better_map_solver`
+- `base_swap_normalize`, `better_base_solver`
 
-Format: `definitions / zero-use / use-at-most-once`.
+Keep this layer stable and low-level.  Do not add repo-specific regular
+extraction here.
 
-- `ContextBase/BaseTactics.v`: 5 / 0 / 3
-- `ContextBase/Prelude.v`: 1 / 1 / 1
-- `ContextBase/Tactics.v`: 21 / 0 / 5
-- `ContextBasicDenotation/theories/BasicTypingOpen.v`: 4 / 0 / 0
-- `ContextBasicDenotation/theories/RelevantEnvRegular.v`: 10 / 2 / 3
-- `ContextBasicDenotation/theories/TermSyntax.v`: 1 / 1 / 1
-- `ContextLogic/theories/FormulaConnectives.v`: 4 / 4 / 4
-- `ContextLogic/theories/FormulaConnectivesHigher.v`: 1 / 0 / 1
-- `ContextLogic/theories/FormulaFiberwise.v`: 2 / 0 / 2
-- `ContextLogic/theories/FormulaSemantics.v`: 11 / 5 / 7
-- `ContextLogic/theories/FormulaSyntaxRegular.v`: 12 / 0 / 9
-- `ContextStore/Store.v`: 12 / 1 / 8
-- `ContextTypeLanguage/theories/LtyEnv.v`: 1 / 1 / 1
-- `ContextTypeLanguage/theories/SyntaxRegular.v`: 18 / 2 / 7
-- `ContextTypeLanguage/theories/TypeOpen.v`: 8 / 1 / 5
-- `ContextTyping/theories/PrimOpConcreteContext.v`: 3 / 1 / 3
-- `ContextTyping/theories/SoundnessCaseTactics.v`: 5 / 0 / 1
-- `ContextTyping/theories/SoundnessFix.v`: 4 / 0 / 2
-- `ContextTyping/theories/SoundnessFixBase.v`: 2 / 0 / 0
-- `ContextTyping/theories/SoundnessFixSelf.v`: 3 / 0 / 0
-- `ContextTyping/theories/TypingRegular.v`: 4 / 0 / 3
-- `CoreLang/theories/InstantiationProps.v`: 5 / 4 / 5
-- `CoreLang/theories/LocallyNamelessExtra.v`: 1 / 0 / 1
-- `CoreLang/theories/LocallyNamelessProps.v`: 1 / 0 / 0
-- `Denotation/theories/ConstDenote.v`: 6 / 1 / 1
-- `Denotation/theories/ConstDenoteBase.v`: 1 / 0 / 0
-- `Denotation/theories/Context.v`: 3 / 1 / 1
-- `Denotation/theories/DenotationSetMapFacts.v`: 10 / 2 / 6
-- `Denotation/theories/ResultFirstOpen.v`: 2 / 2 / 2
-- `Denotation/theories/TypeDenoteRegular.v`: 18 / 2 / 4
-- `Denotation/theories/TypeEquivArrow.v`: 1 / 1 / 1
-- `Denotation/theories/TypeEquivBody.v`: 2 / 0 / 0
-- `Denotation/theories/TypeEquivWand.v`: 3 / 2 / 2
-- `Denotation/theories/TypePersistArrow.v`: 1 / 0 / 0
-- `Denotation/theories/TypePersistWandForward.v`: 3 / 0 / 0
-- `Denotation/theories/TypePersistWandReverse.v`: 3 / 0 / 0
-- `LocallyNameless/Tactics.v`: 43 / 7 / 20
+2. Store/resource
 
+- `store_normalize`
+- `better_store_solver`
+- `store_restrict_lookup_split`
+
+Keep store-specific rewriting here; do not recreate removed aliases unless a
+consistent public naming decision is made.
+
+3. Formula/type syntax
+
+- Formula syntax normalizers in `FormulaSyntaxRegular.v`.
+- Type syntax/open normalizers in `SyntaxRegular.v` and `TypeOpen.v`.
+- These are the right source of open/fv/shift normalization.
+
+4. Denotation boundary
+
+- `denotation_result_first_open_norm` / `_in`
+- `ty_denote_open_one_side`
+- `lvars_open_difference_bound0_norm` / `_in`
+- `normalize_denot_formula_lvars`
+
+These are still used.  Avoid adding back broad wrappers like the removed
+`denotation_open_norm`.
+
+5. Soundness regular/case prelude
+
+- `soundness_regular`
+- `soundness_case_start`
+
+Keep these deterministic and cheap.
+
+Validation status
+-----------------
+
+Sequential local rebuilds passed for the affected core and Denotation targets:
+
+- `CoreLang/theories/InstantiationProps.vo`
+- `ContextLogic/theories/FormulaSemantics.vo`
+- `ContextLogic/theories/FormulaConnectives.vo`
+- `ContextTypeLanguage/theories/SyntaxRegular.vo`
+- `Denotation/theories/TypeDenoteRegular.vo`
+- `Denotation/theories/ResultFirstOpen.vo`
+- `Denotation/theories/TypeEquivArrow.vo`
+- `Denotation/theories/TypeEquivWand.vo`
+- `ContextTyping/theories/PrimOpConcreteContext.vo`
+
+Note: an earlier parallel make attempt caused a transient `.vo` write conflict
+on `TypeEquivTermResult.vo`; rerunning sequentially fixed it.  Future timing
+runs should avoid overlapping make targets that share dependencies.
+
+Final validation for this pass:
+
+- `timeout 180s make TIMED=1` passed.
+- `rg -n "Admitted\\.|admit\\." -g '*.v' .` found no admits.
+- `git diff --check` passed.
+
+Next pass stopping condition
+----------------------------
+
+At this point, remaining items are no longer clear zero-use deletion.  Continue
+only if the goal is one of:
+
+- LN cofinite-boundary migration;
+- shared Persist/Fix side-condition tactic extraction;
+- targeted timing work on a specific slow file.
+
+Otherwise this cleanup pass has reached the intended stopping point: the TXT
+contains only low收益 or timing-sensitive follow-up work.

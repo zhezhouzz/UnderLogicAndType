@@ -545,26 +545,6 @@ Ltac type_syntax_norm_in H :=
   cty_erase_syntax_norm_in H;
   ctx_syntax_norm_in H.
 
-Ltac type_lvars_norm :=
-  repeat match goal with
-  | |- context[into_lvars ?X] =>
-      let T := type of X in
-      lazymatch T with
-      | lvset => change (into_lvars X) with X
-      | aset => change (into_lvars X) with (lvars_of_atoms X)
-      | gmap atom ty => change (into_lvars X) with (lvars_of_atoms (dom X))
-      | gmap logic_var ty => change (into_lvars X) with (dom X)
-      end
-  | H : context[into_lvars ?X] |- _ =>
-      let T := type of X in
-      lazymatch T with
-      | lvset => change (into_lvars X) with X in H
-      | aset => change (into_lvars X) with (lvars_of_atoms X) in H
-      | gmap atom ty => change (into_lvars X) with (lvars_of_atoms (dom X)) in H
-      | gmap logic_var ty => change (into_lvars X) with (dom X) in H
-      end
-  end.
-
 (** Paper-facing context-type constructors and syntax facts. *)
 
 
@@ -582,11 +562,6 @@ Notation " c1 '≺[' b ']' c2 " :=
 Ltac cty_depth_norm :=
   cbn [cty_depth over_ty under_ty precise_ty primop_ty fix_rec_call_ty];
   rewrite ?cty_open_preserves_depth, ?cty_shift_preserves_depth.
-
-Ltac cty_depth_norm_in H :=
-  cbn [cty_depth over_ty under_ty precise_ty primop_ty fix_rec_call_ty] in H;
-  rewrite ?cty_open_preserves_depth in H;
-  rewrite ?cty_shift_preserves_depth in H.
 
 Ltac cty_depth_solve :=
   cty_depth_norm; lia.

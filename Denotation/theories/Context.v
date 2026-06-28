@@ -1974,9 +1974,6 @@ Ltac ctx_erasure_under_norm_in H :=
   rewrite ?erase_ctx_comma_bind_dom in H;
   rewrite ?erase_ctx_star_bind_dom in H.
 
-Ltac ctx_erasure_set :=
-  ctx_erasure_under_norm; better_set_solver.
-
 #[global] Instance denot_cty_inst :
     Denotation context_ty (tm -> Formula (V := value)) :=
   fun τ e => ty_denote ∅ τ e.

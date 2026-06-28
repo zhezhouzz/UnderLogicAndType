@@ -86,10 +86,6 @@ Proof.
   split; assumption.
 Qed.
 
-Ltac type_env_norm :=
-  type_open_env_syntax_norm;
-  rewrite ?lvar_store_atom_dom_shift in *.
-
 Lemma lty_env_open_one_dom k x (Σ : lty_env) :
   dom (lty_env_open_one k x Σ) = lvars_open k x (dom Σ).
 Proof. apply lvar_store_open_one_dom. Qed.

@@ -1347,36 +1347,6 @@ Ltac lvars_open_difference_bound0_norm_in H :=
       rewrite (set_swap_qual_vars_open_atom0 z φ) in H
   end.
 
-Ltac open_syntax_norm :=
-  formula_syntax_norm;
-  type_open_env_syntax_norm;
-  cty_open_syntax_norm;
-  cty_shift_syntax_norm;
-  cty_erase_syntax_norm;
-  cty_depth_norm;
-  cbn [open_tm open_value value_shift tm_shift shift open_one
-    open_tm_atom_inst open_value_atom_inst];
-  rewrite ?open_tm_shift0_lc by eauto;
-  rewrite ?open_tm_shift0_lvars_lc by eauto;
-  rewrite ?open_tapp_tm_shift_bvar0_lc by eauto;
-  lvars_open_difference_bound0_norm;
-  rewrite ?fv_tapp_tm, ?tm_shift_fv.
-
-Ltac open_syntax_norm_in H :=
-  formula_syntax_norm_in H;
-  type_open_env_syntax_norm_in H;
-  cty_open_syntax_norm_in H;
-  cty_shift_syntax_norm_in H;
-  cty_erase_syntax_norm_in H;
-  cbn [open_tm open_value value_shift tm_shift shift open_one
-    open_tm_atom_inst open_value_atom_inst] in H;
-  rewrite ?open_tm_shift0_lc in H by eauto;
-  rewrite ?open_tm_shift0_lvars_lc in H by eauto;
-  rewrite ?open_tapp_tm_shift_bvar0_lc in H by eauto;
-  lvars_open_difference_bound0_norm_in H;
-  rewrite ?fv_tapp_tm in H;
-  rewrite ?tm_shift_fv in H.
-
 Ltac denotation_result_first_open_norm :=
   cbn [formula_open];
   repeat match goal with
@@ -1444,48 +1414,6 @@ Ltac denotation_result_first_open_norm_in H :=
         by ty_denote_open_one_side
   end;
   lvars_open_difference_bound0_norm_in H.
-
-Ltac denotation_open_norm :=
-  repeat match goal with
-  | |- context [formula_open 0 ?y
-      (expr_result_formula_at (lvars_shift_from 0 ?D)
-        (tm_shift 0 ?e) (LVBound 0))] =>
-      denotation_result_first_open_norm
-  | |- context [formula_open 0 ?y
-      (ty_denote_gas ?gas ?Σ ?τ ?e)] =>
-      rewrite (formula_open_ty_denote_gas_singleton 0 y gas Σ τ e)
-        by ty_denote_open_one_side
-  | |- context [lty_env_open_one 0 ?y (typed_lty_env_bind ?Σ ?T)] =>
-      rewrite (typed_lty_env_bind_open_current y Σ T)
-        by ty_denote_open_one_side
-  | |- context [relevant_env ?Σ ?τ ?e] =>
-      relevant_env_norm
-  end;
-  open_syntax_norm.
-
-Ltac denotation_open_norm_in H :=
-  repeat match type of H with
-  | context [formula_open 0 ?y
-      (expr_result_formula_at (lvars_shift_from 0 ?D)
-        (tm_shift 0 ?e) (LVBound 0))] =>
-      denotation_result_first_open_norm_in H
-  | context [formula_open 0 ?y
-      (ty_denote_gas ?gas ?Σ ?τ ?e)] =>
-      rewrite (formula_open_ty_denote_gas_singleton 0 y gas Σ τ e) in H
-        by ty_denote_open_one_side
-  | context [lty_env_open_one 0 ?y (typed_lty_env_bind ?Σ ?T)] =>
-      rewrite (typed_lty_env_bind_open_current y Σ T) in H
-        by ty_denote_open_one_side
-  | context [relevant_env ?Σ ?τ ?e] =>
-      relevant_env_norm_in H
-  end;
-  open_syntax_norm_in H.
-
-Ltac ty_denote_open_one_norm :=
-  denotation_open_norm.
-
-Ltac ty_denote_open_one_norm_in H :=
-  denotation_open_norm_in H.
 
 (** ** Free-variable support for denotation formulas *)
 

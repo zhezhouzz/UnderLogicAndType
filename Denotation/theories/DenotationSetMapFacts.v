@@ -287,18 +287,12 @@ Ltac denotation_set_norm :=
   cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at] in *;
   rewrite ?dom_insert_L, ?dom_union_L, ?dom_singleton_L in *.
 
-Ltac denotation_set_solve :=
-  denotation_set_norm; better_set_solver!!.
-
 Ltac soundness_fresh_norm :=
   denotation_set_norm;
   rewrite ?dom_empty_L, ?dom_singleton_L in *.
 
 Ltac soundness_fresh_solve :=
   soundness_fresh_norm; better_set_solver.
-
-Ltac denotation_store_norm :=
-  rewrite ?storeA_restrict_twice_subset in * by better_set_solver!!.
 
 (** ** Regular facts extracted from denotation/resource definitions *)
 

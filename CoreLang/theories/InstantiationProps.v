@@ -135,32 +135,6 @@ Proof.
   - by apply lc_env_storeA_swap.
 Qed.
 
-Ltac gen_closed_env :=
-  repeat
-    match goal with
-    | H : closed_env (<[?x := _]> ?σ), Hfresh : ?σ !! ?x = None |- _ =>
-        let Hv := fresh "Hclosed_value" in
-        let Hσ := fresh "Hclosed_env" in
-        destruct (closed_env_insert σ x _ Hfresh H) as [Hv Hσ];
-        clear H
-    | H : closed_env ?σ, Hlookup : ?σ !! ?x = Some ?v |- _ =>
-        let Hv := fresh "Hclosed_value" in
-        pose proof (closed_env_lookup σ x v H Hlookup) as Hv
-    end.
-
-Ltac gen_lc_env :=
-  repeat
-    match goal with
-    | H : lc_env (<[?x := _]> ?σ), Hfresh : ?σ !! ?x = None |- _ =>
-        let Hv := fresh "Hlc_value" in
-        let Hσ := fresh "Hlc_env" in
-        destruct (lc_env_insert σ x _ Hfresh H) as [Hv Hσ];
-        clear H
-    | H : lc_env ?σ, Hlookup : ?σ !! ?x = Some ?v |- _ =>
-        let Hv := fresh "Hlc_value" in
-        pose proof (lc_env_lookup σ x v H Hlookup) as Hv
-    end.
-
 (** Single-substitutions commute when the two substituted values are closed.
     This is the exact hypothesis needed by [map_fold_insert_L]. *)
 Class SubstCommuteClosed A `{Stale A} `{SubstV value A} :=
@@ -212,12 +186,6 @@ Proof. eapply MsubstInsert_all; typeclasses eauto. Qed.
 
 #[global] Instance MsubstInsert_tm : MsubstInsert tm.
 Proof. eapply MsubstInsert_all; typeclasses eauto. Qed.
-
-Ltac fold_msubst :=
-  change (map_fold (fun x vx acc => {x := vx} acc) ?a ?σ) with (m{σ} a) in *.
-
-Ltac rewrite_msubst_insert :=
-  cbn; fold_msubst; rewrite !msubst_insert; eauto.
 
 Lemma env_delete_insert σ Γ x vx :
   σ !! x = None →
@@ -1230,15 +1198,3 @@ Proof.
   apply msubst_lc; [exact Hlc_env |].
   apply Hbody. set_solver.
 Qed.
-
-Ltac msubst_simp :=
-  repeat match goal with
-  | |- context [m{∅} _] => rewrite msubst_empty
-  | H : context [m{∅} _] |- _ => rewrite msubst_empty in H
-  | |- context [m{?σ} ?a] => rewrite (msubst_fresh σ a) by set_solver
-  | H : context [m{?σ} ?a] |- _ => rewrite (msubst_fresh σ a) in H by set_solver
-  | |- context [m{<[?x := ?vx]> ?σ} _] =>
-      rewrite (msubst_insert σ x vx); eauto
-  | H : context [m{<[?x := ?vx]> ?σ} _] |- _ =>
-      rewrite (msubst_insert σ x vx) in H; eauto
-  end.

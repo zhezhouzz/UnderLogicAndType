@@ -233,36 +233,6 @@ Local Ltac solve_const_forall_closed_scope :=
   try const_forall_scope_norm;
   first [const_scope_set | better_set_solver].
 
-Local Ltac solve_const_forall_open_scope :=
-  const_forall_scope_norm;
-  lazymatch goal with
-  | |- context[lvars_fv ({[LVFree ?y]} ∪ ∅ : lvset)] =>
-      replace (lvars_fv ({[LVFree y]} ∪ ∅ : lvset)) with ({[y]} : aset)
-        by (rewrite lvars_fv_union, lvars_fv_singleton_free,
-              lvars_fv_empty; set_solver)
-  | _ => idtac
-  end;
-  lazymatch goal with
-  | |- context[lvars_fv ({[LVFree ?y]} : lvset)] =>
-      replace (lvars_fv ({[LVFree y]} : lvset)) with ({[y]} : aset)
-        by (symmetry; apply lvars_fv_singleton_free)
-  | _ => idtac
-  end;
-  lazymatch goal with
-  | |- context[lvars_fv (set_swap ?a ?b ∅)] =>
-      replace (lvars_fv (set_swap a b ∅)) with (∅ : aset)
-        by (rewrite set_swap_empty, lvars_fv_empty; reflexivity)
-  | _ => idtac
-  end;
-  match goal with
-  | Hdom : world_dom (?n : WorldT) = world_dom (?m : WorldT) ∪ extA_out ?F,
-    HFout : ext_out ?F = {[?y]} |- _ =>
-      unfold ext_out in HFout;
-      rewrite Hdom, HFout;
-      const_scope_set
-  | |- _ => const_scope_set
-  end.
-
 Lemma const_over_denotation_gas gas (Σ : gmap atom ty) c (m : WfWorldT) :
   m ⊨ ty_denote_gas gas (atom_env_to_lty_env Σ)
     (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))

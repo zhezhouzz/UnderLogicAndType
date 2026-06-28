@@ -2167,11 +2167,3 @@ Ltac relevant_env_norm_in H :=
   lty_env_open_bind_norm_in H;
   store_normalize;
   rewrite ?storeA_restrict_dom in H.
-
-Ltac relevant_env_set :=
-  relevant_env_norm; better_set_solver.
-
-Ltac closed_side_solve :=
-  eauto using lc_lvars_relevant_lvars,
-    wf_context_ty_at_lc, basic_context_ty_lc,
-    lty_env_closed_insert_free, atom_store_to_lvar_store_closed.

@@ -21,12 +21,6 @@ Local Ltac wand_union_member :=
     | apply elem_of_union_l; wand_union_member
     | apply elem_of_union_r; wand_union_member ].
 
-Local Ltac wand_fresh_from_disjoint Hfresh :=
-  intros Hy;
-  eapply Hfresh;
-    [ apply elem_of_union_l; apply elem_of_singleton; reflexivity
-    | subst; wand_union_member ].
-
 Local Lemma wand_open_world_term_scope
     (Σ : lty_env) τx τr e1 e2 (m my : WfWorldT) y :
   typed_total_equiv_on Σ (CTWand τx τr) m e1 e2 ->
@@ -1150,13 +1144,6 @@ Proof.
   - eapply wand_result_body_relevant_subset; eauto.
   - exact Hres.
 Qed.
-
-Local Ltac wand_expr_result_shift0_side :=
-  first
-    [ assumption
-    | apply result_first_lc_lvars_shift_from; assumption
-    | rewrite lvars_shift_from_fv; assumption ].
-
 
 Lemma ty_denote_gas_tm_equiv_wand_body
     gas (IH : forall Σ τ e1 e2 (m : WfWorldT),

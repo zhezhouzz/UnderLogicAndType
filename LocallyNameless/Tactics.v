@@ -146,7 +146,7 @@ Ltac my_set_norm :=
 
 (** [solve_set] is the small finalizer for pure set side conditions after
     normalization.  Keep this tactic lightweight: heavier domain-specific
-    rewriting belongs in [store_solver] or [resource_solver]. *)
+    rewriting belongs in store/resource-specific solvers. *)
 Ltac solve_set :=
   my_set_norm;
   try solve [better_map_solver | better_set_solver].
@@ -372,8 +372,6 @@ Tactic Notation "auto_apply" "by" tactic3(tac) :=
 
 Tactic Notation "auto_apply" := auto_apply by (fun H => apply H).
 Tactic Notation "auto_eapply" := auto_apply by (fun H => eapply H).
-Tactic Notation "auto_apply_eq" := auto_apply by (fun H => apply_eq H).
-Tactic Notation "auto_eapply_eq" := auto_apply by (fun H => eapply_eq H).
 
 (** ** Cofinite constructors
 

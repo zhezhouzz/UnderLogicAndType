@@ -834,30 +834,6 @@ Definition lstore_instantiate_tm_at
 Definition lstore_instantiate_tm (σ : LStoreT) (e : tm) : tm :=
   lstore_instantiate_tm_at 0 σ e.
 
-Ltac fold_lstore_instantiate_at :=
-  repeat match goal with
-  | H : context[lstore_instantiate_tm_split_at ?d
-        (lstore_free_part ?s) (lstore_bound_part ?s) ?e] |- _ =>
-      change (lstore_instantiate_tm_split_at d
-        (lstore_free_part s) (lstore_bound_part s) e)
-        with (lstore_instantiate_tm_at d s e) in H
-  | |- context[lstore_instantiate_tm_split_at ?d
-        (lstore_free_part ?s) (lstore_bound_part ?s) ?e] =>
-      change (lstore_instantiate_tm_split_at d
-        (lstore_free_part s) (lstore_bound_part s) e)
-        with (lstore_instantiate_tm_at d s e)
-  | H : context[lstore_instantiate_value_split_at ?d
-        (lstore_free_part ?s) (lstore_bound_part ?s) ?v] |- _ =>
-      change (lstore_instantiate_value_split_at d
-        (lstore_free_part s) (lstore_bound_part s) v)
-        with (lstore_instantiate_value_at d s v) in H
-  | |- context[lstore_instantiate_value_split_at ?d
-        (lstore_free_part ?s) (lstore_bound_part ?s) ?v] =>
-      change (lstore_instantiate_value_split_at d
-        (lstore_free_part s) (lstore_bound_part s) v)
-        with (lstore_instantiate_value_at d s v)
-  end.
-
 Lemma lstore_free_part_lift_free (σ : StoreT) :
   lstore_free_part (lstore_lift_free σ : LStoreT) = σ.
 Proof.

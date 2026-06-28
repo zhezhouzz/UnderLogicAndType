@@ -944,13 +944,6 @@ Proof.
   - exact Hres.
 Qed.
 
-Local Ltac arrow_expr_result_shift0_side :=
-  first
-    [ assumption
-    | apply result_first_lc_lvars_shift_from; assumption
-    | rewrite lvars_shift_from_fv; assumption ].
-
-
 Lemma ty_denote_gas_tm_equiv_arrow_body
     gas (IH : forall Σ τ e1 e2 (m : WfWorldT),
       typed_total_equiv_on Σ τ m e1 e2 ->
