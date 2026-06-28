@@ -2,9 +2,9 @@
 
     Concrete primitive-operation context for the current core operators.
 
-    Deterministic primitives use graph-precise result qualifiers.  Generator
-    primitives take a unit argument and use top precise result types because
-    their operational semantics really covers the whole result carrier. *)
+    All concrete primitives use graph-precise result qualifiers.  Generator
+    primitives take a unit argument; their graph relation enumerates all
+    boolean or natural results. *)
 
 From CoreLang Require Import BasicTyping BasicTypingProps SmallStep StrongNormalization.
 From ContextBase Require Import BaseTactics.

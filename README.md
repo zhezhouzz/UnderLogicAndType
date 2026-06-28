@@ -3,9 +3,10 @@
 Rocq formalization for the context-logic/context-type development behind
 *Underapproximate Types*.
 
-The current `main` branch is tagged `first-complete-proof`: this is the first
-version where the direct Fundamental theorem and denotational soundness
-theorem are fully proved for the current core system.
+The `first-complete-proof` tag marks the first version where the direct
+Fundamental theorem and denotational soundness theorem were fully proved for
+the then-current core system.  The current `main` branch extends that line of
+work and remains fully checked.
 
 ## Status
 
@@ -123,8 +124,9 @@ ContextBase -> ContextStore -> ContextAlgebra -> ContextLogic
 
 - `CoreLang`: call-by-value language with nondeterministic primitive results,
   locally nameless syntax, basic typing, small-step semantics, and
-  instantiation.  The current base types include `Unit`, `Bool`, `Nat`, `Tree`,
-  and fixed `List` values over Rocq's `list nat`.
+  instantiation.  The checked core base types are `Unit`, `Bool`, and `Nat`;
+  paper-level data structures such as trees and lists are not part of the
+  compiled core on `main`.
 - `ContextTypeLanguage`: context types, contexts, qualifiers, erasure,
   locally nameless opening, and well-formedness.
 - `ContextBasicDenotation`: basic semantic atoms for stores, worlds, term

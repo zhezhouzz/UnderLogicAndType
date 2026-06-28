@@ -14,25 +14,186 @@ The current proof has no `Admitted.`/`admit.` in compiled Rocq files on
 This repository intentionally differs from the paper presentation in a few
 places.  Keep these in mind when comparing statements.
 
+- The checked core language is smaller than the language used in the paper
+  examples.  It has `Unit`, `Bool`, and `Nat`; unary primitive operations;
+  function application; `let`; and a boolean-specific match.  It does not
+  currently include the paper's general datatype match, fixed tree/list
+  syntax, binary operator syntax, or n-ary primitive operator judgment.
 - Primitive operations are parameterized in the abstract proof.  The concrete
   checked instance is `concrete_Φ`, proved well formed by `concrete_Φ_wf`.
 - The core semantics is nondeterministic-ready.  In particular, `boolGen` and
   `natGen` are concrete generator primitives with `Unit` arguments.
 - Concrete primitive result types are graph precise.  Deterministic primitives
   use their exact input/output graph; generators use graph qualifiers whose
-  graphs enumerate all boolean or natural results.
+  graphs enumerate all boolean or natural results.  This is not the same
+  presentation as the paper's persistent generator-function types, although
+  the proof has separate `FPersist`/`CTPersist` infrastructure.
+- Qualifiers are semantic predicates with explicit support sets, not the
+  paper's first-order qualifier syntax.  This is why the implementation
+  records qualifier support explicitly and why several paper-side logical
+  connectives are represented as Rocq-level predicate structure instead of
+  syntax.
 - Qualifier top is not empty-support top.  `qual_top_on D` carries an explicit
   support domain, and the usual `qual_top` notation observes the result binder.
   This is necessary because an empty-support qualifier would impose no
   result-slot constraint.
+- The context logic has set-indexed fiber quantification `FFibVars D P`.
+  The paper presents this idea as a binding-reference/fiber connective.  The
+  implementation form is more general but less syntactically close to the
+  prose notation.
+- The compiled formula syntax does not include `FExists`.  Earlier drafts and
+  some paper discussion mention existential formulas, but the checked
+  denotation path on `main` does not require them.
 - The type denotation for `CTOver b φ` and `CTUnder b φ` interprets the result
   refinement in the typed carrier for `b`: the result body is
   `FOver`/`FUnder` of `FAnd (FAtom φ) result_basic_typing_formula`.
   Consequently `CTUnder b qual_top` covers all values of base type `b`, not all
   syntactic values.
-- The implementation has additional infrastructure compared with the paper,
-  including `FPersist`/`CTPersist`, `FExists`, result-first Arrow/Wand
-  denotation, and fixed tree/list support in the core language.
+- The checked type denotation follows the nondeterministic, result-first shape:
+  `CTSum`, `CTArrow`, `CTWand`, and `CTPersist` first bind the result of the
+  scrutinized term/function value and then state the branch/value obligation.
+  This corresponds to the later nondeterministic design rather than the
+  simpler deterministic presentation.
+- The implementation has additional proof infrastructure compared with the
+  paper core, including `FPersist`/`CTPersist`, a value-only persistence intro
+  rule, fiberwise joinability lemmas, result-first Arrow/Wand support, and
+  concrete graph-precise primitive contexts.
+- Paper Section 5 case-study programs are not part of the current compiled
+  source on `main`.  The proof currently establishes the generic soundness
+  theorem for the checked core calculus and concrete primitive context, not the
+  full collection of paper examples.
+
+## Paper-To-Proof Correspondence
+
+This section lists the main definitions and theorems that appear in the paper
+and where they live in the checked Rocq development.  When the proof uses an
+equivalent implementation form rather than the exact paper syntax, the
+equivalence or bridge theorem is listed explicitly.
+
+| Paper item | Checked Rocq counterpart | Status |
+| --- | --- | --- |
+| Core values/terms and operational semantics | `CoreLang/theories/SyntaxCore.v`, `SmallStep.v`, `OperationalResults.v` | Checked for the smaller core: unit, booleans, naturals, unary primops, application, `let`, and boolean match. |
+| Base/basic typing | `CoreLang/theories/BasicTyping.v`, `BasicTypingProps.v` | Checked. |
+| Qualifier syntax | `ContextQualifier/theories/Qualifier.v` | Implemented semantically as `tqual D (Store -> Prop)` with explicit support, not as a first-order syntax tree. |
+| Qualifier top | `qual_top_on D` in `ContextQualifier/theories/Qualifier.v`; standard notation `qual_top` | Checked with explicit support.  This intentionally differs from an empty-support top. |
+| Context type syntax | `ContextTypeLanguage/theories/SyntaxCore.v` | Checked, with paper types plus proof extensions such as `CTPersist`. |
+| `O[b | φ]`, `U[b | φ]`, precise type | `over_ty`, `under_ty`, `precise_ty`; notations `{: b | φ }`, `[: b | φ ]` | Checked definitions. |
+| Type contexts | `ctx` in `ContextTypeLanguage/theories/SyntaxCore.v`; notations `Emp`, `x ∷ τ`, `Γ1 ,, Γ2`, `Γ1 ∗ Γ2`, `Γ1 ⊕ Γ2` | Checked definitions. |
+| Context logic formulas | `Formula` in `ContextLogic/theories/FormulaSyntaxCore.v` | Checked, but `FExists` is absent on `main`. |
+| Formula satisfaction | `res_models` in `ContextLogic/theories/FormulaSemantics.v`; notation `m ⊨ P` | Checked. |
+| Entailment and formula equivalence | `entails`, `formula_equiv`; notations `P ⊫ Q`, `P ⊣⊢ Q` | Checked. |
+| Binding reference/fiber connective `∀M` | `FFibVars D P`; notation `fib D |> P` | Checked set-indexed implementation of the paper connective. |
+| Ordinary universal formula | `FForall P`; notation `∀. P` | Checked. |
+| Ordinary existential formula | Paper syntax only | Not present in compiled formula syntax. |
+| Demonic/angelic formula modalities | `FOver P`, `FUnder P`; notations `over P`, `under P` | Checked. |
+| Additive/multiplicative connectives | `FAnd`, `FOr`, `FImpl`, `FStar`, `FBWand`, `FPlus`; notations `∧`, `∨`, `→`, `∗`, `-∗[d]`, `⊕` | Checked. |
+| Persistent modality `□P` | `FPersist P`; notation `□ P` | Checked.  The projection/singleton implementation is bridged by `res_models_persist_iff`, `persistent_formula_persist`, and related persistence laws. |
+| Persistent formula laws | `persistent_formula`, `persistent_formula_equiv_persist`, `persistent_star_self`, `persistent_star_and` | Checked theorems. |
+| Type denotation `[[τ]]Σ e` | `ty_denote_gas`, `ty_denote`; notations `⟦ty⟧[Σ, gas] τ e`, `⟦ty⟧[Δ] τ e` | Checked.  Uses the nondeterministic result-first shape. |
+| Type context denotation `[[Γ]]Σ` | `ctx_denote_under`, `ctx_denote`; notations `⟦ctx⟧[Σ] Γ`, `⟦ctx⟧ Γ` | Checked. |
+| Guard in type denotation | `ty_guard_formula`, `ty_static_guard_formula`; notations `guard[Σ] τ e`, `static_guard[Σ] τ e` | Checked. |
+| Paper `mstep(e, x)` result graph | `expr_result_formula_at D e x`; compatibility wrapper `expr_result_formula e x` | Checked.  The proof tracks the observation domain explicitly. |
+| Typed Over/Under result body | `over_result_body b φ`, `under_result_body b φ` | Checked implementation correction: refinement atom is paired with result-slot basic typing. |
+| Nondeterministic result-first Arrow/Wand/Sum denotation | `arrow_value_denote_gas_with`, `wand_value_denote_gas_with`, branches of `ty_denote_gas` | Checked. |
+| Persistent type `□τ` | `CTPersist τ`; notation `□ τ`; branch of `ty_denote_gas` | Checked. |
+| Persistence intro typing rule | `CT_PersistIntro` in `ContextTyping/theories/Typing.v` | Checked soundness case in `SoundnessPersist.v`. |
+| Context duplication for persistent bindings | `ctx_bind_persist_star_dup` | Checked theorem. |
+| Primitive operator context | `primop_ctx`, `primop_sig`, `wf_primop_ctx` | Checked unary abstraction, not paper's n-ary presentation. |
+| Concrete primitive context | `concrete_Φ`, `concrete_Φ_wf` | Checked.  Concrete result qualifiers are graph precise. |
+| Fundamental theorem | `Fundamental` in `ContextTyping/theories/Soundness.v` | Checked theorem. |
+| Closed-program denotational soundness | `denotational_soundness`; concrete wrapper `concrete_denotational_soundness` | Checked theorem. |
+
+### Typing Rule Correspondence
+
+The paper presents typing rules as inference rules.  In the proof, the main
+rules are constructors of `has_context_type` in
+`ContextTyping/theories/Typing.v`; their soundness cases are proved in
+`ContextTyping/theories/Soundness*.v`.
+
+| Paper rule/form | Rocq rule/form | Notes |
+| --- | --- | --- |
+| `T-Var` | `CT_Var` | Checked for singleton context `x ∷ τ`. |
+| `T-Const` | `CT_Const` | Constants have `const_precise_ty c`. |
+| `T-Sub` | `CT_Sub` with premise `sub_type_under Σ Γ τ1 τ2` | Semantic subtyping is a definition, not a separate syntactic judgment. |
+| `T-CtxSub` | `CT_CtxSub` with premise `ctx_sub_under Σ X Γ1 Γ2` | Context subtyping is semantic/projection-based. |
+| `T-Let` | `CT_Let` | Checked. |
+| Separating let | `CT_LetD` | Checked extension for separating contexts. |
+| `T-Lam` | `CT_Lam` | Checked for ordinary function type `τx → τ`. |
+| Separating lambda | `CT_LamD` | Checked for `τx -∗ τ`. |
+| Function application | `CT_AppFun` | Checked, but the argument is a fresh atom variable `vfvar x`, not an arbitrary value expression. |
+| Separating function application | `CT_AppFunD` | Checked with the same fresh-atom argument restriction. |
+| Fixpoint rule | `CT_Fix` | Checked ordinary recursive function rule.  `FixD` is not compiled. |
+| Primitive operation application | `CT_AppOp` | Checked unary primop rule; the paper's n-ary rule is represented by the unary `primop_sig` abstraction. |
+| Pattern match | `CT_MatchBoth`, `CT_MatchTrueOnly`, `CT_MatchFalseOnly` | Checked boolean-only match split into reachable-branch variants, not the paper's general datatype match rule. |
+| Persistent intro | `CT_PersistIntro` | Checked value-only rule corresponding to the paper's persistence-introduction idea. |
+
+The semantic relations used by `CT_Sub` and `CT_CtxSub` are:
+
+```coq
+sub_type_under Σ Γ τ1 τ2
+ctx_sub_under Σ X Γ1 Γ2
+```
+
+These are intentionally semantic definitions: the proof does not introduce a
+separate syntactic subtyping derivation and then prove it sound.
+
+Important theorem-level bridges for equivalent definitions:
+
+- `res_models_persist_iff` states the operational meaning of `□P` in terms of
+  singleton projection and satisfaction of `P` on the singleton world.
+- `persistent_formula_equiv_persist`, `persistent_star_self`, and
+  `persistent_star_and` justify the persistent algebra laws used by the paper
+  prose.
+- `fiberwise_joinable_on_*` lemmas in
+  `ContextLogic/theories/FormulaFiberwise.v` and
+  `ContextBasicDenotation/theories/BasicFormulaFiberwise.v` formalize the
+  fiberwise aggregation principles used by the nondeterministic proof.
+- `ty_denote_gas_result_ext` and `ty_denote_gas_result_alias_at` are the
+  checked bridges from result-extension/result-graph facts back into type
+  denotation.
+- `ty_denote_wand_over_param_persist_over_result_equiv` and
+  `ty_denote_wand_over_param_persist_under_result_equiv` record the checked
+  persistent-over parameter equivalences for Wand results where the return
+  body is fiberwise joinable.  The analogous unrestricted Arrow reverse is not
+  claimed.
+
+## Notation Guide
+
+The proof uses a compact object-language notation layer.  The most important
+notations for reading theorem statements are:
+
+| Paper notation | Rocq notation | Meaning |
+| --- | --- | --- |
+| `x`, bound `#k` | `$ₗ x`, `#ₗ k` | Logical variables in type/formula support. |
+| `O[b | φ]` | `{: b | φ }` | Overapproximate context type. |
+| `U[b | φ]` | `[: b | φ ]` | Underapproximate context type. |
+| `τ1 ∧ τ2` / intersection | `τ1 ⊓ τ2` | Type intersection. |
+| `τ1 ∨ τ2` / union | `τ1 ⊔ τ2` | Type union. |
+| `τ1 ⊕ τ2` | `τ1 ⊕ τ2` | Additive/sum context type. |
+| `τx -> τ` | `τx → τ` | Ordinary function context type. |
+| `τx -* τ` | `τx -∗ τ` | Separating function context type. |
+| `□τ` | `□ τ` | Persistent context type. |
+| `∅`, `x : τ` | `Emp`, `x ∷ τ` | Empty and singleton contexts. |
+| `Γ1, Γ2` | `Γ1 ,, Γ2` | Ordered/comma context composition. |
+| `Γ1 * Γ2` | `Γ1 ∗ Γ2` | Separating context composition. |
+| `Γ1 ⊕ Γ2` | `Γ1 ⊕ Γ2` | Additive context composition. |
+| `r ⊨ P` | `m ⊨ P` | Formula satisfaction. |
+| `P ⊢ Q` | `P ⊫ Q` | Semantic entailment. |
+| `P ≡ Q` | `P ⊣⊢ Q` | Formula equivalence. |
+| `P * Q` | `P ∗ Q` | Multiplicative conjunction. |
+| `P -* Q` | `P -∗[d] Q` | Binder-aware magic wand; `d` is the binder depth shift. |
+| `P ⊕ Q` | `P ⊕ Q` | Additive/sum formula. |
+| `∀x. P` | `∀. P` plus locally nameless opening | Ordinary formula forall. |
+| `∀M X. P` | `fib D |> P` | Fiber/binding-reference connective over support set `D`. |
+| `□P` | `□ P` | Persistent formula. |
+| `[[τ]]Σ e` | `⟦ty⟧[Σ, gas] τ e`, `⟦ty⟧[Δ] τ e` | Gas-indexed and saturated type denotation. |
+| `[[Γ]]Σ` | `⟦ctx⟧[Σ] Γ` | Context denotation. |
+
+The canonical notation for persistence is the square `□`; the old word-style
+formula notation `persist P` is intentionally not provided.  Word-style
+`over P` and `under P` remain because they name formula modalities rather than
+context types; context types use the closer paper-style `{: b | φ }` and
+`[: b | φ ]`.
 
 ## Quick Checks
 
