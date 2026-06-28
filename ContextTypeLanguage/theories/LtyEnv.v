@@ -224,6 +224,19 @@ Proof.
   - exact (HzΣ Hin).
 Qed.
 
+Lemma lvars_of_atoms_singleton_subset_insert_empty_dom z T :
+  lvars_of_atoms ({[z]} : aset) ⊆
+  dom (<[LVFree z := T]> (∅ : lty_env)).
+Proof.
+  intros v Hv.
+  unfold lvars_of_atoms in Hv.
+  apply elem_of_map in Hv as [a [-> Ha]].
+  apply elem_of_singleton in Ha. subst a.
+  apply elem_of_dom. exists T.
+  rewrite lookup_insert.
+  destruct decide as [_|Hbad]; [reflexivity|contradiction].
+Qed.
+
 Lemma lty_env_insert_free_commute
     (Σ : lty_env) x y Tx Ty :
   x <> y ->

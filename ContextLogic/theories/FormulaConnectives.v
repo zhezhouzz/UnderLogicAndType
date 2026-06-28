@@ -774,6 +774,42 @@ Proof.
   eapply res_models_fuel_scoped; eauto.
 Qed.
 
+Lemma res_models_over_and_elim_l (m : WfWorldT) (φ ψ : FormulaT) :
+  m ⊨ FOver (FAnd φ ψ) ->
+  m ⊨ FOver φ.
+Proof.
+  intros Hover.
+  unfold res_models in *.
+  cbn [formula_measure res_models_fuel] in *.
+  destruct Hover as [Hscope [mo [Hsub Hand]]].
+  split.
+  - unfold formula_scoped_in_world in *.
+    rewrite formula_fv_over, formula_fv_and in Hscope.
+    rewrite formula_fv_over.
+    intros x Hx. apply Hscope. set_solver.
+  - exists mo. split; [exact Hsub|].
+    apply res_models_and_elim_l with (ψ := ψ).
+    unfold res_models. models_fuel_irrel Hand.
+Qed.
+
+Lemma res_models_under_and_elim_l (m : WfWorldT) (φ ψ : FormulaT) :
+  m ⊨ FUnder (FAnd φ ψ) ->
+  m ⊨ FUnder φ.
+Proof.
+  intros Hunder.
+  unfold res_models in *.
+  cbn [formula_measure res_models_fuel] in *.
+  destruct Hunder as [Hscope [mo [Hsub Hand]]].
+  split.
+  - unfold formula_scoped_in_world in *.
+    rewrite formula_fv_under, formula_fv_and in Hscope.
+    rewrite formula_fv_under.
+    intros x Hx. apply Hscope. set_solver.
+  - exists mo. split; [exact Hsub|].
+    apply res_models_and_elim_l with (ψ := ψ).
+    unfold res_models. models_fuel_irrel Hand.
+Qed.
+
 Lemma formula_scoped_persist_from_singleton
     (m : WfWorldT) (φ : FormulaT) (σ : Store (V := V)) :
   dom (σ : Store (V := V)) = formula_fv φ ->
