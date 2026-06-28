@@ -1536,7 +1536,7 @@ Proof.
     pose proof (wf_context_ty_at_fv_subset 0 ∅ τ Hτ_closed) as Hτ_fv.
     intros y Hy.
     pose proof (Hrel y Hy) as Hyrel.
-    relevant_lvars_norm_in Hyrel.
+    support_lvars_norm_in Hyrel.
     better_set_solver.
   }
   exact (proj1 (res_models_minimal_on ({[x]} : aset) m

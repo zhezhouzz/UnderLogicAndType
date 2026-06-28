@@ -926,7 +926,7 @@ Proof.
     rewrite !storeA_restrict_dom.
     intros v Hv. apply elem_of_intersection in Hv as [Hv Hrel].
     apply elem_of_intersection. split; [exact Hv|].
-    relevant_lvars_norm. relevant_lvars_norm_in Hrel. better_set_solver.
+    support_lvars_norm. support_lvars_norm_in Hrel. better_set_solver.
   }
   assert (HD2_sum : D2 ⊆ Dsum).
   {
@@ -935,7 +935,7 @@ Proof.
     rewrite !storeA_restrict_dom.
     intros v Hv. apply elem_of_intersection in Hv as [Hv Hrel].
     apply elem_of_intersection. split; [exact Hv|].
-    relevant_lvars_norm. relevant_lvars_norm_in Hrel. better_set_solver.
+    support_lvars_norm. support_lvars_norm_in Hrel. better_set_solver.
   }
   assert (HeD1 : tm_lvars e ⊆ D1).
   {

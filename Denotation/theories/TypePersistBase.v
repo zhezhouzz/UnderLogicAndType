@@ -41,7 +41,7 @@ Lemma over_ret_fvar_env_restrict_eq Σ b φ z :
 Proof.
   intros Hz.
   unfold over_ret_fvar_env.
-  relevant_lvars_norm.
+  support_lvars_norm.
   apply lty_env_restrict_lvars_insert_restrict_current.
   apply lvfree_notin_lvars_at_depth1_qual_vars.
   exact Hz.
@@ -59,7 +59,7 @@ Lemma over_ret_fvar_relevant_env_restrict_eq Σ b φ z y :
 Proof.
   intros Hy Hzφ.
   unfold over_ret_fvar_env.
-  relevant_lvars_norm.
+  support_lvars_norm.
   rewrite lty_env_restrict_lvars_insert_restrict_current.
   2:{
     apply lvfree_notin_lvars_at_depth1_qual_vars.
@@ -68,7 +68,7 @@ Proof.
   rewrite (relevant_env_restrict_subset Σ (CTOver b φ) (tret (vfvar z))
     (lvars_at_depth 1 (qual_vars φ))).
   - reflexivity.
-  - relevant_lvars_norm. set_solver.
+  - support_lvars_norm. set_solver.
 Qed.
 
 Lemma insert_relevant_env_ret_fvar_restrict_eq Σ τ z y :

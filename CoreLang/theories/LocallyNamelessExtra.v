@@ -49,7 +49,8 @@ Lemma subst_body_value x u v :
   body_val v -> lc_value u -> body_val (value_subst x u v).
 Proof.
   intros [L Hbody] Hlc.
-  exists (L ∪ {[x]}). intros y Hy.
+  let acc := collect_stales ({[x]} : aset) in
+  exists (L ∪ acc). intros y Hy.
   rewrite <- subst_open_var_value by my_set_solver.
   apply subst_lc_value; auto. apply Hbody. my_set_solver.
 Qed.
@@ -58,7 +59,8 @@ Lemma subst_body_tm x u e :
   body_tm e -> lc_value u -> body_tm (tm_subst x u e).
 Proof.
   intros [L Hbody] Hlc.
-  exists (L ∪ {[x]}). intros y Hy.
+  let acc := collect_stales ({[x]} : aset) in
+  exists (L ∪ acc). intros y Hy.
   rewrite <- subst_open_var_tm by my_set_solver.
   apply subst_lc_tm; auto. apply Hbody. my_set_solver.
 Qed.

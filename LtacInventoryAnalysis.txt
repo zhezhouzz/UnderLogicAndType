@@ -14,8 +14,9 @@ Current snapshot
 ----------------
 
 - Initial scan: 235 `Ltac` / `Tactic Notation` definitions.
-- After cleanup and compositional fusion: 174 definitions.
-- Removed or fused in this pass: 61 unused wrappers, stale normalizers, old-route
+- Current direct scan: 174 `Ltac` / `Tactic Notation` matches.
+- Cumulative removals/fusions recorded in this file: 63 unused wrappers,
+  stale normalizers, old-route
   proof-search helpers, or duplicate local tactics.
 - Current zero-use tactics left: 6, all intentionally deferred.
 
@@ -176,6 +177,36 @@ Design note: `SoundnessFixSelf.v` keeps its local names as thin aliases because
 they document the recursive-self proof case, but the underlying behavior is now
 shared and compositional.
 
+13. Relevant-lvars compatibility tactic removal
+
+- Removed:
+  - `relevant_lvars_norm`
+  - `relevant_lvars_norm_in`
+- Migrated all call sites to:
+  - `support_lvars_norm`
+  - `support_lvars_norm_in`
+
+Reason: the relevant-lvars names had become pure aliases after the direct
+support normalization refactor.  Keeping them encouraged proof scripts to look
+as if they still depended on the old relevant wrapper route.  The remaining
+regular tactic is the direct support normalizer, which still handles legacy
+`relevant_lvars` occurrences deterministically when they appear in older
+statements.
+
+14. Locally-nameless stale-set adoption at the small body boundary
+
+- Updated the two bottom-layer substitution body lemmas in
+  `CoreLang/theories/LocallyNamelessExtra.v`:
+  - `subst_body_value`
+  - `subst_body_tm`
+- Their cofinite witnesses now seed from `collect_stales` instead of manually
+  using only `L ∪ {[x]}`.
+
+Reason: this is a safe local use of the locally-nameless stale collector at a
+true binder boundary.  The larger Fundamental/Denotation cofinite witnesses
+still carry proof-specific freshness assertions, so they are not blindly
+rewritten in this pass.
+
 Current zero-use tactics intentionally deferred
 -----------------------------------------------
 
@@ -252,12 +283,16 @@ Folder-by-folder status
   were fused into `TypePersistBase.v`; result-first broad wrappers already
   removed.  Remaining local tactics are case-specific or timing-sensitive.
 - `ContextBasicDenotation`: done for this pass.  Dead relevant-env/term syntax
-  wrappers removed.  Remaining tactics are either regular support or local
-  BasicTypingOpen cofinite helpers.
+  wrappers and the old relevant-lvars compatibility tactic were removed.
+  Remaining tactics are either regular support or local BasicTypingOpen
+  cofinite helpers.
 - `ContextTypeLanguage`: done for this pass.  Dead `mopen_norm`/`type_env_norm`
   and unused lvar/depth wrappers removed; type syntax/open normalizers remain
   regular-file tactics.
 - `CoreLang`: done for this pass.  Old msubst/env proof-search tactics removed;
+  the small substitution body lemmas now use `collect_stales` at the cofinite
+  boundary.  Larger mutual-induction/cofinite witnesses remain explicit because
+  their proof scripts depend on named freshness subsets.
   remaining local tactics are narrow proof helpers.
 - `ContextLogic`: done for this pass.  Formula syntax tactic wrappers removed;
   semantic fuel tactics remain folder-interface utilities.
@@ -311,15 +346,16 @@ These are not simple dead-code deletion.  Do them only with timing checks.
 - Future work should add tactic wrappers only if a concrete proof family needs
   them and timing confirms the wrapper is cheaper than explicit rewrites.
 
-3. `relevant_lvars_norm` compatibility
+3. Direct support normalization
 
-- `relevant_lvars_norm` is still used, but conceptually legacy after the move
-  toward direct support expressions.
-- Candidate action:
-  - prefer `support_lvars_norm` in new proofs;
-  - migrate old callers only when touching those proofs for another reason.
-- Risk:
-  - low to medium.  It can affect normalization timing and proof readability.
+- Completed in this pass: the old `relevant_lvars_norm` compatibility tactic
+  and all call sites were removed.
+- Current rule:
+  - use `support_lvars_norm` / `_in` for direct support expressions and any
+    legacy `relevant_lvars` occurrence that still appears in old statements.
+- Remaining risk:
+  - low.  Future work should simplify old theorem statements when they are
+    touched, rather than adding another relevant wrapper tactic.
 
 Current tactic families to keep
 -------------------------------

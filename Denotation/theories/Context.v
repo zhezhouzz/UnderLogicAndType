@@ -225,7 +225,7 @@ Proof.
   apply atom_env_to_lty_env_restrict_lvars_agree_on
     with (X := fv_cty τ ∪ {[y]}).
   - exact Hagree.
-  - relevant_lvars_norm. better_set_solver.
+  - support_lvars_norm. better_set_solver.
 Qed.
 
 (** ** Context bridge lemmas for the Fundamental proof
@@ -1855,7 +1855,7 @@ Proof.
         { clear -Hy Hyx. cbn [fv_tm fv_value] in Hy. better_set_solver. }
         pose proof (basic_context_ty_fv_subset ∅ τ Hτ_closed y Hyτ).
         set_solver.
-    - relevant_lvars_norm. better_set_solver.
+    - support_lvars_norm. better_set_solver.
   }
   assert (Hxden_lty :
       m ⊨ ty_denote_gas (cty_depth τ)

@@ -87,7 +87,7 @@ Proof.
   2:{
     eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
     intros v Hv.
-    relevant_lvars_norm. better_set_solver.
+    support_lvars_norm. better_set_solver.
   }
   2: exact Hinj.
   rewrite relevant_env_open_env by exact Hfresh || exact Hinj.
@@ -800,7 +800,7 @@ Proof.
 	      (dom Σ ∪ (context_ty_lvars τ ∪ tm_lvars e))).
   {
     apply open_env_fresh_for_lvars_singleton.
-    relevant_lvars_norm. better_set_solver.
+    support_lvars_norm. better_set_solver.
   }
   pose proof (formula_open_env_ty_denote_gas
     (<[k := y]> ∅) gas Σ τ e Hfresh
@@ -1315,7 +1315,7 @@ Ltac ty_denote_open_one_side :=
           intros Hyvars; apply H; apply lvars_fv_elem; exact Hyvars
       end
     | apply relevant_env_closed; assumption
-    | relevant_lvars_norm; better_set_solver
+    | support_lvars_norm; better_set_solver
     | type_open_env_syntax_norm;
       cbn [fv_tm fv_value value_lvars value_lvars_at];
       rewrite ?fv_tapp_tm, ?tm_shift_fv, ?cty_shift_fv;
@@ -1782,8 +1782,8 @@ Proof.
     + apply ty_denote_gas_lvars_subset.
     + change (tm_lvars_at 0 e) with (tm_lvars e).
       change (context_ty_lvars_at 0 τ) with (context_ty_lvars τ).
-      relevant_lvars_norm. better_set_solver.
-  - relevant_lvars_norm. better_set_solver.
+      support_lvars_norm. better_set_solver.
+  - support_lvars_norm. better_set_solver.
 Qed.
 
 Lemma fv_tm_ty_denote_gas_subset_formula gas Σ τ e :

@@ -192,7 +192,7 @@ Proof.
     apply atom_env_to_lty_env_restrict_lvars_agree_on
       with (X := fv_tm e ∪ fv_cty τ).
     - intros x Hx. symmetry. apply Hagree. exact Hx.
-    - relevant_lvars_norm. better_set_solver.
+    - support_lvars_norm. better_set_solver.
   }
   eapply res_models_from_restrict_extension_on_fv
     with (X := fv_tm e ∪ fv_cty τ) (n := m').
@@ -241,7 +241,7 @@ Proof.
         set_solver.
       }
       apply erase_ctx_lookup_ctx_erasure_under_of_basic_ctx; assumption.
-    - relevant_lvars_norm. better_set_solver.
+    - support_lvars_norm. better_set_solver.
   }
   assert (Htarget :
       mx ⊨ ty_denote_gas (cty_depth τ1)
@@ -562,7 +562,7 @@ Proof.
     with (X := fv_tm e ∪ fv_cty τ).
   - eapply erase_ctx_star_bind_insert_agree_on; [exact Hbasic_top| |exact Hxctx].
     better_set_solver.
-  - relevant_lvars_norm. better_set_solver.
+  - support_lvars_norm. better_set_solver.
 Qed.
 
 Lemma ty_denote_gas_zero_tletd_ext

@@ -2125,12 +2125,6 @@ Ltac support_lvars_norm_in H :=
   try rewrite ?tm_lvars_at_shift_under in H by lia;
   rewrite ?tm_lvars_at_tret_bound0_under in H.
 
-Ltac relevant_lvars_norm :=
-  support_lvars_norm.
-
-Ltac relevant_lvars_norm_in H :=
-  support_lvars_norm_in H.
-
 Ltac lty_env_open_bind_norm :=
   rewrite ?atom_env_to_lty_env_erase_ctx_comma_bind_open_one
     by (eauto; better_set_solver);
