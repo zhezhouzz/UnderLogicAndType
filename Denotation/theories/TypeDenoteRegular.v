@@ -4,6 +4,7 @@
     [ty_denote_gas].  The core definitions and notations live in
     [TypeDenote]. *)
 
+From ContextBase Require Import LogicVarShift.
 From Denotation Require Import Notation TypeDenote.
 
 Lemma open_env_lift_fresh_for_bound0_bind_dom η T :
@@ -879,9 +880,7 @@ Lemma denotation_open_lvars_lc_at_zero_of_lc D :
   lc_lvars D ->
   lvars_lc_at 0 D.
 Proof.
-  intros Hlc k Hk.
-  rewrite lvars_bv_elem in Hk.
-  exfalso. exact (Hlc (LVBound k) Hk).
+  apply lvars_lc_at_zero_of_lc.
 Qed.
 
 Lemma set_swap_bound0_difference_free_normalize D z :

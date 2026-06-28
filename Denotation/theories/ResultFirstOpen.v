@@ -2,6 +2,7 @@
 
     Shared opening and scope facts for result-first Arrow/Wand denotations. *)
 
+From ContextBase Require Import LogicVarShift.
 From Denotation Require Import Notation TypeDenote TypeEquivCore TypeDenoteRegular.
 
 Section TypeDenote.
@@ -24,9 +25,7 @@ Lemma result_first_lvars_lc_at_zero_of_lc D :
   lc_lvars D ->
   lvars_lc_at 0 D.
 Proof.
-  intros Hlc k Hk.
-  rewrite lvars_bv_elem in Hk.
-  exfalso. exact (Hlc (LVBound k) Hk).
+  apply lvars_lc_at_zero_of_lc.
 Qed.
 
 Lemma result_first_forall_impl_open_elim
