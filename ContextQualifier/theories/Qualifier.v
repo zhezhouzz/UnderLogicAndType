@@ -37,6 +37,23 @@ Definition qual_dom (q : qualifier) : aset :=
 Definition qual_bvars (q : qualifier) : gset nat :=
   lvars_bv (qual_lvars q).
 
+Lemma lvfree_notin_lvars_at_depth1_qual_vars (q : qualifier) z :
+  z ∉ qual_dom q ->
+  LVFree z ∉ lvars_at_depth 1 (qual_vars q).
+Proof.
+  unfold qual_dom.
+  intros Hz HzD.
+  apply Hz.
+  rewrite lvars_at_depth_elem in HzD.
+  destruct HzD as [v [Hv Hat]].
+  destruct v as [n|a].
+  - cbn [logic_var_at_depth] in Hat.
+    destruct decide; discriminate.
+  - cbn [logic_var_at_depth] in Hat.
+    inversion Hat. subst a.
+    apply lvars_fv_elem. exact Hv.
+Qed.
+
 Lemma qual_ext (q1 q2 : qualifier) :
   qual_lvars q1 = qual_lvars q2 ->
   (forall (s1 : LStoreOnT (qual_lvars q1))

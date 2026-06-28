@@ -2,7 +2,7 @@
 
     Arrow-specific consequences of type-level persistency. *)
 
-From Denotation Require Import Notation TypeDenote ResultFirstOpen
+From Denotation Require Import Notation TypeDenote TypeDenoteRegular ResultFirstOpen
   DenotationSetMapFacts TypeEquivCore TypeEquivFiberBaseCore TypeEquivFiberBaseProjected TypeEquivBody TypeEquiv
   TypePersistBase.
 From ContextAlgebra Require Import ResourceAlgebra.

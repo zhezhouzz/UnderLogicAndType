@@ -123,6 +123,40 @@ Proof.
   exact Hclosed.
 Qed.
 
+Lemma wfworld_closed_on_open_world_from_base
+    (m my : WfWorld) X :
+  X ⊆ world_dom (m : World) ->
+  res_restrict my (world_dom (m : World)) = m ->
+  wfworld_closed_on X m ->
+  wfworld_closed_on X my.
+Proof.
+  intros HX Hbase Hclosed σ Hσ.
+  assert (Hσm :
+      (m : World) (store_restrict σ (world_dom (m : World)))).
+  {
+    assert (Hσres :
+        (res_restrict my (world_dom (m : World)) : World)
+          (store_restrict σ (world_dom (m : World)))).
+    { exists σ. split; [exact Hσ|reflexivity]. }
+    rewrite Hbase in Hσres.
+    exact Hσres.
+  }
+  specialize (Hclosed _ Hσm).
+  rewrite (storeA_restrict_twice_subset σ
+    (world_dom (m : World)) X HX) in Hclosed.
+  exact Hclosed.
+Qed.
+
+Lemma wfworld_closed_on_store_restrict_closed
+    X (m : WfWorld) (σ : StoreT) :
+  wfworld_closed_on X m ->
+  (m : World) σ ->
+  store_closed (store_restrict σ X).
+Proof.
+  intros Hclosed Hσ.
+  exact (Hclosed σ Hσ).
+Qed.
+
 Lemma store_closed_restrict_union_from_parts
     (σ : StoreT) X Y :
   store_closed (store_restrict σ X) ->

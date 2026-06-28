@@ -116,6 +116,21 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma tm_eval_in_store_empty_iff e v :
+  tm_eval_in_store (∅ : StoreT) e v <-> e →* tret v.
+Proof.
+  unfold tm_eval_in_store.
+  rewrite expr_eval_in_store_no_bvars_iff.
+  - rewrite lstore_free_part_lift_free.
+    rewrite subst_map_tm_eq_msubst.
+    rewrite msubst_empty.
+    reflexivity.
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free.
+    apply map_Forall_lookup_2. intros y u Hlook.
+    rewrite lookup_empty in Hlook. discriminate.
+Qed.
+
 Lemma tm_eval_in_store_ret_fvar_lookup σ x v :
   store_closed σ ->
   σ !! x = Some v ->

@@ -1068,6 +1068,65 @@ Proof.
   exact (basic_tm_has_ltype_lvars _ _ _ Hty).
 Qed.
 
+Lemma formula_msubst_store_expr_basic_typing_ret_fvar_fresh
+    σ b y :
+  y ∉ dom (σ : StoreT) ->
+  formula_msubst_store σ
+    (expr_basic_typing_formula
+      (<[LVFree y := TBase b]> ∅) (tret (vfvar y)) (TBase b)) =
+  expr_basic_typing_formula
+    (<[LVFree y := TBase b]> ∅) (tret (vfvar y)) (TBase b).
+Proof.
+  intros Hyσ.
+  unfold formula_msubst_store, expr_basic_typing_formula,
+    expr_basic_typing_qual, qual_msubst_store, FFiberAtom.
+  cbn [formula_mlsubst].
+  f_equal.
+  - cbn [qual_mlsubst qual_vars].
+    rewrite dom_lstore_lift_free.
+    rewrite dom_insert_L, dom_empty_L.
+    cbn [qual_vars qual_lvars].
+    unfold lvars_of_atoms.
+    apply set_eq. intros v.
+    rewrite elem_of_difference.
+    rewrite elem_of_union, elem_of_singleton, elem_of_empty.
+    rewrite elem_of_map.
+    split.
+    + intros [[Hv|[]] Hnot].
+      subst v. left; reflexivity.
+    + intros Hv.
+      destruct Hv as [->|[]].
+      split; [left; reflexivity|].
+      intros Hbad.
+      destruct Hbad as [a [Ha_eq Ha_dom]].
+      inversion Ha_eq. subst a.
+      exact (Hyσ Ha_dom).
+  - f_equal.
+    apply qual_ext.
+    + cbn [qual_mlsubst qual_vars].
+      rewrite dom_lstore_lift_free.
+      rewrite dom_insert_L, dom_empty_L.
+      cbn [qual_vars qual_lvars].
+      unfold lvars_of_atoms.
+      apply set_eq. intros v.
+      rewrite elem_of_difference.
+      rewrite elem_of_union, elem_of_singleton, elem_of_empty.
+      rewrite elem_of_map.
+      split.
+      * intros [[Hv|[]] Hnot].
+        subst v. left; reflexivity.
+      * intros Hv.
+        destruct Hv as [->|[]].
+        split; [left; reflexivity|].
+        intros Hbad.
+        destruct Hbad as [a [Ha_eq Ha_dom]].
+        inversion Ha_eq. subst a.
+        exact (Hyσ Ha_dom).
+    + intros s1 s2 _.
+      cbn [qual_mlsubst qual_prop].
+      reflexivity.
+Qed.
+
 End BasicTypingFormula.
 
 Notation "'FWfTy' '[' Σ ';' τ ']'" := (context_ty_wf_formula Σ τ)

@@ -358,3 +358,15 @@ Proof.
   rewrite <- (subst_intro_tm x u 0 e Hxfv Hlc).
   by apply subst_lc_tm.
 Qed.
+
+Lemma open_value_fvar_fresh_notin k vf y z :
+  z ∉ fv_value vf ∪ {[y]} ->
+  z ∉ fv_value (open_value k (vfvar y) vf).
+Proof.
+  intros Hfresh Hbad.
+  pose proof (open_fv_value vf (vfvar y) k) as Hopen.
+  cbn [fv_value] in Hopen.
+  apply Hopen in Hbad.
+  cbn [fv_value] in Hbad.
+  clear -Hfresh Hbad. set_solver.
+Qed.

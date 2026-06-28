@@ -4,7 +4,7 @@
 
 From Stdlib Require Import Lia.
 From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps
-  SmallStep StrongNormalization.
+  SmallStep StrongNormalization LocallyNamelessProps.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceInterface ResourceExtension.
 From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier
@@ -21,69 +21,7 @@ From Denotation Require Import Context
   TypeEquiv
   TypePersistArrow
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLam SoundnessFixBase.
-
-Local Lemma fix_apply_open_value_fresh vf y z :
-  z ∉ fv_value vf ∪ {[y]} ->
-  z ∉ fv_value (open_value 0 (vfvar y) vf).
-Proof.
-  intros Hfresh Hbad.
-  pose proof (open_fv_value vf (vfvar y) 0) as Hopen.
-  cbn [fv_value] in Hopen.
-  apply Hopen in Hbad.
-  cbn [fv_value] in Hbad.
-  clear -Hfresh Hbad. set_solver.
-Qed.
-
-Local Lemma fix_apply_open_cty_fresh τ y z :
-  z ∉ fv_cty τ ∪ {[y]} ->
-  z ∉ fv_cty (cty_open 0 y τ).
-Proof.
-  apply cty_open_fresh_notin.
-Qed.
-
-Local Lemma fix_apply_fix_rec_call_ty_fresh b y τx τ z :
-  z ∉ fv_cty τx ∪ fv_cty τ ∪ {[y]} ->
-  z ∉ fv_cty (fix_rec_call_ty b y τx τ).
-Proof.
-  intros Hfresh Hbad.
-  pose proof (fv_cty_fix_rec_call_ty_subset b y τx τ) as Hsub.
-  apply Hsub in Hbad.
-  clear -Hfresh Hbad. set_solver.
-Qed.
-
-Local Lemma fix_apply_vfix_fresh b t vf z :
-  z ∉ fv_value vf ->
-  z ∉ fv_value (vfix (TBase b →ₜ t) vf).
-Proof.
-  intros Hfresh. cbn [fv_value]. exact Hfresh.
-Qed.
-
-Local Lemma fix_apply_bind_lvar_env_dom_subset
-    (Σ : tyctx) Γ y τx :
-  y ∉ dom (erase_ctx Γ) ->
-  dom (<[LVFree y := erase_ty τx]>
-    (atom_env_to_lty_env (erase_ctx Γ))) ⊆
-  dom (atom_env_to_lty_env
-    (ctx_erasure_under Σ (CtxComma Γ (CtxBind y τx)))).
-Proof.
-  apply ctx_erasure_under_comma_bind_insert_lty_env_dom_subset.
-Qed.
-
-Local Lemma fix_apply_relevant_lvars_tapp_values_fresh
-    τ body self z :
-  z ∉ fv_cty τ ->
-  z ∉ fv_value body ->
-  z ∉ fv_value self ->
-  LVFree z ∉ relevant_lvars τ (tapp_tm (tret body) self).
-Proof.
-  intros Hzτ Hzbody Hzself Hbad.
-  apply lvars_fv_elem in Hbad.
-  rewrite relevant_lvars_fv in Hbad.
-  rewrite fv_tapp_tm in Hbad.
-  cbn [fv_tm fv_value] in Hbad.
-  clear -Hzτ Hzbody Hzself Hbad. set_solver.
-Qed.
+From ContextTyping Require Import Typing TypingRegular SoundnessLam SoundnessFixBase.
 
 Lemma fix_body_arrow_outer_value_open
     (Σ : tyctx) Γ τx τ vf b (t : ty)
@@ -182,18 +120,13 @@ Proof.
     apply lvars_fv_elem. exact Hin.
   }
   assert (Hzτself : z ∉ fv_cty τself).
-  { subst τself. apply fix_apply_fix_rec_call_ty_fresh. clear -Hzfresh. set_solver. }
+  { subst τself. apply fv_cty_fix_rec_call_ty_fresh_union. clear -Hzfresh. set_solver. }
   assert (Hzτres : z ∉ fv_cty τres).
-  { subst τres. apply fix_apply_open_cty_fresh. clear -Hzfresh. set_solver. }
+  { subst τres. apply cty_open_fresh_notin. clear -Hzfresh. set_solver. }
   assert (Hzbody : z ∉ fv_value body).
   {
-    subst body.
-    pose proof (open_fv_value vf (vfvar y) 0) as Hopen.
-    cbn [fv_value] in Hopen.
-    intros Hzbody.
-    apply Hopen in Hzbody.
-    cbn [fv_value] in Hzbody.
-    clear -Hzfresh Hzbody. better_set_solver.
+    subst body. apply open_value_fvar_fresh_notin.
+    clear -Hzfresh. better_set_solver.
   }
   destruct (expr_result_extension_witness_on_exists
     (world_dom (my : WorldT)) (tret body) z Hbody_fv_my
@@ -363,22 +296,22 @@ Proof.
   set (Σrel := relevant_env Δy (CTArrow τself τres) (tret body)).
   assert (Hzτself : z ∉ fv_cty τself).
   {
-    subst τself. apply fix_apply_fix_rec_call_ty_fresh.
+    subst τself. apply fv_cty_fix_rec_call_ty_fresh_union.
     clear -Hzfresh. set_solver.
   }
   assert (Hzτres : z ∉ fv_cty τres).
   {
-    subst τres. apply fix_apply_open_cty_fresh.
+    subst τres. apply cty_open_fresh_notin.
     clear -Hzfresh. set_solver.
   }
   assert (Hzbody : z ∉ fv_value body).
   {
-    subst body. apply fix_apply_open_value_fresh.
+    subst body. apply open_value_fvar_fresh_notin.
     clear -Hzfresh. set_solver.
   }
   assert (Hzself : z ∉ fv_value self).
   {
-    subst self. apply fix_apply_vfix_fresh.
+    subst self. apply vfix_fresh_notin.
     clear -Hzfresh. set_solver.
   }
   assert (Hle_my_mz : my ⊑ mz).
@@ -408,29 +341,31 @@ Proof.
     clear -Hbad. better_set_solver. }
   assert (Hwτself : w ∉ fv_cty τself).
   {
-    subst τself. apply fix_apply_fix_rec_call_ty_fresh.
+    subst τself. apply fv_cty_fix_rec_call_ty_fresh_union.
     clear -Hwfresh. set_solver.
   }
   assert (Hwτres : w ∉ fv_cty τres).
   {
-    subst τres. apply fix_apply_open_cty_fresh.
+    subst τres. apply cty_open_fresh_notin.
     clear -Hwfresh. set_solver.
   }
   assert (Hwbody : w ∉ fv_value body).
   {
-    subst body. apply fix_apply_open_value_fresh.
+    subst body. apply open_value_fvar_fresh_notin.
     clear -Hwfresh. set_solver.
   }
   assert (Hwself : w ∉ fv_value self).
   {
-    subst self. apply fix_apply_vfix_fresh.
+    subst self. apply vfix_fresh_notin.
     clear -Hwfresh. set_solver.
   }
   assert (HΔ_ctx :
       dom Δy ⊆
       dom (atom_env_to_lty_env
         (ctx_erasure_under Σ (CtxComma Γ (CtxBind y τx))))).
-  { subst Δy. apply fix_apply_bind_lvar_env_dom_subset. exact HyΓ. }
+  { subst Δy.
+    apply ctx_erasure_under_comma_bind_insert_lty_env_dom_subset.
+    exact HyΓ. }
   assert (HzΔ : LVFree z ∉ dom Δy).
   {
     intros HzΔ.
@@ -638,7 +573,7 @@ Proof.
       HzΔ Hres_body_z_mw Hworld_Δ Hbasic_body) as Hworld_z.
     assert (Hzrel :
         LVFree z ∉ relevant_lvars τres (tapp_tm (tret body) self)).
-    { exact (fix_apply_relevant_lvars_tapp_values_fresh
+    { exact (relevant_lvars_tapp_values_fresh
         τres body self z Hzτres Hzbody Hzself). }
     pose proof (ty_static_guard_insert_irrelevant
       Δy τres (tapp_tm (tret body) self)
@@ -685,7 +620,7 @@ Proof.
       Hw_zΔ Hres_self_w Hworld_z Hbasic_self_z) as Hworld_w.
     assert (Hwrel :
         LVFree w ∉ relevant_lvars τres (tapp_tm (tret body) self)).
-    { exact (fix_apply_relevant_lvars_tapp_values_fresh
+    { exact (relevant_lvars_tapp_values_fresh
         τres body self w Hwτres Hwbody Hwself). }
     exact (ty_static_guard_insert_irrelevant
       (<[LVFree z := erase_ty (CTArrow τself τres)]> Δy)

@@ -295,7 +295,12 @@ Lemma lt_type_qualifier_open_msubst_lookup b z y
     constant_lt_for_base b cz cy.
 Proof.
   intros Hσy_dom Hqual Hσ.
-  formula_msubst_syntax_norm_in Hqual.
+  change (formula_msubst_store σy
+    (FAtom (qual_open_atom 0 z (mk_q_lt_base b (vbvar 0) (vfvar y)))))
+    with (FAtom
+      (qual_msubst_store σy
+        (qual_open_atom 0 z (mk_q_lt_base b (vbvar 0) (vfvar y)))))
+    in Hqual.
   unfold res_models in Hqual.
   cbn [formula_measure res_models_fuel] in Hqual.
   destruct Hqual as [_ Hqual].

@@ -30,11 +30,15 @@ ContextQualifier/theories/Qualifier.v
 ContextAlgebra/theories/ResourceCore.v
 ContextAlgebra/theories/ResourceAlgebra.v
 ContextAlgebra/theories/ResourceExtension.v
+ContextAlgebra/theories/ResourceInterfaceCore.v
+ContextAlgebra/theories/ResourceInterfaceFacts.v
 ContextAlgebra/theories/ResourceInterface.v
 ContextAlgebra/theories/ResourceCompat.v
 ContextAlgebra/theories/ContextAlgebra.v
 
 ContextLogic/theories/FormulaAtom.v
+ContextLogic/theories/FormulaSyntaxCore.v
+ContextLogic/theories/FormulaSyntaxRegular.v
 ContextLogic/theories/FormulaSyntax.v
 ContextLogic/theories/FormulaSemantics.v
 ContextLogic/theories/FormulaConnectives.v
@@ -47,6 +51,8 @@ LocallyNameless/Classes.v
 LocallyNameless/Tactics.v
 
 CoreLang/theories/Prelude.v
+CoreLang/theories/SyntaxCore.v
+CoreLang/theories/SyntaxRegular.v
 CoreLang/theories/Syntax.v
 CoreLang/theories/SyntaxNotation.v
 CoreLang/theories/LocallyNamelessExtra.v
@@ -61,6 +67,8 @@ CoreLang/theories/OperationalProps.v
 CoreLang/theories/StrongNormalization.v
 CoreLang/theories/Sugar.v
 
+ContextTypeLanguage/theories/SyntaxCore.v
+ContextTypeLanguage/theories/SyntaxRegular.v
 ContextTypeLanguage/theories/Syntax.v
 ContextTypeLanguage/theories/TypeOpen.v
 ContextTypeLanguage/theories/LtyEnv.v
@@ -77,10 +85,13 @@ ContextBasicDenotation/theories/Qualifier.v
 ContextBasicDenotation/theories/BasicTypingFormula.v
 ContextBasicDenotation/theories/BasicFormulaFiberwise.v
 ContextBasicDenotation/theories/BasicTypingOpen.v
+ContextBasicDenotation/theories/RelevantEnvCore.v
+ContextBasicDenotation/theories/RelevantEnvRegular.v
 ContextBasicDenotation/theories/RelevantEnv.v
 
 Denotation/theories/Notation.v
 Denotation/theories/TypeDenote.v
+Denotation/theories/TypeDenoteRegular.v
 Denotation/theories/TypeEquivCore.v
 Denotation/theories/DenotationSetMapFacts.v
 Denotation/theories/ResultFirstOpen.v
@@ -108,6 +119,8 @@ Denotation/theories/ConstDenote.v
 ContextTyping/theories/PrimOpContext.v
 ContextTyping/theories/PrimOpConcreteContext.v
 ContextTyping/theories/Typing.v
+ContextTyping/theories/TypingRegular.v
+ContextTyping/theories/SoundnessCaseTactics.v
 ContextTyping/theories/SoundnessLam.v
 ContextTyping/theories/SoundnessApp.v
 ContextTyping/theories/SoundnessMatch.v

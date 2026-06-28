@@ -102,6 +102,62 @@ Proof.
   rewrite elem_of_intersection, !set_swap_elem, elem_of_intersection. reflexivity.
 Qed.
 
+Lemma set_swap_opened_singleton_intersection
+    {A : Type} `{Countable A} (M A0 : gset A) x y :
+  x ∈ M ->
+  y ∉ M ->
+  x ∉ A0 ->
+  y ∉ A0 ->
+  (M ∪ {[y]}) ∩ (A0 ∪ {[y]}) =
+    set_swap x y (M ∩ (A0 ∪ {[x]})).
+Proof.
+  intros HxM HyM HxA HyA.
+  assert (Hxy : x <> y).
+  { intros ->. exact (HyM HxM). }
+  apply set_eq. intros a.
+  rewrite set_swap_elem.
+  destruct (decide (a = x)) as [->|Hax].
+  - replace (swap x y x) with y
+      by (unfold swap; repeat destruct decide; congruence).
+    split.
+    + intros Hleft. exfalso.
+      apply elem_of_intersection in Hleft as [_ HxAy].
+      apply elem_of_union in HxAy as [HxA'|Hxy'].
+      * exact (HxA HxA').
+      * apply elem_of_singleton in Hxy'. contradiction.
+    + intros Hright. exfalso.
+      apply elem_of_intersection in Hright as [HyM' _].
+      exact (HyM HyM').
+  - destruct (decide (a = y)) as [->|Hay].
+    + replace (swap x y y) with x
+        by (unfold swap; repeat destruct decide; congruence).
+      split.
+      * intros _. apply elem_of_intersection. split.
+        -- exact HxM.
+        -- apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+      * intros _. apply elem_of_intersection. split.
+        -- apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+        -- apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+    + replace (swap x y a) with a
+        by (unfold swap; repeat destruct decide; congruence).
+      split.
+      * intros Hleft.
+        apply elem_of_intersection in Hleft as [HaMy HaAy].
+        apply elem_of_intersection. split.
+        -- apply elem_of_union in HaMy as [HaM|Hay']; [exact HaM|].
+           apply elem_of_singleton in Hay'. contradiction.
+        -- apply elem_of_union_l.
+           apply elem_of_union in HaAy as [HaA|Hay']; [exact HaA|].
+           apply elem_of_singleton in Hay'. contradiction.
+      * intros Hright.
+        apply elem_of_intersection in Hright as [HaM HaAx].
+        apply elem_of_intersection. split.
+        -- apply elem_of_union_l. exact HaM.
+        -- apply elem_of_union_l.
+           apply elem_of_union in HaAx as [HaA|Hax']; [exact HaA|].
+           apply elem_of_singleton in Hax'. contradiction.
+Qed.
+
 Lemma set_swap_difference {A : Type} `{Countable A} (x y : A) (X Y : gset A) :
   set_swap x y (X ∖ Y) = set_swap x y X ∖ set_swap x y Y.
 Proof.

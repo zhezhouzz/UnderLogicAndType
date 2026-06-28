@@ -157,6 +157,15 @@ Definition lvars_wf_at (d : nat) (D : aset) (L : lvset) : Prop :=
 Definition lvars_lc_at (d : nat) (L : lvset) : Prop :=
   forall k, k ∈ lvars_bv L -> k < d.
 
+Lemma lvars_lc_at_zero_of_lc D :
+  lc_lvars D ->
+  lvars_lc_at 0 D.
+Proof.
+  intros Hlc k Hk.
+  rewrite lvars_bv_elem in Hk.
+  exfalso. exact (Hlc (LVBound k) Hk).
+Qed.
+
 Lemma lvars_wf_at_mono d D E L :
   D ⊆ E ->
   lvars_wf_at d D L ->

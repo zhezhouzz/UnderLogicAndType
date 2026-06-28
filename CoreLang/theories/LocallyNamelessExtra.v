@@ -49,7 +49,8 @@ Lemma subst_body_value x u v :
   body_val v -> lc_value u -> body_val (value_subst x u v).
 Proof.
   intros [L Hbody] Hlc.
-  exists (L ∪ {[x]}). intros y Hy.
+  let acc := collect_stales ({[x]} : aset) in
+  exists (L ∪ acc). intros y Hy.
   rewrite <- subst_open_var_value by my_set_solver.
   apply subst_lc_value; auto. apply Hbody. my_set_solver.
 Qed.
@@ -58,7 +59,8 @@ Lemma subst_body_tm x u e :
   body_tm e -> lc_value u -> body_tm (tm_subst x u e).
 Proof.
   intros [L Hbody] Hlc.
-  exists (L ∪ {[x]}). intros y Hy.
+  let acc := collect_stales ({[x]} : aset) in
+  exists (L ∪ acc). intros y Hy.
   rewrite <- subst_open_var_tm by my_set_solver.
   apply subst_lc_tm; auto. apply Hbody. my_set_solver.
 Qed.
@@ -75,25 +77,23 @@ Proof.
   intros Hlc. exists ∅. intros x _. by rewrite open_rec_lc_tm.
 Qed.
 
+Lemma fv_of_subst_mutual :
+  (forall v x u,
+    fv_value (value_subst x u v) ⊆ (fv_value v ∖ {[x]}) ∪ fv_value u) *
+  (forall e x u,
+    fv_tm (tm_subst x u e) ⊆ (fv_tm e ∖ {[x]}) ∪ fv_value u).
+Proof.
+  apply value_tm_mutind; simpl; intros; try set_solver.
+  destruct (decide (x0 = x)); set_solver.
+Qed.
+
 Lemma fv_of_subst_value x u v :
   fv_value (value_subst x u v) ⊆ (fv_value v ∖ {[x]}) ∪ fv_value u.
-Proof.
-  revert x u. induction v using value_mut with
-      (P0 := fun e => ∀ x u,
-        fv_tm (tm_subst x u e) ⊆ (fv_tm e ∖ {[x]}) ∪ fv_value u);
-      simpl; intros y u; try my_set_solver.
-  - destruct (decide (y = x)); my_set_solver.
-Qed.
+Proof. exact (fst fv_of_subst_mutual v x u). Qed.
 
 Lemma fv_of_subst_tm x u e :
   fv_tm (tm_subst x u e) ⊆ (fv_tm e ∖ {[x]}) ∪ fv_value u.
-Proof.
-  revert x u. induction e using tm_mut with
-      (P := fun v => ∀ x u,
-        fv_value (value_subst x u v) ⊆ (fv_value v ∖ {[x]}) ∪ fv_value u);
-      simpl; intros y u; try my_set_solver.
-  - destruct (decide (y = x)); my_set_solver.
-Qed.
+Proof. exact (snd fv_of_subst_mutual e x u). Qed.
 
 Lemma close_rm_fv_value x k v :
   x ∉ fv_value (close_value x k v).
@@ -357,6 +357,18 @@ Proof.
   by apply open_rec_lc_tm.
 Qed.
 
+Lemma fv_of_subst_closed_reverse_mutual :
+  (forall v x u,
+    fv_value u = ∅ ->
+    fv_value v ∖ {[x]} ⊆ fv_value (value_subst x u v)) *
+  (forall e x u,
+    fv_value u = ∅ ->
+    fv_tm e ∖ {[x]} ⊆ fv_tm (tm_subst x u e)).
+Proof.
+  apply value_tm_mutind; simpl; intros; try set_solver.
+  destruct (decide (x0 = x)); subst; simpl; set_solver.
+Qed.
+
 Lemma fv_of_subst_value_closed x u v :
   fv_value u = ∅ ->
   fv_value (value_subst x u v) = fv_value v ∖ {[x]}.
@@ -366,16 +378,7 @@ Proof.
   split.
   - pose proof (fv_of_subst_value x u v) as Hsub.
     rewrite Hu in Hsub. my_set_solver.
-  - assert (Hrev : ∀ x u,
-        fv_value u = ∅ →
-        fv_value v ∖ {[x]} ⊆ fv_value (value_subst x u v)).
-    { clear x u Hu. induction v using value_mut with
-        (P0 := fun e => ∀ x u,
-          fv_value u = ∅ ->
-          fv_tm e ∖ {[x]} ⊆ fv_tm (tm_subst x u e));
-        simpl; intros y u Hu; try my_set_solver.
-      destruct (decide (y = x)); subst; simpl; my_set_solver. }
-    by apply Hrev.
+  - by apply (fst fv_of_subst_closed_reverse_mutual).
 Qed.
 
 Lemma fv_of_subst_tm_closed x u e :
@@ -387,16 +390,7 @@ Proof.
   split.
   - pose proof (fv_of_subst_tm x u e) as Hsub.
     rewrite Hu in Hsub. my_set_solver.
-  - assert (Hrev : ∀ x u,
-        fv_value u = ∅ →
-        fv_tm e ∖ {[x]} ⊆ fv_tm (tm_subst x u e)).
-    { clear x u Hu. induction e using tm_mut with
-        (P := fun v => ∀ x u,
-          fv_value u = ∅ ->
-          fv_value v ∖ {[x]} ⊆ fv_value (value_subst x u v));
-        simpl; intros y u Hu; try my_set_solver.
-      destruct (decide (y = x)); subst; simpl; my_set_solver. }
-    by apply Hrev.
+  - by apply (snd fv_of_subst_closed_reverse_mutual).
 Qed.
 
 Lemma subst_shadow_value x z u v :

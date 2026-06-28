@@ -16,7 +16,8 @@ From Denotation Require Import Context
   TypeEquiv
   ConstDenoteBase
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLam.
+From ContextTyping Require Import Typing TypingRegular SoundnessCaseTactics
+  SoundnessLam.
 
 Lemma context_typing_wf_match_inv Σ Γ x et ef τ :
   context_typing_wf Σ Γ (tmatch (vfvar x) et ef) τ ->
@@ -528,20 +529,6 @@ Proof.
     set_solver.
 Qed.
 
-Lemma lvars_lc_at_zero_of_lc D :
-  lc_lvars D ->
-  lvars_lc_at 0 D.
-Proof.
-  exact (soundness_lam_lvars_lc_at_zero_of_lc D).
-Qed.
-
-Lemma lc_lvars_shift_from k D :
-  lc_lvars D ->
-  lc_lvars (lvars_shift_from k D).
-Proof.
-  exact (soundness_lam_lc_lvars_shift_from k D).
-Qed.
-
 Lemma ty_denote_gas_lc_context_ty
     gas Σ τ e (m : WfWorldT) :
   m ⊨ ty_denote_gas gas Σ τ e ->
@@ -918,12 +905,12 @@ Proof.
     subst Dsum.
     rewrite formula_open_expr_result_formula_at_shift0 in Hres.
     - rewrite lvars_shift_from_lc_at_id in Hres; [exact Hres|].
-      apply lvars_lc_at_zero_of_lc.
+      apply soundness_lam_lvars_lc_at_zero_of_lc.
       apply relevant_env_sum_closed_of_lc.
       + eapply ty_denote_gas_lc_context_ty; exact Hbranch1.
       + eapply ty_denote_gas_lc_context_ty; exact Hbranch2.
       + exact Hlc_e.
-    - apply lc_lvars_shift_from.
+    - apply soundness_lam_lc_lvars_shift_from.
       apply relevant_env_sum_closed_of_lc.
       + eapply ty_denote_gas_lc_context_ty; exact Hbranch1.
       + eapply ty_denote_gas_lc_context_ty; exact Hbranch2.
@@ -939,7 +926,7 @@ Proof.
     rewrite !storeA_restrict_dom.
     intros v Hv. apply elem_of_intersection in Hv as [Hv Hrel].
     apply elem_of_intersection. split; [exact Hv|].
-    relevant_lvars_norm. relevant_lvars_norm_in Hrel. better_set_solver.
+    support_lvars_norm. support_lvars_norm_in Hrel. better_set_solver.
   }
   assert (HD2_sum : D2 ⊆ Dsum).
   {
@@ -948,7 +935,7 @@ Proof.
     rewrite !storeA_restrict_dom.
     intros v Hv. apply elem_of_intersection in Hv as [Hv Hrel].
     apply elem_of_intersection. split; [exact Hv|].
-    relevant_lvars_norm. relevant_lvars_norm_in Hrel. better_set_solver.
+    support_lvars_norm. support_lvars_norm_in Hrel. better_set_solver.
   }
   assert (HeD1 : tm_lvars e ⊆ D1).
   {
@@ -1402,9 +1389,10 @@ Lemma fundamental_match_true_case Σ Γ x τ et ef :
   ctx_denote_under Σ Γ ⊫
     ty_denote_under Σ Γ τ (tmatch (vfvar x) et ef).
 Proof.
-  intros Hwf Hbool HIH m Hctx.
-  pose proof (Hbool m Hctx) as Hbt.
-  pose proof (HIH m Hctx) as Het.
+  intros Hwf Hbool HIH.
+  soundness_case_start.
+  rename Hden into Het.
+  rename Hden0 into Hbt.
   pose proof (bool_precise_true_ret_fvar_lookup Γ x m) as Hlookup.
   pose proof (tm_equiv_match_true_var
     Σ Γ x et ef τ m Hwf Hctx
@@ -1425,9 +1413,10 @@ Lemma fundamental_match_false_case Σ Γ x τ et ef :
   ctx_denote_under Σ Γ ⊫
     ty_denote_under Σ Γ τ (tmatch (vfvar x) et ef).
 Proof.
-  intros Hwf Hbool HIH m Hctx.
-  pose proof (Hbool m Hctx) as Hbf.
-  pose proof (HIH m Hctx) as Hef.
+  intros Hwf Hbool HIH.
+  soundness_case_start.
+  rename Hden into Hef.
+  rename Hden0 into Hbf.
   pose proof (bool_precise_false_ret_fvar_lookup Γ x m) as Hlookup.
   pose proof (tm_equiv_match_false_var
     Σ Γ x et ef τ m Hwf Hctx

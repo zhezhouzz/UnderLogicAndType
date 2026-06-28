@@ -2,7 +2,7 @@
 
     Arrow case for term-result-equivalence transport. *)
 
-From Denotation Require Import Notation TypeDenote ResultFirstOpen.
+From Denotation Require Import Notation TypeDenote ResultFirstOpen TypeDenoteRegular.
 From Denotation Require Import
   TypeEquivCore
   TypeEquivTermBase
@@ -58,14 +58,7 @@ Lemma arrow_result_open_vars_subset τr y :
   context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
     context_ty_lvars_at 1 τr.
 Proof.
-  intros Hlc Hy.
-  eapply cty_lvars_open_body_closed_no_fresh.
-  - apply lc_lvars_no_bv.
-    apply cty_lc_at_lvars_bv_empty. exact Hlc.
-  - intros HyD. apply Hy.
-    rewrite <- (context_ty_lvars_fv_at 1 τr).
-    apply lvars_fv_elem. exact HyD.
-  - reflexivity.
+  apply cty_open_body_lvars_without_fresh_subset.
 Qed.
 
 Lemma ty_equiv_arrow_result_src_mid
@@ -951,20 +944,6 @@ Proof.
   - exact Hres.
 Qed.
 
-Local Lemma arrow_lvars_shift_from_lc_eq k D :
-  lc_lvars D ->
-  lvars_shift_from k D = D.
-Proof.
-  apply result_first_lvars_shift_from_lc_eq.
-Qed.
-
-Local Ltac arrow_expr_result_shift0_side :=
-  first
-    [ assumption
-    | apply result_first_lc_lvars_shift_from; assumption
-    | rewrite lvars_shift_from_fv; assumption ].
-
-
 Lemma ty_denote_gas_tm_equiv_arrow_body
     gas (IH : forall Σ τ e1 e2 (m : WfWorldT),
       typed_total_equiv_on Σ τ m e1 e2 ->
@@ -1082,7 +1061,7 @@ Proof.
 	    intros Hbad. apply HfΣ1.
 	    apply lvars_fv_elem.
 	    rewrite typed_lty_env_bind_dom.
-	    rewrite (arrow_lvars_shift_from_lc_eq 0
+	    rewrite (result_first_lvars_shift_from_lc_eq 0
 	      (dom (relevant_env Σ (CTArrow τx τr) e1)) HlcΣ_src).
 	    apply elem_of_union_l. exact Hbad.
 	  }
@@ -1092,7 +1071,7 @@ Proof.
 	    intros Hbad. apply HfΣ2.
 	    apply lvars_fv_elem.
 	    rewrite typed_lty_env_bind_dom.
-	    rewrite (arrow_lvars_shift_from_lc_eq 0
+	    rewrite (result_first_lvars_shift_from_lc_eq 0
 	      (dom (relevant_env Σ (CTArrow τx τr) e2)) HlcΣ_tgt).
 	    apply elem_of_union_l. exact Hbad.
 	  }
@@ -1118,7 +1097,7 @@ Proof.
 	        | apply result_first_lc_lvars_shift_from; exact HlcΣ_tgt
 	        | rewrite lvars_shift_from_fv; clear -Hf; set_solver
 	        | clear -Hfe; set_solver ]).
-	    rewrite (arrow_lvars_shift_from_lc_eq 0
+	    rewrite (result_first_lvars_shift_from_lc_eq 0
 	      (dom (relevant_env Σ (CTArrow τx τr) e2)) HlcΣ_tgt)
 	      in Hopened_scope_raw.
 	    rewrite (ty_denote_gas_zero_relevant_env_dom_eq
@@ -1141,7 +1120,7 @@ Proof.
 	      | apply result_first_lc_lvars_shift_from; exact HlcΣ_tgt
 	      | rewrite lvars_shift_from_fv; clear -Hf; set_solver
 	      | clear -Hfe; set_solver ]).
-	  rewrite (arrow_lvars_shift_from_lc_eq 0
+	  rewrite (result_first_lvars_shift_from_lc_eq 0
 	    (dom (relevant_env Σ (CTArrow τx τr) e2)) HlcΣ_tgt).
 	  rewrite (ty_denote_gas_zero_relevant_env_dom_eq
 	    Σ (CTArrow τx τr) e2 m Hzero_tgt).
@@ -1167,7 +1146,7 @@ Proof.
       | apply result_first_lc_lvars_shift_from; exact HlcΣ_src
       | rewrite lvars_shift_from_fv; clear -Hf; set_solver
       | clear -Hfe; set_solver ]).
-  rewrite (arrow_lvars_shift_from_lc_eq 0
+  rewrite (result_first_lvars_shift_from_lc_eq 0
     (dom (relevant_env Σ (CTArrow τx τr) e1)) HlcΣ_src) in Hopened_src.
   rewrite (ty_denote_gas_zero_relevant_env_dom_eq
     Σ (CTArrow τx τr) e1 m Hzero_src) in Hopened_src.
@@ -1270,7 +1249,7 @@ Proof.
           intros Hbad. apply HyΣ1.
           apply lvars_fv_elem.
           rewrite typed_lty_env_bind_dom.
-          rewrite (arrow_lvars_shift_from_lc_eq 0
+          rewrite (result_first_lvars_shift_from_lc_eq 0
             (dom (relevant_env Σ (CTArrow τx τr) e1)) HlcΣ_src).
           apply elem_of_union_l. exact Hbad.
         }
@@ -1280,7 +1259,7 @@ Proof.
           intros Hbad. apply HyΣ2.
           apply lvars_fv_elem.
           rewrite typed_lty_env_bind_dom.
-          rewrite (arrow_lvars_shift_from_lc_eq 0
+          rewrite (result_first_lvars_shift_from_lc_eq 0
             (dom (relevant_env Σ (CTArrow τx τr) e2)) HlcΣ_tgt).
           apply elem_of_union_l. exact Hbad.
         }

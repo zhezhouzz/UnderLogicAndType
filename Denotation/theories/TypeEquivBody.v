@@ -2,7 +2,7 @@
 
     Fiber-body and ordinary term-result-equivalence body lemmas. *)
 
-From Denotation Require Import Notation TypeDenote ResultFirstOpen DenotationSetMapFacts.
+From Denotation Require Import Notation TypeDenote ResultFirstOpen DenotationSetMapFacts TypeDenoteRegular.
 From Denotation Require Import TypeEquivCore TypeEquivTermBase TypeEquivTermResult.
 From Denotation Require Import TypeEquivFiberBaseCore TypeEquivFiberBaseProjected.
 From Denotation Require TypeEquivFiberBaseCore.

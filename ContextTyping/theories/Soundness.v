@@ -24,33 +24,17 @@ From Denotation Require Import Context
   TypePersistArrow
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import PrimOpContext PrimOpConcreteContext Typing
+From ContextTyping Require Import PrimOpContext PrimOpConcreteContext Typing TypingRegular
+  SoundnessCaseTactics
   SoundnessLam
   SoundnessApp SoundnessMatch SoundnessFix SoundnessPersist.
 
 Local Notation StoreT := (gmap atom value) (only parsing).
 Local Notation WorldT := (World (V := value)) (only parsing).
 Local Notation WfWorldT := (WfWorld (V := value)) (only parsing).
-Local Notation FiberExtensionT := (fiber_extension (V := value)) (only parsing).
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
-(** Totality extraction is intentionally a named review point.  The denotation
-    guard contains [expr_total_formula], but future proofs around recursive
-    functions should decide whether this extraction is direct or goes through
-    the well-founded operational totality interface. *)
-Lemma ty_denote_under_total
-    (Σ : gmap atom ty) Γ τ e (m : WfWorldT) :
-  m ⊨ ty_denote_under Σ Γ τ e ->
-	  m ⊨ expr_total_formula e.
-Proof.
-  intros Hden.
-  pose proof (ty_denote_gas_guard_formula
-    (cty_depth τ) (atom_env_to_lty_env (erase_ctx Γ)) τ e m Hden)
-    as Hguard.
-  unfold ty_guard_formula in Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  exact (proj2 (proj2 (proj2 Hguard))).
-Qed.
+Local Notation FiberExtensionT := (fiber_extension (V := value)) (only parsing).
 
 Local Lemma soundness_wf_observed_vars_world_dom
     (Σ : gmap atom ty) Γ e τ (m : WfWorldT) :
@@ -177,13 +161,16 @@ Lemma fundamental_sub_case (Σ : gmap atom ty) (Γ : ctx)
   (ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ1 e) ->
   ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ2 e.
 Proof.
-  intros Hwf Hsub IH m HΓ.
+  intros Hwf Hsub IH.
+  soundness_intro_entailment.
+  soundness_pose_entailments.
+  soundness_regular.
   destruct Hsub as [_ [_ [_ [Herase Hent]]]].
   pose proof (context_typing_wf_basic_typing Σ Γ e τ2 Hwf) as Hbasic.
   rewrite <- Herase in Hbasic.
-  pose proof (Hent e Hbasic m HΓ) as Himpl.
+  pose proof (Hent e Hbasic m Hctx) as Himpl.
   eapply res_models_impl_elim; [exact Himpl|].
-  exact (IH m HΓ).
+  assumption.
 Qed.
 
 Lemma fundamental_ctx_sub_case (Σ : gmap atom ty) (Γ1 Γ2 : ctx)
@@ -205,7 +192,7 @@ Proof.
     apply atom_env_to_lty_env_restrict_lvars_agree_on
       with (X := fv_tm e ∪ fv_cty τ).
     - intros x Hx. symmetry. apply Hagree. exact Hx.
-    - relevant_lvars_norm. better_set_solver.
+    - support_lvars_norm. better_set_solver.
   }
   eapply res_models_from_restrict_extension_on_fv
     with (X := fv_tm e ∪ fv_cty τ) (n := m').
@@ -254,7 +241,7 @@ Proof.
         set_solver.
       }
       apply erase_ctx_lookup_ctx_erasure_under_of_basic_ctx; assumption.
-    - relevant_lvars_norm. better_set_solver.
+    - support_lvars_norm. better_set_solver.
   }
   assert (Htarget :
       mx ⊨ ty_denote_gas (cty_depth τ1)
@@ -575,7 +562,7 @@ Proof.
     with (X := fv_tm e ∪ fv_cty τ).
   - eapply erase_ctx_star_bind_insert_agree_on; [exact Hbasic_top| |exact Hxctx].
     better_set_solver.
-  - relevant_lvars_norm. better_set_solver.
+  - support_lvars_norm. better_set_solver.
 Qed.
 
 Lemma ty_denote_gas_zero_tletd_ext
@@ -1018,21 +1005,6 @@ Qed.
 Definition closed_result_world_of (e : tm) (x : atom) (m : WfWorldT) : Prop :=
   forall σ, (m : WorldT) σ <->
     exists v, e →* tret v /\ σ = ({[x := v]} : StoreT).
-
-Lemma tm_eval_in_store_empty_iff e v :
-  tm_eval_in_store (∅ : StoreT) e v <-> e →* tret v.
-Proof.
-  unfold tm_eval_in_store.
-  rewrite expr_eval_in_store_no_bvars_iff.
-  - rewrite lstore_free_part_lift_free.
-    rewrite subst_map_tm_eq_msubst.
-    rewrite msubst_empty.
-    reflexivity.
-  - apply lc_lstore_lift_free.
-  - rewrite lstore_free_part_lift_free.
-    apply map_Forall_lookup_2. intros y u Hlook.
-    rewrite lookup_empty in Hlook. discriminate.
-Qed.
 
 Lemma closed_result_world_of_result_extension
     e x F (mx : WfWorldT) :

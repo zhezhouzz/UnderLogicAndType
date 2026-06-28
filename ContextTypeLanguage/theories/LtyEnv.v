@@ -86,10 +86,6 @@ Proof.
   split; assumption.
 Qed.
 
-Ltac type_env_norm :=
-  type_open_env_syntax_norm;
-  rewrite ?lvar_store_atom_dom_shift in *.
-
 Lemma lty_env_open_one_dom k x (Σ : lty_env) :
   dom (lty_env_open_one k x Σ) = lvars_open k x (dom Σ).
 Proof. apply lvar_store_open_one_dom. Qed.
@@ -208,6 +204,34 @@ Lemma lty_env_closed_insert_free (Σ : lty_env) x T :
   lty_env_closed Σ ->
   lty_env_closed (<[LVFree x := T]> Σ).
 Proof. apply lvar_store_closed_insert_free. Qed.
+
+Lemma lty_env_insert_free_fresh
+    (Σ : lty_env) x z T :
+  z <> x ->
+  LVFree z ∉ dom Σ ->
+  LVFree z ∉ dom (<[LVFree x := T]> Σ).
+Proof.
+  intros Hzx HzΣ.
+  rewrite dom_insert_L.
+  intros Hin.
+  apply elem_of_union in Hin as [Hin|Hin].
+  - apply elem_of_singleton in Hin. inversion Hin. subst.
+    contradiction.
+  - exact (HzΣ Hin).
+Qed.
+
+Lemma lvars_of_atoms_singleton_subset_insert_empty_dom z T :
+  lvars_of_atoms ({[z]} : aset) ⊆
+  dom (<[LVFree z := T]> (∅ : lty_env)).
+Proof.
+  intros v Hv.
+  unfold lvars_of_atoms in Hv.
+  apply elem_of_map in Hv as [a [-> Ha]].
+  apply elem_of_singleton in Ha. subst a.
+  apply elem_of_dom. exists T.
+  rewrite lookup_insert.
+  destruct decide as [_|Hbad]; [reflexivity|contradiction].
+Qed.
 
 Lemma lty_env_insert_free_commute
     (Σ : lty_env) x y Tx Ty :

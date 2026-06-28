@@ -262,6 +262,59 @@ Proof.
   rewrite value_shift_fv. set_solver.
 Qed.
 
+Lemma ret_value_alias_fv_support_parts X vx z :
+  fv_tm (tret (vfvar z)) ∪ fv_tm (tret vx) ⊆ X ->
+  z ∈ X /\ fv_value vx ⊆ X.
+Proof.
+  intros HfvX. split.
+  - apply HfvX. apply elem_of_union_l.
+    cbn [fv_tm fv_value]. set_solver.
+  - intros a Ha. apply HfvX. apply elem_of_union_r.
+    cbn [fv_tm]. exact Ha.
+Qed.
+
+Lemma tapp_value_arg_alias_fv_support_parts X e vx z :
+  fv_tm (tapp_tm e (vfvar z)) ∪ fv_tm (tapp_tm e vx) ⊆ X ->
+  z ∈ X /\ fv_value vx ⊆ X.
+Proof.
+  intros HfvX. split.
+  - apply HfvX. apply elem_of_union_l.
+    rewrite fv_tapp_tm. cbn [fv_tm fv_value].
+    apply elem_of_union_r. set_solver.
+  - intros a Ha. apply HfvX. apply elem_of_union_r.
+    rewrite fv_tapp_tm. cbn [fv_tm]. set_solver.
+Qed.
+
+Lemma tapp_value_fun_alias_fv_support_parts X vf y z :
+  fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ∪
+    fv_tm (tapp_tm (tret vf) (vfvar y)) ⊆ X ->
+  z ∈ X /\ fv_value vf ⊆ X.
+Proof.
+  intros HfvX. split.
+  - apply HfvX. apply elem_of_union_l.
+    rewrite fv_tapp_tm. cbn [fv_tm fv_value].
+    apply elem_of_union_l. set_solver.
+  - intros a Ha. apply HfvX. apply elem_of_union_r.
+    rewrite fv_tapp_tm. cbn [fv_tm]. set_solver.
+Qed.
+
+Lemma tapp_fvar_apps_fv_subset e1 e2 y :
+  fv_tm (tapp_tm e1 (vfvar y)) ∪
+  fv_tm (tapp_tm e2 (vfvar y)) ⊆
+  (fv_tm e1 ∪ fv_tm e2) ∪ ({[y]} : aset).
+Proof.
+  intros a Ha.
+  apply elem_of_union in Ha as [Ha|Ha];
+    rewrite fv_tapp_tm in Ha; cbn [fv_value] in Ha;
+    apply elem_of_union in Ha as [Ha|Ha].
+  - apply elem_of_union_l. apply elem_of_union_l. exact Ha.
+  - apply elem_of_singleton in Ha. subst a.
+    apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+  - apply elem_of_union_l. apply elem_of_union_r. exact Ha.
+  - apply elem_of_singleton in Ha. subst a.
+    apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+Qed.
+
 Lemma tm_swap_atom_tapp_tm x y ef vx :
   tm_swap_atom x y (tapp_tm ef vx) =
   tapp_tm (tm_swap_atom x y ef) (value_swap_atom x y vx).

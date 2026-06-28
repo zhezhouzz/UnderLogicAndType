@@ -2,7 +2,8 @@
 
     Shared opening and scope facts for result-first Arrow/Wand denotations. *)
 
-From Denotation Require Import Notation TypeDenote TypeEquivCore.
+From ContextBase Require Import LogicVarShift.
+From Denotation Require Import Notation TypeDenote TypeEquivCore TypeDenoteRegular.
 
 Section TypeDenote.
 
@@ -24,9 +25,7 @@ Lemma result_first_lvars_lc_at_zero_of_lc D :
   lc_lvars D ->
   lvars_lc_at 0 D.
 Proof.
-  intros Hlc k Hk.
-  rewrite lvars_bv_elem in Hk.
-  exfalso. exact (Hlc (LVBound k) Hk).
+  apply lvars_lc_at_zero_of_lc.
 Qed.
 
 Lemma result_first_forall_impl_open_elim
@@ -836,140 +835,3 @@ Proof.
 Qed.
 
 End TypeDenote.
-
-Ltac result_first_open_norm :=
-  repeat match goal with
-  | |- context [formula_open 0 ?y
-      (formula_open 1 ?f
-        (ty_denote_gas ?gas
-          (typed_lty_env_bind (typed_lty_env_bind ?Σ ?Tf)
-            (erase_ty (cty_shift 0 ?τx)))
-          (cty_shift 0 (cty_shift 0 ?τx)) (tret (vbvar 0))))] =>
-      rewrite (formula_open_result_first_fun_arg_two gas Σ τx Tf f y)
-        by (try eassumption; try congruence; try set_solver)
-  | H : context [formula_open 0 ?y
-      (formula_open 1 ?f
-        (ty_denote_gas ?gas
-          (typed_lty_env_bind (typed_lty_env_bind ?Σ ?Tf)
-            (erase_ty (cty_shift 0 ?τx)))
-          (cty_shift 0 (cty_shift 0 ?τx)) (tret (vbvar 0))))] |- _ =>
-      rewrite (formula_open_result_first_fun_arg_two gas Σ τx Tf f y) in H
-        by (try eassumption; try congruence; try set_solver)
-  | |- context [formula_open 0 ?y
-      (formula_open 1 ?f
-        (ty_denote_gas ?gas
-          (typed_lty_env_bind (typed_lty_env_bind ?Σ ?Tf)
-            (erase_ty (cty_shift 0 ?τx)))
-          (cty_shift 1 ?τr)
-          (tapp_tm (tret (vbvar 1)) (vbvar 0))))] =>
-      rewrite (formula_open_result_first_fun_result_two gas Σ τx τr Tf f y)
-        by (try eassumption; try congruence; try set_solver)
-  | H : context [formula_open 0 ?y
-      (formula_open 1 ?f
-        (ty_denote_gas ?gas
-          (typed_lty_env_bind (typed_lty_env_bind ?Σ ?Tf)
-            (erase_ty (cty_shift 0 ?τx)))
-          (cty_shift 1 ?τr)
-          (tapp_tm (tret (vbvar 1)) (vbvar 0))))] |- _ =>
-      rewrite (formula_open_result_first_fun_result_two gas Σ τx τr Tf f y) in H
-        by (try eassumption; try congruence; try set_solver)
-  | |- context [formula_open 0 ?f
-      (arrow_value_denote_gas_with ty_denote_gas ?gas ?Σ ?τx ?τr
-        (tret (vbvar 0)))] =>
-      rewrite (formula_open_arrow_value_ret_bvar0 gas Σ τx τr f)
-        by (try eassumption; try set_solver)
-  | H : context [formula_open 0 ?f
-      (arrow_value_denote_gas_with ty_denote_gas ?gas ?Σ ?τx ?τr
-        (tret (vbvar 0)))] |- _ =>
-      rewrite (formula_open_arrow_value_ret_bvar0 gas Σ τx τr f) in H
-        by (try eassumption; try set_solver)
-  | |- context [formula_open 0 ?f
-      (arrow_value_denote_gas_with ty_denote_gas ?gas
-        (typed_lty_env_bind ?Σ ?Tf)
-        (cty_shift 0 ?τx) (cty_shift 1 ?τr)
-        (tret (vbvar 0)))] =>
-      rewrite (formula_open_result_first_arrow_value_ret_bvar0
-        gas Σ τx τr Tf f) by (try eassumption; try set_solver)
-  | H : context [formula_open 0 ?f
-      (arrow_value_denote_gas_with ty_denote_gas ?gas
-        (typed_lty_env_bind ?Σ ?Tf)
-        (cty_shift 0 ?τx) (cty_shift 1 ?τr)
-        (tret (vbvar 0)))] |- _ =>
-      rewrite (formula_open_result_first_arrow_value_ret_bvar0
-        gas Σ τx τr Tf f) in H by (try eassumption; try set_solver)
-  | |- context [formula_open 0 ?f
-      (wand_value_denote_gas_with ty_denote_gas ?gas ?Σ ?τx ?τr
-        (tret (vbvar 0)))] =>
-      rewrite (formula_open_wand_value_ret_bvar0 gas Σ τx τr f)
-        by (try eassumption; try set_solver)
-  | H : context [formula_open 0 ?f
-      (wand_value_denote_gas_with ty_denote_gas ?gas ?Σ ?τx ?τr
-        (tret (vbvar 0)))] |- _ =>
-      rewrite (formula_open_wand_value_ret_bvar0 gas Σ τx τr f) in H
-        by (try eassumption; try set_solver)
-  | |- context [formula_open 0 ?f
-      (wand_value_denote_gas_with ty_denote_gas ?gas
-        (typed_lty_env_bind ?Σ ?Tf)
-        (cty_shift 0 ?τx) (cty_shift 1 ?τr)
-        (tret (vbvar 0)))] =>
-      rewrite (formula_open_result_first_wand_value_ret_bvar0
-        gas Σ τx τr Tf f) by (try eassumption; try set_solver)
-  | H : context [formula_open 0 ?f
-      (wand_value_denote_gas_with ty_denote_gas ?gas
-        (typed_lty_env_bind ?Σ ?Tf)
-        (cty_shift 0 ?τx) (cty_shift 1 ?τr)
-        (tret (vbvar 0)))] |- _ =>
-      rewrite (formula_open_result_first_wand_value_ret_bvar0
-        gas Σ τx τr Tf f) in H by (try eassumption; try set_solver)
-  end;
-  cbn [formula_open arrow_value_denote_gas arrow_value_denote_gas_with
-        wand_value_denote_gas wand_value_denote_gas_with] in *;
-  denotation_open_norm.
-
-Ltac result_first_open_norm_in H :=
-  repeat match type of H with
-  | context [formula_open 0 ?y
-      (formula_open 1 ?f
-        (ty_denote_gas ?gas
-          (typed_lty_env_bind (typed_lty_env_bind ?Σ ?Tf)
-            (erase_ty (cty_shift 0 ?τx)))
-          (cty_shift 0 (cty_shift 0 ?τx)) (tret (vbvar 0))))] =>
-      rewrite (formula_open_result_first_fun_arg_two gas Σ τx Tf f y) in H
-        by (try eassumption; try congruence; try set_solver)
-  | context [formula_open 0 ?y
-      (formula_open 1 ?f
-        (ty_denote_gas ?gas
-          (typed_lty_env_bind (typed_lty_env_bind ?Σ ?Tf)
-            (erase_ty (cty_shift 0 ?τx)))
-          (cty_shift 1 ?τr)
-          (tapp_tm (tret (vbvar 1)) (vbvar 0))))] =>
-      rewrite (formula_open_result_first_fun_result_two gas Σ τx τr Tf f y) in H
-        by (try eassumption; try congruence; try set_solver)
-  | context [formula_open 0 ?f
-      (arrow_value_denote_gas_with ty_denote_gas ?gas ?Σ ?τx ?τr
-        (tret (vbvar 0)))] =>
-      rewrite (formula_open_arrow_value_ret_bvar0 gas Σ τx τr f) in H
-        by (try eassumption; try set_solver)
-  | context [formula_open 0 ?f
-      (arrow_value_denote_gas_with ty_denote_gas ?gas
-        (typed_lty_env_bind ?Σ ?Tf)
-        (cty_shift 0 ?τx) (cty_shift 1 ?τr)
-        (tret (vbvar 0)))] =>
-      rewrite (formula_open_result_first_arrow_value_ret_bvar0
-        gas Σ τx τr Tf f) in H by (try eassumption; try set_solver)
-  | context [formula_open 0 ?f
-      (wand_value_denote_gas_with ty_denote_gas ?gas ?Σ ?τx ?τr
-        (tret (vbvar 0)))] =>
-      rewrite (formula_open_wand_value_ret_bvar0 gas Σ τx τr f) in H
-        by (try eassumption; try set_solver)
-  | context [formula_open 0 ?f
-      (wand_value_denote_gas_with ty_denote_gas ?gas
-        (typed_lty_env_bind ?Σ ?Tf)
-        (cty_shift 0 ?τx) (cty_shift 1 ?τr)
-        (tret (vbvar 0)))] =>
-      rewrite (formula_open_result_first_wand_value_ret_bvar0
-        gas Σ τx τr Tf f) in H by (try eassumption; try set_solver)
-  end;
-  cbn [formula_open arrow_value_denote_gas arrow_value_denote_gas_with
-        wand_value_denote_gas wand_value_denote_gas_with] in H;
-  denotation_open_norm_in H.

@@ -221,9 +221,6 @@ Ltac better_store_solver :=
   store_normalize;
   store_finish.
 
-Ltac store_norm := store_normalize.
-Ltac store_solver := better_store_solver.
-
 Set Warnings "+cast-in-pattern".
 
 #[global] Instance stale_store {A} : Stale (gmap atom A) := dom.

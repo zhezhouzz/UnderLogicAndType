@@ -195,6 +195,13 @@ Proof.
   set_solver.
 Qed.
 
+Lemma const_qual_bound_no_free c y :
+  LVFree y ∉ qual_vars (mk_q_eq (vbvar 0) (vconst c)).
+Proof.
+  rewrite const_qual_vars_bound.
+  apply not_elem_of_singleton_2. discriminate.
+Qed.
+
 Lemma const_qual_vars_bound_without_bound c :
   qual_vars (mk_q_eq (vbvar 0) (vconst c)) ∖ {[LVBound 0]} = ∅.
 Proof.
@@ -597,8 +604,8 @@ Proof.
 	    (dom (relevant_env Δ τc (tret (vfvar x)))) Hlc_rel) in Hopened.
 	  pose proof (res_models_impl_elim mx _ _ Hopened Hexpr_y)
 	    as Hfib_over.
-  rewrite formula_open_over_typed_body_normalize in Hfib_over.
-  2:{ rewrite const_qual_vars_bound. better_set_solver. }
+	  rewrite formula_open_over_typed_body_normalize in Hfib_over.
+	  2:{ apply const_qual_bound_no_free. }
   pose proof (over_open_body_from_typed
     (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)) y mx Hfib_over)
     as Hbody_y.

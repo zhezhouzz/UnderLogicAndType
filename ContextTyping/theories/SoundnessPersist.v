@@ -10,7 +10,7 @@ From Denotation Require Import Context DenotationSetMapFacts TypeEquiv
   TypeEquivCore TypeEquivTermBase TypeEquivTermResult TypeEquivFiberBaseCore
   TypePersistBase TypePersistArrow TypePersistSingleton
   TypePersistWandForward TypePersistWandReverse.
-From ContextTyping Require Import Typing.
+From ContextTyping Require Import Typing TypingRegular SoundnessCaseTactics.
 
 Local Notation StoreT := (gmap atom value) (only parsing).
 Local Notation WorldT := (World (V := value)) (only parsing).
@@ -218,7 +218,7 @@ Lemma insert_relevant_env_ret_value_restrict_eq Σ τ v y :
     (<[LVFree y := erase_ty τ]> Σ)
     (relevant_lvars τ (tret (vfvar y))).
 Proof.
-  apply RelevantEnv.insert_relevant_env_ret_value_restrict_eq.
+  apply RelevantEnvRegular.insert_relevant_env_ret_value_restrict_eq.
 Qed.
 
 Lemma res_restrict_singleton_push_ret_value_result
@@ -709,12 +709,13 @@ Lemma fundamental_persist_intro_case Σ Γ τ v :
   ctx_denote_under Σ Γ ⊫
     ty_denote_under Σ Γ (CTPersist τ) (tret v).
 Proof.
-  intros Hwf Hpersist IH m Hctx.
-  pose proof (IH m Hctx) as Hτ.
+  intros Hwf Hpersist IH.
+  soundness_intro_entailment.
+  soundness_pose_entailments.
   soundness_regular.
   destruct (ctx_persistent_singleton_on_erase_subset
     Σ Γ (fv_cty τ ∪ fv_value v) m Hobs Hpersist Hctx)
     as [σ [Hdomσ Hsingle]].
-  unfold ty_denote_under in Hτ |- *.
+  soundness_unfold_ty_denotes.
   eapply ty_denote_value_persist_intro_singleton; eauto.
 Qed.

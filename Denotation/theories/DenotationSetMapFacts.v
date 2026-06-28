@@ -7,10 +7,10 @@
     transport proofs. *)
 
 From CoreLang Require Import Syntax InstantiationProps.
-From ContextStore Require Import Store.
-From ContextAlgebra Require Import ResourceExtension ResourceInterface.
-From ContextTypeLanguage Require Import Syntax.
-From ContextBasicDenotation Require Import StoreTyping.
+From ContextStore Require Import Store StoreRestrict.
+From ContextAlgebra Require Import ResourceExtension ResourceInterface ResourceInterfaceFacts.
+From ContextTypeLanguage Require Import Syntax LtyEnv.
+From ContextBasicDenotation Require Import StoreTyping RelevantEnvRegular.
 
 Notation StoreT := (Store (V := value)) (only parsing).
 Notation WorldT := (World (V := value)) (only parsing).
@@ -18,47 +18,42 @@ Notation WfWorldT := (WfWorld (V := value)) (only parsing).
 
 Lemma union_singleton_empty_r (X : aset) y :
   X ∪ ({[y]} ∪ ∅) = X ∪ {[y]}.
-Proof. set_solver. Qed.
+Proof. apply gset_union_singleton_empty_r. Qed.
 
 Lemma empty_union_singleton_l y :
   ∅ ∪ {[y]} = ({[y]} : aset).
-Proof. set_solver. Qed.
+Proof. apply gset_empty_union_singleton_l. Qed.
 
 Lemma notin_union4_l (a : atom) (A B C D : aset) :
   a ∉ A ∪ B ∪ C ∪ D ->
   a ∉ A.
-Proof. set_solver. Qed.
+Proof. apply gset_notin_union4_l. Qed.
 
 Lemma notin_union4_r1 (a : atom) (A B C D : aset) :
   a ∉ A ∪ B ∪ C ∪ D ->
   a ∉ B.
-Proof. set_solver. Qed.
+Proof. apply gset_notin_union4_r1. Qed.
 
 Lemma notin_union4_r2 (a : atom) (A B C D : aset) :
   a ∉ A ∪ B ∪ C ∪ D ->
   a ∉ C.
-Proof. set_solver. Qed.
+Proof. apply gset_notin_union4_r2. Qed.
 
 Lemma notin_union4_r3 (a : atom) (A B C D : aset) :
   a ∉ A ∪ B ∪ C ∪ D ->
   a ∉ D.
-Proof. set_solver. Qed.
+Proof. apply gset_notin_union4_r3. Qed.
 
 Lemma elem_union_singleton_not_eq_left (A : aset) a y :
   a ∈ A ∪ {[y]} ->
   a <> y ->
   a ∈ A.
-Proof. set_solver. Qed.
+Proof. apply gset_elem_union_singleton_not_eq_left. Qed.
 
 Lemma elem_open_world_inter_singleton x y (B : aset) :
   x ∈ B ->
   x ∈ (B ∪ {[y]}) ∩ ({[x]} : aset).
-Proof.
-  intros Hx.
-  apply elem_of_intersection. split.
-  - apply elem_of_union_l. exact Hx.
-  - apply elem_of_singleton. reflexivity.
-Qed.
+Proof. apply gset_elem_open_world_inter_singleton. Qed.
 
 Lemma store_restrict_union_singleton_ignore_r
     (σ : StoreT) x (v : value) X :
@@ -81,9 +76,7 @@ Lemma store_lookup_eq_of_restrict_eq
   σ1 !! x = σ2 !! x.
 Proof.
   intros Hx Heq.
-  apply option_eq. intros v. split; intros Hlook.
-  - eapply storeA_restrict_lookup_transport; [exact Hx|exact Heq|exact Hlook].
-  - eapply storeA_restrict_lookup_transport; [exact Hx|symmetry; exact Heq|exact Hlook].
+  eapply storeA_lookup_eq_of_restrict_eq; [exact Hx|exact Heq].
 Qed.
 
 Lemma store_lookup_eq_of_restrict_eq_full
@@ -93,11 +86,7 @@ Lemma store_lookup_eq_of_restrict_eq_full
   σbig !! x = σsmall !! x.
 Proof.
   intros Hx Heq.
-  eapply store_lookup_eq_of_restrict_eq; [exact Hx|].
-  rewrite <- Heq.
-  symmetry.
-  apply storeA_restrict_twice_subset.
-  set_solver.
+  eapply storeA_lookup_eq_of_restrict_eq_full; [exact Hx|exact Heq].
 Qed.
 
 Lemma store_restrict_obs_result_eq
@@ -113,28 +102,13 @@ Lemma store_restrict_obs_result_eq
   store_restrict σv (lvars_fv Dobs ∪ {[y]}) =
     store_restrict σbig (lvars_fv Dobs ∪ {[y]}).
 Proof.
-  intros HDobs Hobs_base Hv_base Hbase_big Hyv Hybig.
-  apply storeA_map_eq. intros a.
-  destruct (decide (a ∈ lvars_fv Dobs ∪ {[y]})) as [Ha|Ha].
-  2:{
-    rewrite !storeA_restrict_lookup_none_r by exact Ha.
-    reflexivity.
-  }
-  rewrite !storeA_restrict_lookup.
-  destruct (decide (a ∈ lvars_fv Dobs ∪ {[y]})) as [_|Hbad];
-    [|contradiction].
-  apply elem_of_union in Ha as [HaD|Hay].
-  - assert (Ha_small : a ∈ lvars_fv Dsmall).
-    {
-      apply lvars_fv_elem. apply HDobs.
-      apply lvars_fv_elem. exact HaD.
-    }
-    assert (Ha_base : a ∈ Xbase) by set_solver.
-    transitivity ((σbase : StoreT) !! a).
-    + eapply store_lookup_eq_of_restrict_eq; [exact Ha_small|exact Hv_base].
-    + eapply store_lookup_eq_of_restrict_eq; [exact Ha_base|exact Hbase_big].
-  - apply elem_of_singleton in Hay as ->.
-    transitivity (Some v); [exact Hyv|symmetry; exact Hybig].
+  intros HDobs Hobs_base.
+  eapply storeA_restrict_obs_result_eq.
+  - intros a Ha.
+    apply lvars_fv_elem.
+    apply HDobs.
+    apply lvars_fv_elem. exact Ha.
+  - exact Hobs_base.
 Qed.
 
 Lemma notin_store_union_singleton_dom
@@ -143,23 +117,7 @@ Lemma notin_store_union_singleton_dom
   z <> x ->
   z ∉ dom (((σ : StoreT) ∪ ({[x := vx]} : StoreT)) : StoreT).
 Proof.
-  intros Hzσ Hzx Hzdom.
-  change (z ∈ dom
-    ((((σ : StoreT) : gmap atom value) ∪
-      ({[x := vx]} : gmap atom value)) : gmap atom value)) in Hzdom.
-  apply elem_of_dom in Hzdom as [vz Hlook].
-  apply map_lookup_union_Some_raw in Hlook as [Hlook|[_ Hlook]].
-  - apply Hzσ.
-    change (z ∈ dom (σ : gmap atom value)).
-    apply elem_of_dom. exists vz. exact Hlook.
-  - apply Hzx.
-    pose proof (dom_singleton_L (M:=gmap atom) x vx) as Hdom_single.
-    change (dom (({[x := vx]} : StoreT)) = {[x]}) in Hdom_single.
-    apply elem_of_dom_2 in Hlook.
-    change (z ∈ dom (({[x := vx]} : StoreT))) in Hlook.
-    rewrite Hdom_single in Hlook.
-    apply elem_of_singleton in Hlook.
-    exact Hlook.
+  apply map_notin_union_singleton_dom.
 Qed.
 
 Lemma store_restrict_insert_same_observed
@@ -171,44 +129,8 @@ Proof.
   intros Heq.
   change (storeA_restrict (<[z := v]> (σ1 : gmap atom value)) (X ∪ {[z]}) =
     storeA_restrict (<[z := v]> (σ2 : gmap atom value)) (X ∪ {[z]})).
-  apply storeA_map_eq. intros a.
-  destruct (decide (a = z)) as [->|Haz].
-  - transitivity (Some v).
-    + apply storeA_restrict_lookup_some_2;
-        [apply map_lookup_insert|set_solver].
-    + symmetry. apply storeA_restrict_lookup_some_2;
-        [apply map_lookup_insert|set_solver].
-  - destruct (decide (a ∈ X)) as [HaX|HaX].
-    + pose proof (store_lookup_eq_of_restrict_eq σ1 σ2 X a HaX Heq)
-        as Hlook_eq.
-      destruct ((σ1 : StoreT) !! a) as [va|] eqn:Hlook1.
-      * assert (Hlook2 : (σ2 : StoreT) !! a = Some va).
-        { symmetry. exact Hlook_eq. }
-        transitivity (Some va).
-        -- apply storeA_restrict_lookup_some_2.
-           ++ transitivity ((σ1 : StoreT) !! a).
-              ** apply map_lookup_insert_ne. congruence.
-              ** exact Hlook1.
-           ++ set_solver.
-        -- symmetry. apply storeA_restrict_lookup_some_2.
-           ++ transitivity ((σ2 : StoreT) !! a).
-              ** apply map_lookup_insert_ne. congruence.
-              ** exact Hlook2.
-           ++ set_solver.
-      * assert (Hlook2 : (σ2 : StoreT) !! a = None).
-        { symmetry. exact Hlook_eq. }
-        transitivity (@None value).
-        -- apply storeA_restrict_lookup_none_l.
-           transitivity ((σ1 : StoreT) !! a).
-           ++ apply map_lookup_insert_ne. congruence.
-           ++ exact Hlook1.
-        -- symmetry. apply storeA_restrict_lookup_none_l.
-           transitivity ((σ2 : StoreT) !! a).
-           ++ apply map_lookup_insert_ne. congruence.
-           ++ exact Hlook2.
-    + transitivity (@None value).
-      * apply storeA_restrict_lookup_none_r. set_solver.
-      * symmetry. apply storeA_restrict_lookup_none_r. set_solver.
+  apply storeA_restrict_insert_same_observed.
+  exact Heq.
 Qed.
 
 Lemma store_restrict_insert_union_eq_of_restrict_eq
@@ -218,9 +140,10 @@ Lemma store_restrict_insert_union_eq_of_restrict_eq
   store_restrict (<[z := v]> σ1) (X ∪ {[z]}) =
   store_restrict (<[z := v]> σ2) (X ∪ {[z]}).
 Proof.
-  intros _ Heq.
-  apply store_restrict_insert_same_observed.
-  exact Heq.
+  intros HzX Heq.
+  change (storeA_restrict (<[z := v]> (σ1 : gmap atom value)) (X ∪ {[z]}) =
+    storeA_restrict (<[z := v]> (σ2 : gmap atom value)) (X ∪ {[z]})).
+  eapply storeA_restrict_insert_union_eq_of_restrict_eq; [exact HzX|exact Heq].
 Qed.
 
 Lemma store_restrict_insert_agree_on_observed
@@ -231,15 +154,12 @@ Lemma store_restrict_insert_agree_on_observed
   store_restrict (<[z := v]> σ) Z =
   store_restrict (<[z := v]> (store_restrict σ X : StoreT)) Z.
 Proof.
-  intros HZX _ HzX.
-  transitivity
-    (store_restrict (store_restrict (<[z := v]> σ) (X ∪ {[z]})) Z).
-  - symmetry. apply storeA_restrict_twice_subset. exact HZX.
-  - rewrite (store_restrict_insert_union_eq_of_restrict_eq
-      σ (store_restrict σ X : StoreT) X z v).
-    + apply storeA_restrict_twice_subset. exact HZX.
-    + exact HzX.
-    + symmetry. apply storeA_restrict_twice_subset. set_solver.
+  intros HZX Hzσ HzX.
+  change (storeA_restrict (<[z := v]> (σ : gmap atom value)) Z =
+    storeA_restrict
+      (<[z := v]> (storeA_restrict (σ : gmap atom value) X)) Z).
+  eapply storeA_restrict_insert_agree_on_observed;
+    [exact HZX|exact Hzσ|exact HzX].
 Qed.
 
 Lemma store_restrict_insert_agree_on_subset
@@ -263,14 +183,7 @@ Lemma res_extend_rel_store_dom
   (we : WorldT) σe ->
   dom (σe : StoreT) = extA_out F.
 Proof.
-  intros Hext Hσm HFrel Hσe.
-  pose proof (wfworld_store_dom we σe Hσe) as Hdomσe.
-  change (dom (σe : StoreT) = world_dom (we : WorldT)) in Hdomσe.
-  rewrite Hdomσe.
-  eapply extA_rel_dom; [|exact HFrel].
-  eapply extA_projection_dom.
-  - apply resA_extend_by_applicable in Hext. exact Hext.
-  - exact Hσm.
+  apply ContextAlgebra.ResourceInterfaceFacts.res_extend_rel_store_dom.
 Qed.
 
 Lemma opened_world_dom_contains_slot
@@ -279,8 +192,8 @@ Lemma opened_world_dom_contains_slot
   y ∈ world_dom (my : WorldT).
 Proof.
   intros Hdom.
-  rewrite Hdom. apply elem_of_union_r. apply elem_of_singleton_2.
-  reflexivity.
+  exact (ContextAlgebra.ResourceInterfaceFacts.opened_world_dom_contains_slot
+    m my y Hdom).
 Qed.
 
 Lemma fvar_in_singleton_restrict_dom
@@ -291,11 +204,8 @@ Lemma fvar_in_singleton_restrict_dom
   x ∈ dom (storeA_restrict σ ({[x]} : aset) : gmap atom value).
 Proof.
   intros Hxm Hσ Hdom.
-  rewrite storeA_restrict_dom.
-  rewrite (wfworld_store_dom my σ Hσ), Hdom.
-  apply elem_of_intersection. split.
-  - apply elem_of_union_l. exact Hxm.
-  - apply elem_of_singleton. reflexivity.
+  exact (ContextAlgebra.ResourceInterfaceFacts.fvar_in_singleton_restrict_dom
+    m my σ x y Hxm Hσ Hdom).
 Qed.
 
 Lemma notin_union_singleton_of_notin_world
@@ -305,10 +215,7 @@ Lemma notin_union_singleton_of_notin_world
   y ∉ world_dom (m : WorldT) ->
   y ∉ A ∪ {[x]}.
 Proof.
-  intros HyA Hxm Hym HyAx.
-  apply elem_of_union in HyAx as [HyA'|Hyx].
-  - exact (HyA HyA').
-  - apply elem_of_singleton in Hyx. subst y. exact (Hym Hxm).
+  apply gset_notin_union_singleton_of_notin_superset.
 Qed.
 
 Lemma notin_union_singleton_swap_ne (A : aset) a x y :
@@ -316,17 +223,14 @@ Lemma notin_union_singleton_swap_ne (A : aset) a x y :
   a <> x ->
   a ∉ A ∪ {[x]}.
 Proof.
-  intros Ha Hax HaAx.
-  apply elem_of_union in HaAx as [HaA|Hax'].
-  - apply Ha. apply elem_of_union_l. exact HaA.
-  - apply elem_of_singleton in Hax'. subst a. contradiction.
+  apply gset_notin_union_singleton_swap_ne.
 Qed.
 
 Lemma singleton_subset_world_dom (m : WfWorldT) z :
   z ∈ world_dom (m : WorldT) ->
   ({[z]} : aset) ⊆ world_dom (m : WorldT).
 Proof.
-  intros Hzm a Ha. apply elem_of_singleton in Ha. subst a. exact Hzm.
+  apply ContextAlgebra.ResourceInterfaceFacts.singleton_subset_world_dom.
 Qed.
 
 Lemma lty_env_insert_free_fresh
@@ -335,32 +239,21 @@ Lemma lty_env_insert_free_fresh
   LVFree z ∉ dom Σ ->
   LVFree z ∉ dom (<[LVFree x := T]> Σ).
 Proof.
-  intros Hzx HzΣ.
-  rewrite dom_insert_L.
-  intros Hin.
-  apply elem_of_union in Hin as [Hin|Hin].
-  - apply elem_of_singleton in Hin. inversion Hin. subst.
-    contradiction.
-  - exact (HzΣ Hin).
+  apply ContextTypeLanguage.LtyEnv.lty_env_insert_free_fresh.
 Qed.
 
 Lemma value_open_result_alias_fresh vf τ y z :
   z ∉ fv_value vf ∪ {[y]} ∪ fv_cty τ ->
   z ∉ fv_value vf ∪ {[y]} ∪ fv_cty (cty_open 0 y τ).
 Proof.
-  intros Hz.
-  pose proof (cty_open_fv_subset 0 y τ) as Hτopen.
-  cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at] in *.
-  set_solver.
+  apply ContextBasicDenotation.RelevantEnvRegular.value_open_result_alias_fresh.
 Qed.
 
 Lemma cty_open_fresh_notin τ y z :
   z ∉ fv_cty τ ∪ {[y]} ->
   z ∉ fv_cty (cty_open 0 y τ).
 Proof.
-  intros Hz.
-  pose proof (cty_open_fv_subset 0 y τ) as Hτopen.
-  set_solver.
+  apply ContextTypeLanguage.SyntaxRegular.cty_open_fresh_notin.
 Qed.
 
 Lemma wfworld_closed_on_open_world_from_base
@@ -370,21 +263,7 @@ Lemma wfworld_closed_on_open_world_from_base
   wfworld_closed_on X m ->
   wfworld_closed_on X my.
 Proof.
-  intros HX Hbase Hclosed σ Hσ.
-  assert (Hσm :
-      (m : WorldT) (store_restrict σ (world_dom (m : WorldT)))).
-  {
-    assert (Hσres :
-        (res_restrict my (world_dom (m : WorldT)) : WorldT)
-          (store_restrict σ (world_dom (m : WorldT)))).
-    { exists σ. split; [exact Hσ|reflexivity]. }
-    rewrite Hbase in Hσres.
-    exact Hσres.
-  }
-  specialize (Hclosed _ Hσm).
-  rewrite (storeA_restrict_twice_subset σ
-    (world_dom (m : WorldT)) X HX) in Hclosed.
-  exact Hclosed.
+  apply ContextBasicDenotation.StoreTyping.wfworld_closed_on_open_world_from_base.
 Qed.
 
 Lemma wfworld_closed_on_store_restrict_closed
@@ -393,8 +272,7 @@ Lemma wfworld_closed_on_store_restrict_closed
   (m : WorldT) σ ->
   store_closed (store_restrict σ X).
 Proof.
-  intros Hclosed Hσ.
-  exact (Hclosed σ Hσ).
+  apply ContextBasicDenotation.StoreTyping.wfworld_closed_on_store_restrict_closed.
 Qed.
 
 Lemma wfworld_eq_by_dom_stores (m n : WfWorldT) :
@@ -402,16 +280,12 @@ Lemma wfworld_eq_by_dom_stores (m n : WfWorldT) :
   (forall σ, (m : WorldT) σ <-> (n : WorldT) σ) ->
   m = n.
 Proof.
-  intros Hdom Hstores.
-  apply wfworld_ext. apply world_ext; assumption.
+  apply ContextAlgebra.ResourceInterfaceFacts.wfworld_eq_by_dom_stores.
 Qed.
 
 Ltac denotation_set_norm :=
   cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at] in *;
   rewrite ?dom_insert_L, ?dom_union_L, ?dom_singleton_L in *.
-
-Ltac denotation_set_solve :=
-  denotation_set_norm; better_set_solver!!.
 
 Ltac soundness_fresh_norm :=
   denotation_set_norm;
@@ -419,9 +293,6 @@ Ltac soundness_fresh_norm :=
 
 Ltac soundness_fresh_solve :=
   soundness_fresh_norm; better_set_solver.
-
-Ltac denotation_store_norm :=
-  rewrite ?storeA_restrict_twice_subset in * by better_set_solver!!.
 
 (** ** Regular facts extracted from denotation/resource definitions *)
 

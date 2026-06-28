@@ -2,8 +2,9 @@
 
     Semantic support lemmas for the type-level persistency modality. *)
 
-From Denotation Require Import Notation TypeDenote ResultFirstOpen
+From Denotation Require Import Notation TypeDenote TypeDenoteRegular ResultFirstOpen
   DenotationSetMapFacts TypeEquivCore TypeEquivFiberBaseCore TypeEquivFiberBaseProjected TypeEquivBody TypeEquiv.
+From ContextBase.Swap Require Import SetSwap.
 From ContextAlgebra Require Import ResourceAlgebra.
 
 Section TypePersist.
@@ -18,74 +19,6 @@ Definition under_open_body (φ : type_qualifier) (z : atom) : FormulaT :=
     (qual_vars (qual_open_atom 0 z φ) ∖ {[LVFree z]})
     (FUnder (FAtom (qual_open_atom 0 z φ))).
 
-Local Lemma singleton_fvar_in_insert_env_dom z T :
-  lvars_of_atoms ({[z]} : aset) ⊆
-  dom (<[LVFree z := T]> (∅ : lty_env)).
-Proof.
-  intros v Hv.
-  unfold lvars_of_atoms in Hv.
-  apply elem_of_map in Hv as [a [-> Ha]].
-  apply elem_of_singleton in Ha. subst a.
-  apply elem_of_dom. exists T.
-  rewrite lookup_insert.
-  destruct decide as [_|Hbad]; [reflexivity|contradiction].
-Qed.
-
-Local Lemma swap_opened_singleton_domain (M A : aset) x y :
-  x ∈ M ->
-  y ∉ M ->
-  x ∉ A ->
-  y ∉ A ->
-  (M ∪ {[y]}) ∩ (A ∪ {[y]}) =
-    set_swap x y (M ∩ (A ∪ {[x]})).
-Proof.
-  intros HxM HyM HxA HyA.
-  assert (Hxy : x <> y).
-  { intros ->. exact (HyM HxM). }
-  apply set_eq. intros a.
-  rewrite set_swap_elem.
-  destruct (decide (a = x)) as [->|Hax].
-  - replace (swap x y x) with y
-      by (unfold swap; repeat destruct decide; congruence).
-    split.
-    + intros Hleft. exfalso.
-      apply elem_of_intersection in Hleft as [_ HxAy].
-      apply elem_of_union in HxAy as [HxA'|Hxy'].
-      * exact (HxA HxA').
-      * apply elem_of_singleton in Hxy'. contradiction.
-    + intros Hright. exfalso.
-      apply elem_of_intersection in Hright as [HyM' _].
-      exact (HyM HyM').
-  - destruct (decide (a = y)) as [->|Hay].
-    + replace (swap x y y) with x
-        by (unfold swap; repeat destruct decide; congruence).
-      split.
-      * intros _. apply elem_of_intersection. split.
-        -- exact HxM.
-        -- apply elem_of_union_r. apply elem_of_singleton. reflexivity.
-      * intros _. apply elem_of_intersection. split.
-        -- apply elem_of_union_r. apply elem_of_singleton. reflexivity.
-        -- apply elem_of_union_r. apply elem_of_singleton. reflexivity.
-    + replace (swap x y a) with a
-        by (unfold swap; repeat destruct decide; congruence).
-      split.
-      * intros Hleft.
-        apply elem_of_intersection in Hleft as [HaMy HaAy].
-        apply elem_of_intersection. split.
-        -- apply elem_of_union in HaMy as [HaM|Hay']; [exact HaM|].
-           apply elem_of_singleton in Hay'. contradiction.
-        -- apply elem_of_union_l.
-           apply elem_of_union in HaAy as [HaA|Hay']; [exact HaA|].
-           apply elem_of_singleton in Hay'. contradiction.
-      * intros Hright.
-        apply elem_of_intersection in Hright as [HaM HaAx].
-        apply elem_of_intersection. split.
-        -- apply elem_of_union_l. exact HaM.
-        -- apply elem_of_union_l.
-        apply elem_of_union in HaAx as [HaA|Hax']; [exact HaA|].
-           apply elem_of_singleton in Hax'. contradiction.
-Qed.
-
 Definition over_ret_fvar_env (Σ : lty_env) b (φ : type_qualifier) z : lty_env :=
   <[LVFree z := TBase b]>
     (lty_env_restrict_lvars Σ (lvars_at_depth 1 (qual_vars φ))).
@@ -99,23 +32,6 @@ Proof.
   reflexivity.
 Qed.
 
-Local Lemma lvfree_notin_lvars_at_depth1_qual_vars (φ : type_qualifier) z :
-  z ∉ qual_dom φ ->
-  LVFree z ∉ lvars_at_depth 1 (qual_vars φ).
-Proof.
-  unfold qual_dom.
-  intros Hz HzD.
-  apply Hz.
-  rewrite lvars_at_depth_elem in HzD.
-  destruct HzD as [v [Hv Hat]].
-  destruct v as [n|a].
-  - cbn [logic_var_at_depth] in Hat.
-    destruct decide; discriminate.
-  - cbn [logic_var_at_depth] in Hat.
-    inversion Hat. subst a.
-    apply lvars_fv_elem. exact Hv.
-Qed.
-
 Lemma over_ret_fvar_env_restrict_eq Σ b φ z :
   z ∉ qual_dom φ ->
   lty_env_restrict_lvars (<[LVFree z := TBase b]> Σ)
@@ -125,7 +41,7 @@ Lemma over_ret_fvar_env_restrict_eq Σ b φ z :
 Proof.
   intros Hz.
   unfold over_ret_fvar_env.
-  relevant_lvars_norm.
+  support_lvars_norm.
   apply lty_env_restrict_lvars_insert_restrict_current.
   apply lvfree_notin_lvars_at_depth1_qual_vars.
   exact Hz.
@@ -143,7 +59,7 @@ Lemma over_ret_fvar_relevant_env_restrict_eq Σ b φ z y :
 Proof.
   intros Hy Hzφ.
   unfold over_ret_fvar_env.
-  relevant_lvars_norm.
+  support_lvars_norm.
   rewrite lty_env_restrict_lvars_insert_restrict_current.
   2:{
     apply lvfree_notin_lvars_at_depth1_qual_vars.
@@ -152,7 +68,7 @@ Proof.
   rewrite (relevant_env_restrict_subset Σ (CTOver b φ) (tret (vfvar z))
     (lvars_at_depth 1 (qual_vars φ))).
   - reflexivity.
-  - relevant_lvars_norm. set_solver.
+  - support_lvars_norm. set_solver.
 Qed.
 
 Lemma insert_relevant_env_ret_fvar_restrict_eq Σ τ z y :
@@ -268,101 +184,6 @@ Proof.
       destruct decide as [_|Hbad]; [reflexivity|contradiction].
 Qed.
 
-Local Lemma formula_msubst_store_result_basic_typing_ret_fvar_fresh
-    σ b y :
-  y ∉ dom (σ : StoreT) ->
-  formula_msubst_store σ
-    (expr_basic_typing_formula
-      (<[LVFree y := TBase b]> ∅) (tret (vfvar y)) (TBase b)) =
-  expr_basic_typing_formula
-    (<[LVFree y := TBase b]> ∅) (tret (vfvar y)) (TBase b).
-Proof.
-  intros Hyσ.
-  unfold formula_msubst_store, expr_basic_typing_formula,
-    expr_basic_typing_qual, qual_msubst_store, FFiberAtom.
-  cbn [formula_mlsubst].
-  f_equal.
-  - cbn [qual_mlsubst qual_vars].
-    rewrite dom_lstore_lift_free.
-    rewrite dom_insert_L, dom_empty_L.
-    cbn [qual_vars qual_lvars].
-    unfold lvars_of_atoms.
-    apply set_eq. intros v.
-    rewrite elem_of_difference.
-    rewrite elem_of_union, elem_of_singleton, elem_of_empty.
-    rewrite elem_of_map.
-    split.
-    + intros [[Hv|[]] Hnot].
-      subst v. left; reflexivity.
-    + intros Hv.
-      destruct Hv as [->|[]].
-      split; [left; reflexivity|].
-      intros Hbad.
-      destruct Hbad as [a [Ha_eq Ha_dom]].
-      inversion Ha_eq. subst a.
-      exact (Hyσ Ha_dom).
-  - f_equal.
-    apply qual_ext.
-    + cbn [qual_mlsubst qual_vars].
-      rewrite dom_lstore_lift_free.
-      rewrite dom_insert_L, dom_empty_L.
-      cbn [qual_vars qual_lvars].
-      unfold lvars_of_atoms.
-      apply set_eq. intros v.
-      rewrite elem_of_difference.
-      rewrite elem_of_union, elem_of_singleton, elem_of_empty.
-      rewrite elem_of_map.
-      split.
-      * intros [[Hv|[]] Hnot].
-        subst v. left; reflexivity.
-      * intros Hv.
-        destruct Hv as [->|[]].
-        split; [left; reflexivity|].
-        intros Hbad.
-        destruct Hbad as [a [Ha_eq Ha_dom]].
-        inversion Ha_eq. subst a.
-        exact (Hyσ Ha_dom).
-    + intros s1 s2 _.
-      cbn [qual_mlsubst qual_prop].
-      reflexivity.
-Qed.
-
-Local Lemma res_models_over_and_elim_l (m : WfWorldT) P Q :
-  m ⊨ FOver (FAnd P Q) ->
-  m ⊨ FOver P.
-Proof.
-  intros Hover.
-  unfold res_models in *.
-  cbn [formula_measure res_models_fuel] in *.
-  destruct Hover as [Hscope [mo [Hsub Hand]]].
-  split.
-  - unfold formula_scoped_in_world in *.
-    rewrite formula_fv_over, formula_fv_and in Hscope.
-    rewrite formula_fv_over.
-    intros x Hx. apply Hscope. set_solver.
-  - exists mo. split; [exact Hsub|].
-    apply res_models_and_elim_l with (ψ := Q).
-    unfold res_models. models_fuel_irrel Hand.
-Qed.
-
-Local Lemma res_models_under_and_elim_l (m : WfWorldT) P Q :
-  m ⊨ FUnder (FAnd P Q) ->
-  m ⊨ FUnder P.
-Proof.
-  intros Hunder.
-  unfold res_models in *.
-  cbn [formula_measure res_models_fuel] in *.
-  destruct Hunder as [Hscope [mo [Hsub Hand]]].
-  split.
-  - unfold formula_scoped_in_world in *.
-    rewrite formula_fv_under, formula_fv_and in Hscope.
-    rewrite formula_fv_under.
-    intros x Hx. apply Hscope. set_solver.
-  - exists mo. split; [exact Hsub|].
-    apply res_models_and_elim_l with (ψ := Q).
-    unfold res_models. models_fuel_irrel Hand.
-Qed.
-
 Lemma over_open_body_from_typed b φ z (m : WfWorldT) :
   m ⊨ FFibVars
       (qual_vars (qual_open_atom 0 z φ) ∖ {[LVFree z]})
@@ -391,10 +212,10 @@ Proof.
     intros σ mfib Hproj.
     pose proof (Hfib σ mfib Hproj) as Hbody.
     cbn [formula_msubst_store formula_mlsubst] in Hbody |- *.
-    apply res_models_over_and_elim_l with
-      (Q := formula_msubst_store σ
+    apply (res_models_over_and_elim_l _ _
+      (formula_msubst_store σ
         (expr_basic_typing_formula (<[LVFree z:=TBase b]> ∅)
-          (tret (vfvar z)) (TBase b))).
+          (tret (vfvar z)) (TBase b)))).
     exact Hbody.
 Qed.
 
@@ -424,10 +245,10 @@ Proof.
     intros σ mfib Hproj.
     pose proof (Hfib σ mfib Hproj) as Hbody.
     cbn [formula_msubst_store formula_mlsubst] in Hbody |- *.
-    apply res_models_under_and_elim_l with
-      (Q := formula_msubst_store σ
+    apply (res_models_under_and_elim_l _ _
+      (formula_msubst_store σ
         (expr_basic_typing_formula (<[LVFree z:=TBase b]> ∅)
-          (tret (vfvar z)) (TBase b))).
+          (tret (vfvar z)) (TBase b)))).
     exact Hbody.
 Qed.
 
@@ -495,7 +316,7 @@ Proof.
       * change (mo ⊨ formula_msubst_store σ
           (expr_basic_typing_formula
             (<[LVFree z:=TBase b]> ∅) (tret (vfvar z)) (TBase b))).
-        rewrite formula_msubst_store_result_basic_typing_ret_fvar_fresh.
+        rewrite formula_msubst_store_expr_basic_typing_ret_fvar_fresh.
         -- apply expr_basic_typing_formula_ret_fvar_singleton.
            pose proof (res_fiber_from_projection_world_dom m mfib
              (lvars_fv (qual_vars (qual_open_atom 0 z φ) ∖ {[LVFree z]}))
@@ -584,7 +405,7 @@ Proof.
       * change (mo ⊨ formula_msubst_store σ
           (expr_basic_typing_formula
             (<[LVFree z:=TBase b]> ∅) (tret (vfvar z)) (TBase b))).
-        rewrite formula_msubst_store_result_basic_typing_ret_fvar_fresh.
+        rewrite formula_msubst_store_expr_basic_typing_ret_fvar_fresh.
         -- apply expr_basic_typing_formula_ret_fvar_singleton.
            pose proof (res_fiber_from_projection_world_dom m mfib
              (lvars_fv (qual_vars (qual_open_atom 0 z φ) ∖ {[LVFree z]}))
@@ -1099,7 +920,7 @@ Proof.
   apply wfworld_ext. apply world_ext.
   - rewrite res_restrict_dom, world_dom_res_atom_swap, res_restrict_dom.
     rewrite Hdom_my.
-    apply swap_opened_singleton_domain; assumption.
+    apply set_swap_opened_singleton_intersection; assumption.
   - intros σ. split.
     + intros [σmy [Hσmy Hσeq]]. subst σ.
       set (σm := store_restrict σmy (world_dom (m : WorldT)) : StoreT).
@@ -1525,7 +1346,7 @@ Proof.
       (S gas) Σ (CTOver b φ) z m Hden_full) as Hbasic_z.
     pose proof (basic_world_formula_wfworld_closed_on_atoms
       (<[LVFree z := erase_ty (CTOver b φ)]> (∅ : lty_env))
-      ({[z]} : aset) m ltac:(apply singleton_fvar_in_insert_env_dom) Hbasic_z) as Hclosed_z_m.
+      ({[z]} : aset) m ltac:(apply lvars_of_atoms_singleton_subset_insert_empty_dom) Hbasic_z) as Hclosed_z_m.
     assert (Hclosed_z_my : wfworld_closed_on ({[z]} : aset) my).
     {
       eapply wfworld_closed_on_open_world_from_base.
@@ -1647,7 +1468,7 @@ Proof.
       (S gas) Σ (CTUnder b φ) z m Hden_full) as Hbasic_z.
     pose proof (basic_world_formula_wfworld_closed_on_atoms
       (<[LVFree z := erase_ty (CTUnder b φ)]> (∅ : lty_env))
-      ({[z]} : aset) m ltac:(apply singleton_fvar_in_insert_env_dom)
+      ({[z]} : aset) m ltac:(apply lvars_of_atoms_singleton_subset_insert_empty_dom)
       Hbasic_z) as Hclosed_z_m.
     assert (Hclosed_z_my : wfworld_closed_on ({[z]} : aset) my).
     {
@@ -1710,7 +1531,7 @@ Proof.
       0 Σ (CTOver b φ) z m Hzero) as Hbasic_z.
     pose proof (basic_world_formula_wfworld_closed_on_atoms
       (<[LVFree z := erase_ty (CTOver b φ)]> (∅ : lty_env))
-      ({[z]} : aset) m ltac:(apply singleton_fvar_in_insert_env_dom) Hbasic_z) as Hclosed_z_m.
+      ({[z]} : aset) m ltac:(apply lvars_of_atoms_singleton_subset_insert_empty_dom) Hbasic_z) as Hclosed_z_m.
     cbn [ty_denote_gas].
     rewrite res_models_and_iff. split.
     + exact (ty_denote_gas_guard_of_zero Σ (CTOver b φ)
@@ -1823,7 +1644,7 @@ Proof.
       0 Σ (CTUnder b φ) z m Hzero) as Hbasic_z.
     pose proof (basic_world_formula_wfworld_closed_on_atoms
       (<[LVFree z := erase_ty (CTUnder b φ)]> (∅ : lty_env))
-      ({[z]} : aset) m ltac:(apply singleton_fvar_in_insert_env_dom) Hbasic_z) as Hclosed_z_m.
+      ({[z]} : aset) m ltac:(apply lvars_of_atoms_singleton_subset_insert_empty_dom) Hbasic_z) as Hclosed_z_m.
     cbn [ty_denote_gas].
     rewrite res_models_and_iff. split.
     + exact (ty_denote_gas_guard_of_zero Σ (CTUnder b φ)
@@ -2053,7 +1874,7 @@ Proof.
       (S (S gas)) Σ (CTPersist (CTOver b φ)) z m Hden) as Hbasic_z.
     pose proof (basic_world_formula_wfworld_closed_on_atoms
       (<[LVFree z := erase_ty (CTPersist (CTOver b φ))]> (∅ : lty_env))
-      ({[z]} : aset) m ltac:(apply singleton_fvar_in_insert_env_dom) Hbasic_z) as Hclosed_z_m.
+      ({[z]} : aset) m ltac:(apply lvars_of_atoms_singleton_subset_insert_empty_dom) Hbasic_z) as Hclosed_z_m.
     assert (Hclosed_z_my : wfworld_closed_on ({[z]} : aset) my).
     {
       eapply wfworld_closed_on_open_world_from_base.
@@ -2340,3 +2161,20 @@ Qed.
 
 
 End TypePersist.
+
+(** Shared side-condition tactics for the persistent-over Wand proofs.
+
+    Keep these tiny and deterministic: they are not proof-search tactics, only
+    wrappers around the repeated freshness shapes that appear after opening the
+    result-first Wand denotation. *)
+Ltac persist_fresh_from H :=
+  clear -H; set_solver.
+
+Ltac persist_eta_fresh_from H :=
+  persist_fresh_from H.
+
+Ltac persist_outer_fresh_from H :=
+  persist_fresh_from H.
+
+Ltac persist_lvar_fresh_from H :=
+  intros Hbad; apply lvars_fv_elem in Hbad; clear -H Hbad; set_solver.

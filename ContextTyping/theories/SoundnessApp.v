@@ -24,7 +24,8 @@ From Denotation Require Import Context
   TypePersistArrow
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLam.
+From ContextTyping Require Import Typing TypingRegular SoundnessCaseTactics
+  SoundnessLam.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
@@ -992,10 +993,8 @@ Lemma fundamental_app_case Σ Γ τx τ v1 x :
   ctx_denote_under Σ Γ ⊫
     ty_denote_under Σ Γ ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof.
-  intros Hwf_fun Hwf Hfresh HfunIH HargIH m Hctx.
-  pose proof (HfunIH m Hctx) as Hfun.
-  pose proof (HargIH m Hctx) as Harg.
-  unfold ty_denote_under, ty_denote in Hfun, Harg |- *.
+  soundness_case_start.
+  soundness_unfold_ty_denotes.
   eapply app_arrow_open_result_from_fresh_drop; eauto.
 Qed.
 

@@ -604,7 +604,3 @@ Ltac type_open_env_syntax_norm_in H :=
   qual_open_env_syntax_norm_in H;
   cty_open_env_syntax_norm_in H;
   type_syntax_norm_in H.
-
-Ltac mopen_norm :=
-  rewrite ?mopen_insert_norm;
-  type_open_env_syntax_norm.

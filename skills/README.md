@@ -1,9 +1,7 @@
 # UnderLogicAndType Workflow Notes
 
-This directory is intentionally small.  The old collection of numbered
-proof-history notes has been removed because most of it described obsolete
-routes.  Current proof-engineering guidance should stay concise and be updated
-when the workflow changes.
+This directory is intentionally small.  Current proof-engineering guidance
+should stay concise and be updated when the workflow changes.
 
 ## Current Discipline
 
@@ -23,7 +21,7 @@ when the workflow changes.
   relevant Store, Algebra, TypeLanguage, BasicDenotation, or Denotation layer.
 - Avoid anonymous `admit`, and avoid long one-use `assert`/`pose` chains.
 - Reviewer-facing metatheory should live next to the Rocq definitions it
-  explains, not in temporary TXT reports.
+  explains, not in temporary analysis reports.
 
 ## Notifications
 

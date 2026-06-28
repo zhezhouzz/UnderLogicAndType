@@ -2,7 +2,8 @@
 
     Wand case for term-result-equivalence transport. *)
 
-From Denotation Require Import Notation TypeDenote ResultFirstOpen.
+From Denotation Require Import Notation TypeDenote ResultFirstOpen TypeDenoteRegular.
+From CoreLang Require Import Sugar.
 From Denotation Require Import
   TypeEquivCore
   TypeEquivTermBase
@@ -19,12 +20,6 @@ Local Ltac wand_union_member :=
     [ assumption
     | apply elem_of_union_l; wand_union_member
     | apply elem_of_union_r; wand_union_member ].
-
-Local Ltac wand_fresh_from_disjoint Hfresh :=
-  intros Hy;
-  eapply Hfresh;
-    [ apply elem_of_union_l; apply elem_of_singleton; reflexivity
-    | subst; wand_union_member ].
 
 Local Lemma wand_open_world_term_scope
     (Σ : lty_env) τx τr e1 e2 (m my : WfWorldT) y :
@@ -79,39 +74,6 @@ Proof.
     apply elem_of_union_r. exact Ha.
   - apply elem_of_singleton in Ha. subst a.
     rewrite Hdom. apply elem_of_union_r. apply elem_of_singleton. reflexivity.
-Qed.
-
-Local Lemma wand_tapp_apps_fv_subset e1 e2 y :
-  fv_tm (tapp_tm e1 (vfvar y)) ∪
-  fv_tm (tapp_tm e2 (vfvar y)) ⊆
-  (fv_tm e1 ∪ fv_tm e2) ∪ ({[y]} : aset).
-Proof.
-  intros a Ha.
-  apply elem_of_union in Ha as [Ha|Ha];
-    rewrite fv_tapp_tm in Ha; cbn [fv_value] in Ha;
-    apply elem_of_union in Ha as [Ha|Ha].
-  - apply elem_of_union_l. apply elem_of_union_l. exact Ha.
-  - apply elem_of_singleton in Ha. subst a.
-    apply elem_of_union_r. apply elem_of_singleton. reflexivity.
-  - apply elem_of_union_l. apply elem_of_union_r. exact Ha.
-  - apply elem_of_singleton in Ha. subst a.
-    apply elem_of_union_r. apply elem_of_singleton. reflexivity.
-Qed.
-
-Local Lemma wand_result_open_vars_subset τr y :
-  cty_lc_at 1 τr ->
-  y ∉ fv_cty τr ->
-  context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
-    context_ty_lvars_at 1 τr.
-Proof.
-  intros Hlc Hy.
-  eapply cty_lvars_open_body_closed_no_fresh.
-  - apply lc_lvars_no_bv.
-    apply cty_lc_at_lvars_bv_empty. exact Hlc.
-  - intros HyD. apply Hy.
-    rewrite <- (context_ty_lvars_fv_at 1 τr).
-    apply lvars_fv_elem. exact HyD.
-  - reflexivity.
 Qed.
 
 Lemma wand_open_arg_to_inserted_env
@@ -285,7 +247,7 @@ Proof.
   }
   eapply (wfworld_closed_on_mono _
     ((fv_tm e1 ∪ fv_tm e2) ∪ ({[y]} : aset)) (res_product n my Hc)).
-  - apply wand_tapp_apps_fv_subset.
+  - apply tapp_fvar_apps_fv_subset.
   - apply (wfworld_closed_on_union (fv_tm e1 ∪ fv_tm e2) ({[y]} : aset));
       [exact Hclosed_base_prod|exact Hclosed_y_prod].
 Qed.
@@ -473,7 +435,7 @@ Proof.
   eapply basic_world_formula_subenv; [|exact Hworld_big].
   intros v T Hlook.
   eapply basic_world_formula_wand_open_result_subenv.
-  apply wand_result_open_vars_subset.
+  apply cty_open_body_lvars_without_fresh_subset.
   pose proof (typed_total_equiv_target_zero
     Σ (CTWand τx τr) m e1 e2 Hequiv) as Hzero_top_tgt.
   pose proof (ty_denote_gas_guard_of_zero
@@ -760,7 +722,7 @@ Proof.
 	  }
   eapply (wfworld_closed_on_mono _
     ((fv_tm e1 ∪ fv_tm e2) ∪ ({[y]} : aset))).
-  - apply wand_tapp_apps_fv_subset.
+  - apply tapp_fvar_apps_fv_subset.
   - apply (wfworld_closed_on_union (fv_tm e1 ∪ fv_tm e2)
       ({[y]} : aset)); [exact Hclosed_fun|exact Hclosed_y].
 Qed.
@@ -852,7 +814,7 @@ Proof.
     Hequiv Hyτx Hyτr Hye Hworld_src_prod Hworld_y_prod) as Hworld_big.
   eapply basic_world_formula_subenv; [|exact Hworld_big].
   eapply basic_world_formula_wand_open_result_subenv; eauto.
-  apply wand_result_open_vars_subset.
+  apply cty_open_body_lvars_without_fresh_subset.
   pose proof (typed_total_equiv_target_zero
     Σ (CTWand τx τr) m e1 e2 Hequiv) as Hzero_top_tgt'.
   pose proof (ty_denote_gas_guard_of_zero
@@ -1183,27 +1145,6 @@ Proof.
   - exact Hres.
 Qed.
 
-Local Lemma wand_lc_lvars_shift_from k D :
-  lc_lvars D ->
-  lc_lvars (lvars_shift_from k D).
-Proof.
-  apply result_first_lc_lvars_shift_from.
-Qed.
-
-Local Lemma wand_lvars_shift_from_lc_eq k D :
-  lc_lvars D ->
-  lvars_shift_from k D = D.
-Proof.
-  apply result_first_lvars_shift_from_lc_eq.
-Qed.
-
-Local Ltac wand_expr_result_shift0_side :=
-  first
-    [ assumption
-    | apply wand_lc_lvars_shift_from; assumption
-    | rewrite lvars_shift_from_fv; assumption ].
-
-
 Lemma ty_denote_gas_tm_equiv_wand_body
     gas (IH : forall Σ τ e1 e2 (m : WfWorldT),
       typed_total_equiv_on Σ τ m e1 e2 ->
@@ -1337,10 +1278,10 @@ Proof.
   rewrite formula_open_expr_result_formula_at_shift0 in Hres_tgt
     by (first
       [ exact Hlc2
-      | apply wand_lc_lvars_shift_from; exact HlcΣ_tgt
+      | apply result_first_lc_lvars_shift_from; exact HlcΣ_tgt
       | rewrite lvars_shift_from_fv; clear -Hf; set_solver
       | clear -Hfe; set_solver ]).
-  rewrite (wand_lvars_shift_from_lc_eq 0
+  rewrite (result_first_lvars_shift_from_lc_eq 0
     (dom (relevant_env Σ (CTWand τx τr) e2)) HlcΣ_tgt) in Hres_tgt.
   rewrite (ty_denote_gas_zero_relevant_env_dom_eq
     Σ (CTWand τx τr) e2 m Hzero_tgt) in Hres_tgt.
@@ -1352,10 +1293,10 @@ Proof.
   rewrite formula_open_expr_result_formula_at_shift0 in Hopened_src
     by (first
       [ exact Hlc1
-      | apply wand_lc_lvars_shift_from; exact HlcΣ_src
+      | apply result_first_lc_lvars_shift_from; exact HlcΣ_src
       | rewrite lvars_shift_from_fv; clear -Hf; set_solver
       | clear -Hfe; set_solver ]).
-  rewrite (wand_lvars_shift_from_lc_eq 0
+  rewrite (result_first_lvars_shift_from_lc_eq 0
     (dom (relevant_env Σ (CTWand τx τr) e1)) HlcΣ_src) in Hopened_src.
   rewrite (ty_denote_gas_zero_relevant_env_dom_eq
     Σ (CTWand τx τr) e1 m Hzero_src) in Hopened_src.
@@ -1466,7 +1407,7 @@ Proof.
         intros Hbad. apply HfΣ2.
         apply lvars_fv_elem.
         rewrite typed_lty_env_bind_dom.
-        rewrite (wand_lvars_shift_from_lc_eq 0
+        rewrite (result_first_lvars_shift_from_lc_eq 0
           (dom (relevant_env Σ (CTWand τx τr) e2)) HlcΣ_tgt).
         apply elem_of_union_l. exact Hbad.
       }
@@ -1476,7 +1417,7 @@ Proof.
         intros Hbad. apply HyΣ2.
         apply lvars_fv_elem.
         rewrite typed_lty_env_bind_dom.
-        rewrite (wand_lvars_shift_from_lc_eq 0
+        rewrite (result_first_lvars_shift_from_lc_eq 0
           (dom (relevant_env Σ (CTWand τx τr) e2)) HlcΣ_tgt).
         apply elem_of_union_l. exact Hbad.
       }
@@ -1502,7 +1443,7 @@ Proof.
 	        intros Hbad. apply HfΣ1.
 	        apply lvars_fv_elem.
 	        rewrite typed_lty_env_bind_dom.
-	        rewrite (wand_lvars_shift_from_lc_eq 0
+	        rewrite (result_first_lvars_shift_from_lc_eq 0
 	          (dom (relevant_env Σ (CTWand τx τr) e1)) HlcΣ_src).
 	        apply elem_of_union_l. exact Hbad.
 	      }
@@ -1512,7 +1453,7 @@ Proof.
 	        intros Hbad. apply HyΣ1.
 	        apply lvars_fv_elem.
 	        rewrite typed_lty_env_bind_dom.
-	        rewrite (wand_lvars_shift_from_lc_eq 0
+	        rewrite (result_first_lvars_shift_from_lc_eq 0
 	          (dom (relevant_env Σ (CTWand τx τr) e1)) HlcΣ_src).
 	        apply elem_of_union_l. exact Hbad.
 	      }

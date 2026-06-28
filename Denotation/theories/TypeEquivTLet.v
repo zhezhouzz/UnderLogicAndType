@@ -9,7 +9,7 @@
     function-valued terms need not remain equivalent in the nondeterministic
     setting. *)
 
-From Denotation Require Import Notation TypeDenote.
+From Denotation Require Import Notation TypeDenote TypeDenoteRegular.
 From Denotation Require Import
   TypeEquivCore
   TypeEquivTermBase
