@@ -114,6 +114,11 @@ Definition wand_value_denote_gas_with
   (denote gas Σx (τx ↑)%cty (ret # 0)%core -∗[1]
    denote gas Σx τr ((ef ↑)%core ·ₜ # 0))%formula.
 
+Reserved Notation "'⟦ty' τ '⟧[' Σ ',' gas ']' e"
+  (at level 20, τ at level 200, Σ at level 200,
+   gas at level 9, e at level 20,
+   format "⟦ty  τ  ⟧[ Σ ,  gas ]  e").
+
 Fixpoint ty_denote_gas
     (gas : nat) (Σ : lty_env) (τ : context_ty) (e : tm)
     {struct gas} : FormulaT :=
@@ -136,17 +141,17 @@ Fixpoint ty_denote_gas
               under (@atom φ ∧
                 FHasType[(∅ ▷ TBase b)%lvar ⊢ (ret # 0)%core ⋮ TBase b]))%formula
       | CTInter τ1 τ2 =>
-          (ty_denote_gas gas' Σ τ1 e ∧
-           ty_denote_gas gas' Σ τ2 e)%formula
+          (⟦ty τ1 ⟧[Σ, gas'] e ∧
+           ⟦ty τ2 ⟧[Σ, gas'] e)%formula
       | CTUnion τ1 τ2 =>
-          (ty_denote_gas gas' Σ τ1 e ∨
-           ty_denote_gas gas' Σ τ2 e)%formula
+          (⟦ty τ1 ⟧[Σ, gas'] e ∨
+           ⟦ty τ2 ⟧[Σ, gas'] e)%formula
       | CTSum τ1 τ2 =>
           let Σr := (Σg ▷ (⌊τ1⌋)%cty)%lvar in
           (∀.
             FResult[(⇑ₗ (dom Σg))%lvar ⊢ (e ↑)%core ⇓ #ₗ 0] →
-            ty_denote_gas gas' Σr (τ1 ↑)%cty (ret # 0)%core ⊕
-            ty_denote_gas gas' Σr (τ2 ↑)%cty (ret # 0)%core)%formula
+            ⟦ty (τ1 ↑)%cty ⟧[Σr, gas'] (ret # 0)%core ⊕
+            ⟦ty (τ2 ↑)%cty ⟧[Σr, gas'] (ret # 0)%core)%formula
       | CTArrow τx τr =>
           let Σf := (Σg ▷ (⌊(τx → τr)%cty⌋)%cty)%lvar in
           (∀.
@@ -163,9 +168,10 @@ Fixpoint ty_denote_gas
           let Σr := (Σg ▷ (⌊(□ τ1)%cty⌋)%cty)%lvar in
           (∀.
             FResult[(⇑ₗ (dom Σg))%lvar ⊢ (e ↑)%core ⇓ #ₗ 0] →
-            □ (ty_denote_gas gas' Σr (τ1 ↑)%cty (ret # 0)%core))%formula
+            □ (⟦ty (τ1 ↑)%cty ⟧[Σr, gas'] (ret # 0)%core))%formula
     end
-    end))%formula.
+    end))%formula
+where "'⟦ty' τ '⟧[' Σ ',' gas ']' e" := (ty_denote_gas gas Σ τ e).
 
 Definition arrow_value_denote_gas :=
   arrow_value_denote_gas_with ty_denote_gas.
@@ -180,12 +186,6 @@ Definition ty_denote
 Notation "'⟦ty' τ '⟧[' Σ ',' gas ']'" :=
   (ty_denote_gas gas Σ τ)
   (at level 20, τ at level 200, Σ at level 200, gas at level 9,
-   only parsing).
-
-Notation "'⟦ty' τ '⟧[' Σ ',' gas ']' e" :=
-  (ty_denote_gas gas Σ τ e)
-  (at level 20, τ at level 200, Σ at level 200,
-   gas at level 9, e at level 20,
    only parsing).
 
 Notation "'⟦ty' τ '⟧[' Δ ']'" :=

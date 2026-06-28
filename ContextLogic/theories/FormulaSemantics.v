@@ -296,6 +296,9 @@ Proof.
     lia.
 Qed.
 
+Reserved Notation "m '⊨[' gas ']' φ"
+  (at level 70, gas at level 9, format "m  ⊨[ gas ]  φ").
+
 Fixpoint res_models_fuel
     (gas : nat) (m : WfWorldT) (φ : FormulaT) : Prop :=
   match gas with
@@ -308,21 +311,21 @@ Fixpoint res_models_fuel
       | FAtom a =>
           qualifier_exact_denote a m
       | FAnd p q =>
-          res_models_fuel gas' m p ∧
-          res_models_fuel gas' m q
+          m ⊨[gas'] p ∧
+          m ⊨[gas'] q
       | FOr p q =>
-          res_models_fuel gas' m p ∨
-          res_models_fuel gas' m q
+          m ⊨[gas'] p ∨
+          m ⊨[gas'] q
       | FImpl p q =>
           ∀ m' : WfWorldT,
             m ⊑ m' →
-            res_models_fuel gas' m' p →
-            res_models_fuel gas' m' q
+            m' ⊨[gas'] p →
+            m' ⊨[gas'] q
       | FStar p q =>
           ∃ (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
             res_product m1 m2 Hc ⊑ m ∧
-            res_models_fuel gas' m1 p ∧
-            res_models_fuel gas' m2 q
+            m1 ⊨[gas'] p ∧
+            m2 ⊨[gas'] q
       | FBWand d p q =>
           ∃ L : aset,
             ∀ (η : gmap nat atom) (m' : WfWorldT)
@@ -332,14 +335,13 @@ Fixpoint res_models_fuel
               let m_prod := res_product m' m Hc in
               world_dom (m_prod : WorldT) =
                 world_dom (m : WorldT) ∪ open_env_atoms η →
-              res_models_fuel gas' m' (formula_open_env η p) →
-              res_models_fuel gas' m_prod
-                (formula_open_env η q)
+              m' ⊨[gas'] (formula_open_env η p) →
+              m_prod ⊨[gas'] (formula_open_env η q)
       | FPlus p q =>
           ∃ (m1 m2 : WfWorldT) (Hdef : raw_sum_defined m1 m2),
             res_sum m1 m2 Hdef ⊑ m ∧
-            res_models_fuel gas' m1 p ∧
-            res_models_fuel gas' m2 q
+            m1 ⊨[gas'] p ∧
+            m2 ⊨[gas'] q
       | FForall p =>
           ∃ L : aset,
             ∀ y : atom, y ∉ L →
@@ -348,27 +350,28 @@ Fixpoint res_models_fuel
               ext_out F = {[y]} →
               ∀ my : WfWorldT,
                 res_extend_by m F my →
-                res_models_fuel gas' my (formula_open 0 y p)
+                my ⊨[gas'] (formula_open 0 y p)
       | FOver p =>
           ∃ m' : WfWorldT,
-            m ⊆ᵣ m' ∧ res_models_fuel gas' m' p
+            m ⊆ᵣ m' ∧ m' ⊨[gas'] p
       | FUnder p =>
           ∃ m' : WfWorldT,
-            m' ⊆ᵣ m ∧ res_models_fuel gas' m' p
+            m' ⊆ᵣ m ∧ m' ⊨[gas'] p
       | FPersist p =>
           ∃ σ : Store (V := V),
             let σ' :=
               (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) in
             dom (σ : Store (V := V)) = formula_fv p ∧
             res_restrict m (formula_fv p) = σ' ∧
-            res_models_fuel gas' σ' p
+            σ' ⊨[gas'] p
 	    | FFibVars D p =>
 	        lc_lvars D ∧
 	          ∀ (σ : Store (V := V)) (mfib : WfWorldT),
 	            fiber(mfib, m, (lvars_fv D), σ) →
-	            res_models_fuel gas' mfib (formula_msubst_store σ p)
+	            mfib ⊨[gas'] (formula_msubst_store σ p)
       end
-  end.  
+  end
+where "m '⊨[' gas ']' φ" := (res_models_fuel gas m φ).
 
 Lemma res_models_fuel_scoped
     (gas : nat) (m : WfWorldT) (φ : FormulaT) :
@@ -887,9 +890,6 @@ Qed.
 
 Definition res_models (m : WfWorldT) (φ : FormulaT) : Prop :=
   res_models_fuel (formula_measure φ) m φ.
-
-Notation "m '⊨[' gas ']' φ" := (res_models_fuel gas m φ)
-  (at level 70, gas at level 9, format "m  ⊨[ gas ]  φ").
 
 Lemma res_models_true (m : WfWorldT) :
   res_models m FTrue.
