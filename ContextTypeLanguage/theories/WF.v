@@ -436,6 +436,21 @@ Proof.
   exact Hk.
 Qed.
 
+Lemma cty_open_body_lvars_without_fresh_subset τ y :
+  cty_lc_at 1 τ ->
+  y ∉ fv_cty τ ->
+  context_ty_lvars (cty_open 0 y τ) ∖ {[LVFree y]} ⊆
+    context_ty_lvars_at 1 τ.
+Proof.
+  intros Hlc Hy.
+  eapply cty_lvars_open_body_closed_no_fresh.
+  - apply context_ty_lvars_at_lc_of_cty_lc. exact Hlc.
+  - intros HyD. apply Hy.
+    rewrite <- (context_ty_lvars_fv_at 1 τ).
+    apply lvars_fv_elem. exact HyD.
+  - reflexivity.
+Qed.
+
 Lemma wf_context_ty_at_fv_subset d D τ :
   wf_context_ty_at d D τ ->
   fv_cty τ ⊆ D.

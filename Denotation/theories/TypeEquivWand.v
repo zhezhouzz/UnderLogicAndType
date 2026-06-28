@@ -82,22 +82,6 @@ Proof.
     rewrite Hdom. apply elem_of_union_r. apply elem_of_singleton. reflexivity.
 Qed.
 
-Local Lemma wand_result_open_vars_subset τr y :
-  cty_lc_at 1 τr ->
-  y ∉ fv_cty τr ->
-  context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
-    context_ty_lvars_at 1 τr.
-Proof.
-  intros Hlc Hy.
-  eapply cty_lvars_open_body_closed_no_fresh.
-  - apply lc_lvars_no_bv.
-    apply cty_lc_at_lvars_bv_empty. exact Hlc.
-  - intros HyD. apply Hy.
-    rewrite <- (context_ty_lvars_fv_at 1 τr).
-    apply lvars_fv_elem. exact HyD.
-  - reflexivity.
-Qed.
-
 Lemma wand_open_arg_to_inserted_env
     gas (Σ : lty_env) τx τr e
     (m : WfWorldT) y :
@@ -457,7 +441,7 @@ Proof.
   eapply basic_world_formula_subenv; [|exact Hworld_big].
   intros v T Hlook.
   eapply basic_world_formula_wand_open_result_subenv.
-  apply wand_result_open_vars_subset.
+  apply cty_open_body_lvars_without_fresh_subset.
   pose proof (typed_total_equiv_target_zero
     Σ (CTWand τx τr) m e1 e2 Hequiv) as Hzero_top_tgt.
   pose proof (ty_denote_gas_guard_of_zero
@@ -836,7 +820,7 @@ Proof.
     Hequiv Hyτx Hyτr Hye Hworld_src_prod Hworld_y_prod) as Hworld_big.
   eapply basic_world_formula_subenv; [|exact Hworld_big].
   eapply basic_world_formula_wand_open_result_subenv; eauto.
-  apply wand_result_open_vars_subset.
+  apply cty_open_body_lvars_without_fresh_subset.
   pose proof (typed_total_equiv_target_zero
     Σ (CTWand τx τr) m e1 e2 Hequiv) as Hzero_top_tgt'.
   pose proof (ty_denote_gas_guard_of_zero

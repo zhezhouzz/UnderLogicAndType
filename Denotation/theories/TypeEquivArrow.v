@@ -58,14 +58,7 @@ Lemma arrow_result_open_vars_subset τr y :
   context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
     context_ty_lvars_at 1 τr.
 Proof.
-  intros Hlc Hy.
-  eapply cty_lvars_open_body_closed_no_fresh.
-  - apply lc_lvars_no_bv.
-    apply cty_lc_at_lvars_bv_empty. exact Hlc.
-  - intros HyD. apply Hy.
-    rewrite <- (context_ty_lvars_fv_at 1 τr).
-    apply lvars_fv_elem. exact HyD.
-  - reflexivity.
+  apply cty_open_body_lvars_without_fresh_subset.
 Qed.
 
 Lemma ty_equiv_arrow_result_src_mid
