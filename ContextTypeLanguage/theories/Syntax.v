@@ -940,9 +940,15 @@ Definition mk_q_eq (v1 v2 : value) : type_qualifier :=
     and recursive calls are required to decrease under that measure. *)
 Definition constant_measure_for_base (b : base_ty) (c : constant) : nat :=
   match b, c with
+  | TUnit, cunit => 0
+  | TUnit, cbool false => 0
+  | TUnit, cbool true => 1
+  | TUnit, cnat n => n
+  | TNat, cunit => 0
   | TNat, cnat n => n
   | TNat, cbool false => 0
   | TNat, cbool true => 1
+  | TBool, cunit => 0
   | TBool, cbool false => 0
   | TBool, cbool true => 1
   | TBool, cnat n => n

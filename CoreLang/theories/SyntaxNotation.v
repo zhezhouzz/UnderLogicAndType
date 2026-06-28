@@ -39,6 +39,7 @@ Notation tyctx := (gmap atom ty).
 
 Notation "'𝔹'" := TBool : core_scope.
 Notation "'ℕ'" := TNat : core_scope.
+Notation "'𝟙'" := TUnit : core_scope.
 Notation "T1 '→' T2" := (TArrow T1 T2)
   (at level 99, right associativity) : core_scope.
 Notation "T1 ⇒ T2" := (TArrow T1 T2)
@@ -46,6 +47,7 @@ Notation "T1 ⇒ T2" := (TArrow T1 T2)
 
 Notation "'true'" := (cbool Datatypes.true) (only printing) : core_scope.
 Notation "'false'" := (cbool Datatypes.false) (only printing) : core_scope.
+Notation "'unit'" := cunit (only printing) : core_scope.
 
 Definition constant_of_uint (n : Number.uint) : constant :=
   cnat (Nat.of_num_uint n).
@@ -53,6 +55,7 @@ Definition constant_of_uint (n : Number.uint) : constant :=
 Definition constant_to_uint (c : constant) : option Number.uint :=
   match c with
   | cnat n => Some (Nat.to_num_uint n)
+  | cunit => None
   | cbool _ => None
   end.
 

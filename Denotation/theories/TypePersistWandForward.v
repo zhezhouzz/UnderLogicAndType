@@ -193,13 +193,13 @@ Proof.
            apply Hr. clear -HrDfv. set_solver.
         -- exact Hproj.
         -- exact Hres.
-      * rewrite formula_open_over_self_body_normalize.
-        -- apply fiberwise_joinable_on_over_open_body.
-           clear -Hr. set_solver.
-        -- intros Hrvars.
-           assert (Hrφ : r ∈ qual_dom φ).
-           { unfold qual_dom. apply lvars_fv_elem. exact Hrvars. }
-           apply Hr. clear -Hrφ. set_solver.
+      * rewrite formula_open_over_typed_body_normalize.
+        apply fiberwise_joinable_on_over_open_typed_body.
+        clear -Hr. set_solver.
+        intros Hrvars.
+        assert (Hrφ : r ∈ qual_dom φ).
+        { unfold qual_dom. apply lvars_fv_elem. exact Hrvars. }
+        apply Hr. clear -Hrφ. set_solver.
 Qed.
 
 Lemma fiberwise_joinable_on_ty_denote_gas_under
@@ -244,13 +244,13 @@ Proof.
            apply Hr. clear -HrDfv. set_solver.
         -- exact Hproj.
         -- exact Hres.
-      * rewrite formula_open_under_self_body_normalize.
-        -- apply fiberwise_joinable_on_under_open_body.
-           clear -Hr. set_solver.
-        -- intros Hrvars.
-           assert (Hrφ : r ∈ qual_dom φ).
-           { unfold qual_dom. apply lvars_fv_elem. exact Hrvars. }
-           apply Hr. clear -Hrφ. set_solver.
+      * rewrite formula_open_under_typed_body_normalize.
+        apply fiberwise_joinable_on_under_open_typed_body.
+        clear -Hr. set_solver.
+        intros Hrvars.
+        assert (Hrφ : r ∈ qual_dom φ).
+        { unfold qual_dom. apply lvars_fv_elem. exact Hrvars. }
+        apply Hr. clear -Hrφ. set_solver.
 Qed.
 
 Lemma tm_lvars_tapp_ret_fvar_fvar_relevant_env_dom
@@ -314,7 +314,7 @@ Proof.
   cbn [formula_open] in Himpl.
   denotation_result_first_open_norm_in Himpl.
   pose proof (res_models_impl_elim _ _ _ Himpl Hres) as Helim.
-  exact Helim.
+  exact (over_open_body_from_typed b φ r mr Helim).
 Qed.
 
 Lemma ty_denote_gas_under_result_body_elim
@@ -342,7 +342,7 @@ Proof.
   cbn [formula_open] in Himpl.
   denotation_result_first_open_norm_in Himpl.
   pose proof (res_models_impl_elim _ _ _ Himpl Hres) as Helim.
-  exact Helim.
+  exact (under_open_body_from_typed b φ r mr Helim).
 Qed.
 
 Lemma arrow_value_persist_over_arg_apply_singleton

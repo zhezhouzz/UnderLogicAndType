@@ -100,7 +100,8 @@ Lemma basic_typing_bool_canonical_form v :
   v = vconst (cbool true) ∨ v = vconst (cbool false).
 Proof.
   intros Hty.
-  destruct (basic_typing_base_canonical_form v TBool Hty) as [[b|n] [-> Hbase]]; simpl in Hbase.
+  destruct (basic_typing_base_canonical_form v TBool Hty) as [[|b|n] [-> Hbase]]; simpl in Hbase.
+  - discriminate.
   - destruct b; auto.
   - discriminate.
 Qed.
@@ -110,9 +111,21 @@ Lemma basic_typing_nat_canonical_form v :
   ∃ n, v = vconst (cnat n).
 Proof.
   intros Hty.
-  destruct (basic_typing_base_canonical_form v TNat Hty) as [[b|n] [-> Hbase]]; simpl in Hbase.
+  destruct (basic_typing_base_canonical_form v TNat Hty) as [[|b|n] [-> Hbase]]; simpl in Hbase.
+  - discriminate.
   - discriminate.
   - eauto.
+Qed.
+
+Lemma basic_typing_unit_canonical_form v :
+  ∅ ⊢ᵥ v ⋮ TBase TUnit →
+  v = vconst cunit.
+Proof.
+  intros Hty.
+  destruct (basic_typing_base_canonical_form v TUnit Hty) as [[|b|n] [-> Hbase]]; simpl in Hbase.
+  - reflexivity.
+  - discriminate.
+  - discriminate.
 Qed.
 
 Lemma basic_typing_arrow_canonical_form v s T :

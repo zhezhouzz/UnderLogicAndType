@@ -11,7 +11,10 @@ theorem are fully proved for the current core system.
 
 - Primitive operations are supplied by an explicit context `Φ : primop_ctx`.
   The abstract soundness theorem assumes `wf_primop_ctx Φ`; the current
-  graph-based instance is `concrete_Φ` with theorem `concrete_Φ_wf`.
+  graph-based instance is `concrete_Φ` with theorem `concrete_Φ_wf`.  The
+  concrete primitive context includes deterministic graph-precise operators
+  `eq0`, `plus1`, and `minus1`, plus nondeterministic generators `boolGen` and
+  `natGen`.
 - The main typing judgment is `has_context_type Φ Σ Γ e τ`.
 - The Fundamental theorem is:
 
@@ -118,8 +121,10 @@ ContextBase -> ContextStore -> ContextAlgebra -> ContextLogic
 
 ### Language and Denotation
 
-- `CoreLang`: deterministic call-by-value language, locally nameless syntax,
-  basic typing, small-step semantics, and instantiation.
+- `CoreLang`: call-by-value language with nondeterministic primitive results,
+  locally nameless syntax, basic typing, small-step semantics, and
+  instantiation.  The current base types include `Unit`, `Bool`, `Nat`, `Tree`,
+  and fixed `List` values over Rocq's `list nat`.
 - `ContextTypeLanguage`: context types, contexts, qualifiers, erasure,
   locally nameless opening, and well-formedness.
 - `ContextBasicDenotation`: basic semantic atoms for stores, worlds, term
@@ -136,6 +141,12 @@ ContextBase -> ContextStore -> ContextAlgebra -> ContextLogic
 - Normalize at proof boundaries: unfold and simplify erasure, relevant
   environments, `ctx_erasure_under`, `lty_env_open_one`, and formula/type opens
   before extracting helper lemmas.
+- Qualifier top is domain-indexed.  Use `qual_top_on D` or the standard
+  `qual_top` notation for the result binder domain; do not use an empty-support
+  top qualifier.  Empty support would make underapproximate coverage vacuous.
+- `CTOver` and `CTUnder` result bodies are typed: the qualifier atom is paired
+  with the result slot's basic typing formula, so `CTUnder b qual_top` covers
+  all and only values of base type `b`.
 - Keep helper statements semantic and short. If a premise contains only
   syntactic noise, normalize earlier or move the fact to the lower layer.
 - Prefer existing `better_*` solvers for set/store side conditions. For slow

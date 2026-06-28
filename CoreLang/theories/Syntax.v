@@ -12,7 +12,7 @@ From ContextBase Require Import LogicVar BaseTactics.
 (** ** Base and basic types *)
 
 Inductive base_ty : Type :=
-  | TBool | TNat.
+  | TUnit | TBool | TNat.
 
 Inductive ty : Type :=
   | TBase  (b : base_ty)
@@ -36,6 +36,7 @@ Notation "s1 '→ₜ' s2" := (TArrow s1 s2)
 (** ** Constants and primitive operations *)
 
 Inductive constant : Type :=
+  | cunit
   | cbool (b : bool)
   | cnat  (n : nat).
 
@@ -51,7 +52,11 @@ Inductive prim_op : Type :=
 #[global] Instance prim_op_eqdec : EqDecision prim_op. Proof. solve_decision. Defined.
 
 Definition base_ty_of_const (c : constant) : base_ty :=
-  match c with cbool _ => TBool | cnat _ => TNat end.
+  match c with
+  | cunit => TUnit
+  | cbool _ => TBool
+  | cnat _ => TNat
+  end.
 
 (** ** Values and terms — mutual induction, locally nameless
 

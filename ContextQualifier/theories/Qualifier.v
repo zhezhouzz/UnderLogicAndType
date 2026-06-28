@@ -354,8 +354,30 @@ Proof.
   unfold qual_open_env. rewrite map_fold_empty. reflexivity.
 Qed.
 
-Definition qual_top : qualifier :=
-  tqual ∅ (fun _ => True).
+Definition qual_top_on (D : lvset) : qualifier :=
+  tqual D (fun _ => True).
+
+Notation qual_top := (qual_top_on {[LVBound 0]}).
+
+Lemma qual_vars_top_on D :
+  qual_vars (qual_top_on D) = D.
+Proof. reflexivity. Qed.
+
+Lemma qual_lvars_top_on D :
+  qual_lvars (qual_top_on D) = D.
+Proof. reflexivity. Qed.
+
+Lemma qual_dom_top_on D :
+  qual_dom (qual_top_on D) = lvars_fv D.
+Proof. reflexivity. Qed.
+
+Lemma qual_open_atom_top_on k x D :
+  qual_open_atom k x (qual_top_on D) = qual_top_on (lvars_open k x D).
+Proof.
+  apply qual_ext; cbn [qual_lvars qual_prop qual_open_atom].
+  - reflexivity.
+  - intros s1 s2 Hs. split; intros _; exact I.
+Qed.
 
 Definition qual_and (q1 q2 : qualifier) : qualifier :=
   match q1, q2 with
@@ -700,3 +722,4 @@ Qed.
 End Qualifier.
 
 Notation type_qualifier := (qualifier (V := value)) (only parsing).
+Notation qual_top := (qual_top_on (V := value) {[LVBound 0]}).
