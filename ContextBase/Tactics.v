@@ -73,6 +73,21 @@ Lemma gset_elem_open_world_inter_singleton {K : Type} `{Countable K}
   x ∈ (B ∪ {[y]}) ∩ ({[x]} : gset K).
 Proof. set_solver. Qed.
 
+Lemma gset_notin_union_singleton_of_notin_superset
+    {K : Type} `{Countable K} (A B : gset K) x y :
+  y ∉ A ->
+  x ∈ B ->
+  y ∉ B ->
+  y ∉ A ∪ {[x]}.
+Proof. set_solver. Qed.
+
+Lemma gset_notin_union_singleton_swap_ne
+    {K : Type} `{Countable K} (A : gset K) a x y :
+  a ∉ A ∪ {[y]} ->
+  a <> x ->
+  a ∉ A ∪ {[x]}.
+Proof. set_solver. Qed.
+
 Ltac fast_set_solver :=
   solve [try fast_done; repeat (set_unfold; subst; intuition)].
 
@@ -263,6 +278,16 @@ Lemma map_lookup_union_None {K A : Type} `{Countable K}
     (m1 m2 : gmap K A) i :
   (m1 ∪ m2) !! i = None ↔ m1 !! i = None ∧ m2 !! i = None.
 Proof. apply lookup_union_None. Qed.
+
+Lemma map_notin_union_singleton_dom {K A : Type} `{Countable K}
+    (m : gmap K A) x vx z :
+  z ∉ dom m ->
+  z <> x ->
+  z ∉ dom (m ∪ ({[x := vx]} : gmap K A)).
+Proof.
+  rewrite dom_union_L, dom_singleton_L.
+  set_solver.
+Qed.
 
 Lemma map_elem_of_dom_lookup_some {K A : Type} `{Countable K}
     (m : gmap K A) i v :

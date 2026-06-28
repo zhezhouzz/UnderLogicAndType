@@ -132,23 +132,7 @@ Lemma notin_store_union_singleton_dom
   z <> x ->
   z ∉ dom (((σ : StoreT) ∪ ({[x := vx]} : StoreT)) : StoreT).
 Proof.
-  intros Hzσ Hzx Hzdom.
-  change (z ∈ dom
-    ((((σ : StoreT) : gmap atom value) ∪
-      ({[x := vx]} : gmap atom value)) : gmap atom value)) in Hzdom.
-  apply elem_of_dom in Hzdom as [vz Hlook].
-  apply map_lookup_union_Some_raw in Hlook as [Hlook|[_ Hlook]].
-  - apply Hzσ.
-    change (z ∈ dom (σ : gmap atom value)).
-    apply elem_of_dom. exists vz. exact Hlook.
-  - apply Hzx.
-    pose proof (dom_singleton_L (M:=gmap atom) x vx) as Hdom_single.
-    change (dom (({[x := vx]} : StoreT)) = {[x]}) in Hdom_single.
-    apply elem_of_dom_2 in Hlook.
-    change (z ∈ dom (({[x := vx]} : StoreT))) in Hlook.
-    rewrite Hdom_single in Hlook.
-    apply elem_of_singleton in Hlook.
-    exact Hlook.
+  apply map_notin_union_singleton_dom.
 Qed.
 
 Lemma store_restrict_insert_same_observed
@@ -246,10 +230,7 @@ Lemma notin_union_singleton_of_notin_world
   y ∉ world_dom (m : WorldT) ->
   y ∉ A ∪ {[x]}.
 Proof.
-  intros HyA Hxm Hym HyAx.
-  apply elem_of_union in HyAx as [HyA'|Hyx].
-  - exact (HyA HyA').
-  - apply elem_of_singleton in Hyx. subst y. exact (Hym Hxm).
+  apply gset_notin_union_singleton_of_notin_superset.
 Qed.
 
 Lemma notin_union_singleton_swap_ne (A : aset) a x y :
@@ -257,10 +238,7 @@ Lemma notin_union_singleton_swap_ne (A : aset) a x y :
   a <> x ->
   a ∉ A ∪ {[x]}.
 Proof.
-  intros Ha Hax HaAx.
-  apply elem_of_union in HaAx as [HaA|Hax'].
-  - apply Ha. apply elem_of_union_l. exact HaA.
-  - apply elem_of_singleton in Hax'. subst a. contradiction.
+  apply gset_notin_union_singleton_swap_ne.
 Qed.
 
 Lemma singleton_subset_world_dom (m : WfWorldT) z :
