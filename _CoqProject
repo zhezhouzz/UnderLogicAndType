@@ -30,6 +30,8 @@ ContextQualifier/theories/Qualifier.v
 ContextAlgebra/theories/ResourceCore.v
 ContextAlgebra/theories/ResourceAlgebra.v
 ContextAlgebra/theories/ResourceExtension.v
+ContextAlgebra/theories/ResourceInterfaceCore.v
+ContextAlgebra/theories/ResourceInterfaceFacts.v
 ContextAlgebra/theories/ResourceInterface.v
 ContextAlgebra/theories/ResourceCompat.v
 ContextAlgebra/theories/ContextAlgebra.v

@@ -50,7 +50,7 @@ Lemma res_fiber_from_projection_world_dom
   res_fiber_from_projection m X σ mfib ->
   world_dom (mfib : WorldT) = world_dom (m : WorldT).
 Proof.
-  apply ResourceInterface.res_fiber_from_projection_world_dom.
+  apply ResourceInterfaceFacts.res_fiber_from_projection_world_dom.
 Qed.
 
 Lemma res_fiber_from_projection_fresh_eq
@@ -59,7 +59,7 @@ Lemma res_fiber_from_projection_fresh_eq
   res_fiber_from_projection m X σ mfib ->
   mfib = m.
 Proof.
-  apply ResourceInterface.res_fiber_from_projection_fresh_eq.
+  apply ResourceInterfaceFacts.res_fiber_from_projection_fresh_eq.
 Qed.
 
 Ltac formula_regular_fiber_dom :=
@@ -84,7 +84,7 @@ Local Lemma res_fiber_from_projection_store_restrict_input
   (mfib : WorldT) τ ->
   store_restrict τ X = σ.
 Proof.
-  apply ResourceInterface.res_fiber_from_projection_store_restrict_input.
+  apply ResourceInterfaceFacts.res_fiber_from_projection_store_restrict_input.
 Qed.
 
 Local Lemma lstore_in_lworld_on_lift_res_subset
