@@ -1441,27 +1441,6 @@ Qed.
 
 (** Wand/LamD proof support. *)
 
-Local Lemma lam_wand_fresh_erase_ctx
-    (Σ : tyctx) Γ τx τ e y :
-  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
-    fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  y ∉ dom (erase_ctx Γ).
-Proof.
-  intros Hy.
-  eapply soundness_fresh_erase_ctx_from_context_union.
-  exact Hy.
-Qed.
-
-Local Lemma lam_wand_fresh_tm
-    (Σ : tyctx) Γ τx τ e y :
-  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
-    fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  y ∉ fv_tm e.
-Proof.
-  intros Hy.
-  soundness_fresh_solve.
-Qed.
-
 Lemma lamd_wand_open_arg_to_bind_denotation
     (Σ : tyctx) Γ τx τ e
     (n : WfWorldT) y :
@@ -1572,7 +1551,7 @@ Proof.
   intros Hwf Hy Hbody Hstatic.
   set (elam := tret (vlam (erase_ty τx) e)).
   assert (HyΓ : y ∉ dom (erase_ctx Γ)).
-  { eapply lam_wand_fresh_erase_ctx. exact Hy. }
+  { eapply soundness_fresh_erase_ctx_from_context_union. exact Hy. }
   pose proof (ty_denote_under_star_bind_to_lvar_insert_direct
     Σ Γ τx ({0 ~> y} τ) (e ^^ y) y my HyΓ Hbody) as Hbody_insert.
   assert (Hmid_body :
@@ -1673,7 +1652,7 @@ Proof.
 	    { apply wfworld_closed_on_union; assumption. }
 			    pose proof (tm_total_equiv_lam_app_body
 			      (erase_ty τx) e y my Hclosed Hbody_lc
-			      ltac:(eapply lam_wand_fresh_tm; exact Hy)
+			      ltac:(clear -Hy; soundness_fresh_solve)
 			      Hy_dom) as Htotal_eq.
 	    eapply tm_equiv_total;
 	      [ exact Htotal_eq
@@ -1733,7 +1712,7 @@ Proof.
         (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y))).
 		  {
 		    eapply lam_intro_denotation; eauto.
-		    eapply lam_wand_fresh_tm. exact Hy.
+		    clear -Hy. soundness_fresh_solve.
 		  }
   exact Happ_mid.
 Qed.
@@ -1914,7 +1893,7 @@ Proof.
 	        fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
 	  { clear -Hy_fresh. better_set_solver. }
 		  assert (Hy_eraseΓ : y ∉ dom (erase_ctx Γ)).
-		  { eapply lam_wand_fresh_erase_ctx. exact Hy_rest. }
+		  { eapply soundness_fresh_erase_ctx_from_context_union. exact Hy_rest. }
 	  assert (HyΔ : LVFree y ∉ dom Δ).
 	  {
 	    subst Δ. apply atom_env_to_lty_env_dom_free_notin.
