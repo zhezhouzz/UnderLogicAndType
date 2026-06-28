@@ -14,9 +14,9 @@ Current snapshot
 ----------------
 
 - Initial scan: 235 `Ltac` / `Tactic Notation` definitions.
-- After cleanup: 191 definitions.
-- Removed in this pass: 44 unused wrappers, stale normalizers, or old-route
-  proof-search helpers.
+- After cleanup and compositional fusion: 174 definitions.
+- Removed or fused in this pass: 61 unused wrappers, stale normalizers, old-route
+  proof-search helpers, or duplicate local tactics.
 - Current zero-use tactics left: 6, all intentionally deferred.
 
 Completed cleanup
@@ -138,16 +138,13 @@ that local helper family.
 
 10. Formula syntax normalizer split
 
-- Removed the zero-use broad aggregators:
-    - `formula_syntax_norm_in`
-- Kept the smaller compositional entries:
-  - `formula_fv_syntax_norm` / `_in`
-  - `formula_open_syntax_norm` / `_in`
-  - `formula_open_env_syntax_norm` / `_in`
-  - `formula_msubst_syntax_norm` / `_in`
+- Removed the zero-use formula syntax Ltac layer entirely, including broad
+  aggregators and phase-specific wrappers.
+- Kept the reusable formula syntax facts as lemmas, not tactic wrappers.
 
-Design note: callers should choose the syntax phase they actually need instead
-of invoking a broad all-in-one formula normalizer.
+Design note: future formula normalization should introduce a tactic only at a
+concrete call site and only for the exact phase needed.  Do not reintroduce a
+broad all-in-one formula normalizer without timing evidence.
 
 11. TypePersist fresh-side tactic fusion
 
@@ -200,6 +197,74 @@ Why deferred:
 - `pose_fresh_from` / `pose_fresh_fv` may become obsolete after a future
   cofinite-boundary tactic is built around `collect_stales`, but that should be
   done as a real migration, not as dead-code deletion.
+
+
+Folder placement policy
+-----------------------
+
+Use three placement classes for tactics in each folder.
+
+1. Regular-file tactics
+
+- Location: immediately after the folder's regular lemma file or inside that
+  regular file.
+- Purpose: deterministic extraction of facts from this folder's definitions,
+  plus syntax/fv/open normalization that is needed by later lemmas.
+- Examples now in this class:
+  - `TypingRegular.v`: `soundness_regular_*`, `soundness_regular`.
+  - `DenotationSetMapFacts.v`: `denotation_regular_res_extend_*`,
+    `denotation_regular`.
+  - `RelevantEnvRegular.v`: `support_lvars_norm`, `relevant_env_norm`.
+  - `SyntaxRegular.v` / `TypeOpen.v`: type syntax and open-env normalizers.
+
+2. Folder-interface tactics
+
+- Location: near the end of the folder support/interface file, after the lemmas
+  they depend on.
+- Purpose: serve later files in the same folder or upper folders; these should
+  be small, compositional primitives rather than broad solvers.
+- Examples now in this class:
+  - `TypePersistBase.v`: `persist_fresh_from` and its semantic aliases.
+  - `SoundnessFixBase.v`: `fix_union_member`, `fix_break_union`,
+    `fix_notin_union`, `fix_singleton_side`.
+  - `SoundnessCaseTactics.v`: `soundness_case_start` and entailment prelude
+    tactics.
+
+3. Local tactics
+
+- Location: inside the one file that uses them.
+- Purpose: name a case-specific proof pattern that should not leak into the
+  folder API.
+- Examples that remain local intentionally:
+  - `ConstDenote.v`: const-specific guard/scope tactics.
+  - `TypeEquivBody.v`: Over/Under/Sum-specific side tactics.
+  - `TypePersistArrow.v`: `persist_over_context_wf`.
+  - `SoundnessFix.v` and `SoundnessFixSelf.v`: local case-facing wrappers over
+    the shared Fix primitives.
+
+Folder-by-folder status
+-----------------------
+
+- `ContextTyping`: done for this pass.  Shared Fix primitives were moved into
+  `SoundnessFixBase.v`; case-level wrappers remain local.  Further migration
+  would be LN/fundamental prelude work and needs timing checks.
+- `Denotation`: done for this pass.  Persist Wand duplicate freshness tactics
+  were fused into `TypePersistBase.v`; result-first broad wrappers already
+  removed.  Remaining local tactics are case-specific or timing-sensitive.
+- `ContextBasicDenotation`: done for this pass.  Dead relevant-env/term syntax
+  wrappers removed.  Remaining tactics are either regular support or local
+  BasicTypingOpen cofinite helpers.
+- `ContextTypeLanguage`: done for this pass.  Dead `mopen_norm`/`type_env_norm`
+  and unused lvar/depth wrappers removed; type syntax/open normalizers remain
+  regular-file tactics.
+- `CoreLang`: done for this pass.  Old msubst/env proof-search tactics removed;
+  remaining local tactics are narrow proof helpers.
+- `ContextLogic`: done for this pass.  Formula syntax tactic wrappers removed;
+  semantic fuel tactics remain folder-interface utilities.
+- `ContextStore` / `ContextBase`: done for this pass.  Alias cleanup completed;
+  pure solver layer remains intentionally low-level.
+- `LocallyNameless`: deferred.  Existing zero-use helpers are interactive or
+  need a real cofinite-boundary migration before deletion.
 
 Underused but important tactics
 -------------------------------
@@ -279,9 +344,11 @@ consistent public naming decision is made.
 
 3. Formula/type syntax
 
-- Formula syntax normalizers in `FormulaSyntaxRegular.v`.
-- Type syntax/open normalizers in `SyntaxRegular.v` and `TypeOpen.v`.
-- These are the right source of open/fv/shift normalization.
+- Formula syntax support is currently lemma-based; no formula syntax Ltac API is
+  exposed after this cleanup pass.
+- Type syntax/open normalizers remain in `SyntaxRegular.v` and `TypeOpen.v`.
+- New formula syntax Ltac should be added only when a concrete proof family
+  needs it and timing justifies it.
 
 4. Denotation boundary
 
@@ -333,7 +400,6 @@ At this point, remaining items are no longer clear zero-use deletion.  Continue
 only if the goal is one of:
 
 - LN cofinite-boundary migration;
-- shared Persist/Fix side-condition tactic extraction;
 - targeted timing work on a specific slow file.
 
 Otherwise this cleanup pass has reached the intended stopping point: the TXT
