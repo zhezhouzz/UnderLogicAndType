@@ -6,7 +6,7 @@ Use this to find lemmas whose file imports only lower-layer definitions and may 
 ## Folder Summary
 - Rocq files: 8
 - Definition/notation/typeclass declarations: 148
-- Lemma/theorem declarations: 208
+- Lemma/theorem declarations: 210
 - Direct imported repo folders: ContextAlgebra, ContextBase, ContextStore
 
 ## Files
@@ -172,7 +172,7 @@ Use this to find lemmas whose file imports only lower-layer definitions and may 
 ### theories/ResourceInterfaceFacts.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBase, ContextStore
 - Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceCore ResourceAlgebra ResourceExtension ResourceInterfaceCore.] | ContextBase [From ContextBase Require Import Prelude LogicVar BaseTactics.] | ContextStore [From ContextStore Require Import Store.]
-- Local definitions/notation/typeclasses: Local notation `StoreT`@12, Local notation `World`@13, Local notation `WfWorld`@14, Local notation `LWorld`@15, Local notation `LWfWorld`@16, definition `res_pullback_subset_projection`@950, Local notation `"m`@1484, definition `const_fresh_value_extension`@1701, notation `"r`@1816, notation `"m1`@1819, notation `"m1`@1822, notation `"m1`@1825, notation `"m1`@1828
+- Local definitions/notation/typeclasses: Local notation `StoreT`@12, Local notation `World`@13, Local notation `WfWorld`@14, Local notation `LWorld`@15, Local notation `LWfWorld`@16, definition `res_pullback_subset_projection`@950, Local notation `"m`@1484, definition `const_fresh_value_extension`@1730, notation `"r`@1845, notation `"m1`@1848, notation `"m1`@1851, notation `"m1`@1854, notation `"m1`@1857
 - Lemmas/theorems and available definition folders:
   - Public lemma `world_ext` at line 18: ContextAlgebra, ContextBase, ContextStore
   - Public lemma `wfworld_ext` at line 24: ContextAlgebra, ContextBase, ContextStore
@@ -257,14 +257,16 @@ Use this to find lemmas whose file imports only lower-layer definitions and may 
   - Public lemma `res_restrict_singleton_store_eq` at line 1557: ContextAlgebra, ContextBase, ContextStore
   - Public lemma `res_restrict_singleton_exact_dom_subset` at line 1574: ContextAlgebra, ContextBase, ContextStore
   - Public lemma `res_fiber_from_projection_restrict_singleton` at line 1589: ContextAlgebra, ContextBase, ContextStore
-  - Public lemma `store_singleton_dom_value` at line 1633: ContextAlgebra, ContextBase, ContextStore
-  - Public lemma `singleton_world_member_eq` at line 1640: ContextAlgebra, ContextBase, ContextStore
-  - Public lemma `res_extend_by_singleton_output_in_world` at line 1649: ContextAlgebra, ContextBase, ContextStore
-  - Public lemma `res_extend_by_singleton_output_open_world` at line 1663: ContextAlgebra, ContextBase, ContextStore
-  - Public lemma `res_extend_by_singleton_output_notin_base_store` at line 1679: ContextAlgebra, ContextBase, ContextStore
-  - Public lemma `res_extend_by_exists` at line 1696: ContextAlgebra, ContextBase, ContextStore
-  - Public lemma `res_extend_by_const_fresh_value_exact` at line 1720: ContextAlgebra, ContextBase, ContextStore
-  - Public lemma `res_extend_by_const_fresh_value` at line 1762: ContextAlgebra, ContextBase, ContextStore
-  - Public lemma `res_extend_by_projection_eq` at line 1785: ContextAlgebra, ContextBase, ContextStore
-  - Public lemma `res_extend_by_product_frame_r` at line 1794: ContextAlgebra, ContextBase, ContextStore
-  - Public lemma `res_extend_by_product_frame_l` at line 1804: ContextAlgebra, ContextBase, ContextStore
+  - Public lemma `y_fiber_store_dom` at line 1633: ContextAlgebra, ContextBase, ContextStore
+  - Public lemma `y_fiber_restrict_singleton` at line 1649: ContextAlgebra, ContextBase, ContextStore
+  - Public lemma `store_singleton_dom_value` at line 1662: ContextAlgebra, ContextBase, ContextStore
+  - Public lemma `singleton_world_member_eq` at line 1669: ContextAlgebra, ContextBase, ContextStore
+  - Public lemma `res_extend_by_singleton_output_in_world` at line 1678: ContextAlgebra, ContextBase, ContextStore
+  - Public lemma `res_extend_by_singleton_output_open_world` at line 1692: ContextAlgebra, ContextBase, ContextStore
+  - Public lemma `res_extend_by_singleton_output_notin_base_store` at line 1708: ContextAlgebra, ContextBase, ContextStore
+  - Public lemma `res_extend_by_exists` at line 1725: ContextAlgebra, ContextBase, ContextStore
+  - Public lemma `res_extend_by_const_fresh_value_exact` at line 1749: ContextAlgebra, ContextBase, ContextStore
+  - Public lemma `res_extend_by_const_fresh_value` at line 1791: ContextAlgebra, ContextBase, ContextStore
+  - Public lemma `res_extend_by_projection_eq` at line 1814: ContextAlgebra, ContextBase, ContextStore
+  - Public lemma `res_extend_by_product_frame_r` at line 1823: ContextAlgebra, ContextBase, ContextStore
+  - Public lemma `res_extend_by_product_frame_l` at line 1833: ContextAlgebra, ContextBase, ContextStore

@@ -6,7 +6,7 @@ Use this to find lemmas whose file imports only lower-layer definitions and may 
 ## Folder Summary
 - Rocq files: 24
 - Definition/notation/typeclass declarations: 120
-- Lemma/theorem declarations: 572
+- Lemma/theorem declarations: 569
 - Direct imported repo folders: ContextAlgebra, ContextBase, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, CoreLang, Denotation, LocallyNameless
 
 ## Files
@@ -571,9 +571,8 @@ Use this to find lemmas whose file imports only lower-layer definitions and may 
   - Public lemma `expr_result_formula_at_of_result_extends` at line 1011: ContextBasicDenotation, CoreLang, Denotation
   - Public lemma `expr_result_formula_msubst_alias_ret_fvar` at line 1115: ContextBasicDenotation, CoreLang, Denotation
   - Public lemma `expr_result_extension_open_fiber_alias` at line 1257: ContextBasicDenotation, CoreLang, Denotation
-  - Local lemma `tlet_fresh_for_parts` at line 1429: ContextBasicDenotation, CoreLang, Denotation
-  - Public lemma `tm_total_equiv_res_store_subset` at line 1442: ContextBasicDenotation, CoreLang, Denotation
-  - Public lemma `tm_fiber_equiv_tlete_body_extension` at line 1452: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `tm_total_equiv_res_store_subset` at line 1429: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `tm_fiber_equiv_tlete_body_extension` at line 1439: ContextBasicDenotation, CoreLang, Denotation
 
 ### theories/TypeEquivWand.v
 - Direct definition folders available to lemmas: CoreLang, Denotation
@@ -695,24 +694,22 @@ Use this to find lemmas whose file imports only lower-layer definitions and may 
 
 ### theories/TypePersistWandForward.v
 - Direct definition folders available to lemmas: ContextAlgebra, Denotation
-- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceAlgebra.] | Denotation [From Denotation Require Import Notation TypeDenote TypeDenoteRegular ResultFirstOpen]
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceAlgebra ResourceInterfaceFacts.] | Denotation [From Denotation Require Import Notation TypeDenote TypeDenoteRegular ResultFirstOpen]
 - Local definitions/notation/typeclasses: Local ltac `persist_eta_fresh_from`@12, Local ltac `persist_outer_fresh_from`@15, Local ltac `persist_lvar_fresh_from`@18
 - Lemmas/theorems and available definition folders:
-  - Local lemma `over_y_fiber_store_dom` at line 21: ContextAlgebra, Denotation
-  - Local lemma `over_y_fiber_restrict_singleton` at line 40: ContextAlgebra, Denotation
-  - Public lemma `ty_denote_gas_over_ret_fvar_fiber_stable` at line 62: ContextAlgebra, Denotation
-  - Public lemma `wand_arg_fiber_models_persist_over_arg` at line 85: ContextAlgebra, Denotation
-  - Public lemma `fiberwise_joinable_on_ty_denote_gas_over` at line 156: ContextAlgebra, Denotation
-  - Public lemma `fiberwise_joinable_on_ty_denote_gas_under` at line 207: ContextAlgebra, Denotation
-  - Public lemma `tm_lvars_tapp_ret_fvar_fvar_relevant_env_dom` at line 258: ContextAlgebra, Denotation
-  - Public lemma `singleton_lvar_subset_tapp_ret_fvar_fvar_relevant_env_dom` at line 277: ContextAlgebra, Denotation
-  - Public lemma `ty_denote_gas_over_result_body_elim` at line 294: ContextAlgebra, Denotation
-  - Public lemma `ty_denote_gas_under_result_body_elim` at line 322: ContextAlgebra, Denotation
-  - Public lemma `arrow_value_persist_over_arg_apply_singleton` at line 350: ContextAlgebra, Denotation
-  - Public lemma `wand_value_over_arg_to_persist_over_arg_plain` at line 469: ContextAlgebra, Denotation
-  - Public lemma `wand_result_first_open_value_over_arg_to_persist_over_arg` at line 659: ContextAlgebra, Denotation
-  - Public lemma `ty_denote_gas_wand_over_arg_to_persist_over_arg` at line 697: ContextAlgebra, Denotation
-  - Public lemma `ty_denote_wand_over_arg_to_persist_over_arg` at line 929: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_gas_over_ret_fvar_fiber_stable` at line 21: ContextAlgebra, Denotation
+  - Public lemma `wand_arg_fiber_models_persist_over_arg` at line 44: ContextAlgebra, Denotation
+  - Public lemma `fiberwise_joinable_on_ty_denote_gas_over` at line 126: ContextAlgebra, Denotation
+  - Public lemma `fiberwise_joinable_on_ty_denote_gas_under` at line 177: ContextAlgebra, Denotation
+  - Public lemma `tm_lvars_tapp_ret_fvar_fvar_relevant_env_dom` at line 228: ContextAlgebra, Denotation
+  - Public lemma `singleton_lvar_subset_tapp_ret_fvar_fvar_relevant_env_dom` at line 247: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_gas_over_result_body_elim` at line 264: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_gas_under_result_body_elim` at line 292: ContextAlgebra, Denotation
+  - Public lemma `arrow_value_persist_over_arg_apply_singleton` at line 320: ContextAlgebra, Denotation
+  - Public lemma `wand_value_over_arg_to_persist_over_arg_plain` at line 439: ContextAlgebra, Denotation
+  - Public lemma `wand_result_first_open_value_over_arg_to_persist_over_arg` at line 629: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_gas_wand_over_arg_to_persist_over_arg` at line 667: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_wand_over_arg_to_persist_over_arg` at line 899: ContextAlgebra, Denotation
 
 ### theories/TypePersistWandReverse.v
 - Direct definition folders available to lemmas: ContextAlgebra, Denotation
