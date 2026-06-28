@@ -37,6 +37,8 @@ ContextAlgebra/theories/ResourceCompat.v
 ContextAlgebra/theories/ContextAlgebra.v
 
 ContextLogic/theories/FormulaAtom.v
+ContextLogic/theories/FormulaSyntaxCore.v
+ContextLogic/theories/FormulaSyntaxRegular.v
 ContextLogic/theories/FormulaSyntax.v
 ContextLogic/theories/FormulaSemantics.v
 ContextLogic/theories/FormulaConnectives.v
