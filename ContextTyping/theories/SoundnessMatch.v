@@ -528,20 +528,6 @@ Proof.
     set_solver.
 Qed.
 
-Lemma lvars_lc_at_zero_of_lc D :
-  lc_lvars D ->
-  lvars_lc_at 0 D.
-Proof.
-  exact (soundness_lam_lvars_lc_at_zero_of_lc D).
-Qed.
-
-Lemma lc_lvars_shift_from k D :
-  lc_lvars D ->
-  lc_lvars (lvars_shift_from k D).
-Proof.
-  exact (soundness_lam_lc_lvars_shift_from k D).
-Qed.
-
 Lemma ty_denote_gas_lc_context_ty
     gas Σ τ e (m : WfWorldT) :
   m ⊨ ty_denote_gas gas Σ τ e ->
@@ -918,12 +904,12 @@ Proof.
     subst Dsum.
     rewrite formula_open_expr_result_formula_at_shift0 in Hres.
     - rewrite lvars_shift_from_lc_at_id in Hres; [exact Hres|].
-      apply lvars_lc_at_zero_of_lc.
+      apply soundness_lam_lvars_lc_at_zero_of_lc.
       apply relevant_env_sum_closed_of_lc.
       + eapply ty_denote_gas_lc_context_ty; exact Hbranch1.
       + eapply ty_denote_gas_lc_context_ty; exact Hbranch2.
       + exact Hlc_e.
-    - apply lc_lvars_shift_from.
+    - apply soundness_lam_lc_lvars_shift_from.
       apply relevant_env_sum_closed_of_lc.
       + eapply ty_denote_gas_lc_context_ty; exact Hbranch1.
       + eapply ty_denote_gas_lc_context_ty; exact Hbranch2.
