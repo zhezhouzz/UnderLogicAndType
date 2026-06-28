@@ -42,6 +42,20 @@ Definition ty_denote_under
 Definition ty_env_agree_on (X : aset) (Σ1 Σ2 : gmap atom ty) : Prop :=
   forall x, x ∈ X -> Σ1 !! x = Σ2 !! x.
 
+Lemma ty_denote_under_total
+    (Σ : gmap atom ty) Γ τ e (m : WfWorldT) :
+  m ⊨ ty_denote_under Σ Γ τ e ->
+  m ⊨ expr_total_formula e.
+Proof.
+  intros Hden.
+  pose proof (ty_denote_gas_guard_formula
+    (cty_depth τ) (atom_env_to_lty_env (erase_ctx Γ)) τ e m Hden)
+    as Hguard.
+  unfold ty_guard_formula in Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  exact (proj2 (proj2 (proj2 Hguard))).
+Qed.
+
 Lemma erase_ctx_star_bind_insert_agree_on
     (Σ : gmap atom ty) Γ1 Γ2 τx x X :
   basic_ctx (dom Σ) (CtxStar Γ1 Γ2) ->

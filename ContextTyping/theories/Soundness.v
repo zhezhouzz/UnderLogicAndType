@@ -31,26 +31,9 @@ From ContextTyping Require Import PrimOpContext PrimOpConcreteContext Typing Typ
 Local Notation StoreT := (gmap atom value) (only parsing).
 Local Notation WorldT := (World (V := value)) (only parsing).
 Local Notation WfWorldT := (WfWorld (V := value)) (only parsing).
-Local Notation FiberExtensionT := (fiber_extension (V := value)) (only parsing).
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
-(** Totality extraction is intentionally a named review point.  The denotation
-    guard contains [expr_total_formula], but future proofs around recursive
-    functions should decide whether this extraction is direct or goes through
-    the well-founded operational totality interface. *)
-Lemma ty_denote_under_total
-    (Σ : gmap atom ty) Γ τ e (m : WfWorldT) :
-  m ⊨ ty_denote_under Σ Γ τ e ->
-	  m ⊨ expr_total_formula e.
-Proof.
-  intros Hden.
-  pose proof (ty_denote_gas_guard_formula
-    (cty_depth τ) (atom_env_to_lty_env (erase_ctx Γ)) τ e m Hden)
-    as Hguard.
-  unfold ty_guard_formula in Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  exact (proj2 (proj2 (proj2 Hguard))).
-Qed.
+Local Notation FiberExtensionT := (fiber_extension (V := value)) (only parsing).
 
 Local Lemma soundness_wf_observed_vars_world_dom
     (Σ : gmap atom ty) Γ e τ (m : WfWorldT) :
