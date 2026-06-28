@@ -600,11 +600,17 @@ Proof.
         apply expr_basic_typing_formula_models_iff in Hbasic as [_ [_ Hty]].
         exact (basic_tm_has_ltype_lvars _ _ _ Hty).
   }
-	  rewrite (lvars_shift_from_lc_eq 0
-	    (dom (relevant_env Δ τc (tret (vfvar x)))) Hlc_rel) in Hopened.
-	  pose proof (res_models_impl_elim mx _ _ Hopened Hexpr_y)
-	    as Hfib_over.
-	  rewrite formula_open_over_typed_body_normalize in Hfib_over.
+		  rewrite (lvars_shift_from_lc_eq 0
+		    (dom (relevant_env Δ τc (tret (vfvar x)))) Hlc_rel) in Hopened.
+		  pose proof (res_models_impl_elim mx _ _ Hopened Hexpr_y)
+		    as Hfib_over.
+		  change (FOver (FAnd (FAtom (mk_q_eq (vbvar 0) (vconst c)))
+		    (expr_basic_typing_formula
+		      (typed_lty_env_bind ∅ (TBase (base_ty_of_const c)))
+		      (tret (vbvar 0)) (TBase (base_ty_of_const c)))))
+		    with (over_result_body (base_ty_of_const c)
+		      (mk_q_eq (vbvar 0) (vconst c))) in Hfib_over.
+		  rewrite formula_open_over_typed_body_normalize in Hfib_over.
 	  2:{ apply const_qual_bound_no_free. }
   pose proof (over_open_body_from_typed
     (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)) y mx Hfib_over)

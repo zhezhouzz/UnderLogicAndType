@@ -1082,3 +1082,8 @@ End TermDenotation.
 Notation "'FResult' '[' e '⇓' x ']'" := (expr_result_formula e x)
   (at level 10, e at level 9, x at level 9,
    format "FResult [ e  ⇓  x ]") : formula_scope.
+
+Notation "'FResult' '[' D '⊢' e '⇓' x ']'" :=
+  (expr_result_formula_at D e x)
+  (at level 10, D at level 9, e at level 9, x at level 9,
+   format "FResult [ D  ⊢  e  ⇓  x ]") : formula_scope.

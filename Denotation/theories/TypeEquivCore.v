@@ -32,8 +32,9 @@ Proof.
     intros fuel.
     induction fuel as [fuel IH] using lt_wf_ind.
     intros τ0 Σ0 e0 Hgas.
-    destruct fuel as [|gas']; destruct τ0; cbn [cty_depth] in Hgas; try lia;
-      cbn [cty_depth ty_denote_gas].
+	    destruct fuel as [|gas']; destruct τ0; cbn [cty_depth] in Hgas; try lia;
+	      cbn [cty_depth ty_denote_gas
+	        shift_from shift_tm_inst shift_value_inst shift_cty_inst shift_lvars_inst].
     - reflexivity.
     - reflexivity.
     - rewrite (IH gas' ltac:(lia) τ0_1 Σ0 e0 ltac:(lia)).
@@ -50,7 +51,8 @@ Proof.
       rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2))
         ltac:(lia) τ0_2 Σ0 e0 ltac:(lia)).
       reflexivity.
-    - rewrite (IH gas' ltac:(lia) (cty_shift 0 τ0_1)
+    - cbn [shift_from shift_cty_inst shift_tm_inst shift_value_inst].
+      rewrite (IH gas' ltac:(lia) (cty_shift 0 τ0_1)
         (typed_lty_env_bind
           (relevant_env Σ0 (CTSum τ0_1 τ0_2) e0)
           (erase_ty τ0_1)) (tret (vbvar 0))

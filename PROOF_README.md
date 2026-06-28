@@ -187,7 +187,7 @@ notations for reading theorem statements are:
 | `∀x. P` | `∀. P` plus locally nameless opening | Ordinary formula forall. |
 | `∀M X. P` | `fib D |> P` | Fiber/binding-reference connective over support set `D`. |
 | `□P` | `□ P` | Persistent formula. |
-| `[[τ]]Σ e` | `⟦ty⟧[Σ, gas] τ e`, `⟦ty⟧[Δ] τ e` | Gas-indexed and saturated type denotation. |
+| `[[τ]]Σ e` | `⟦ty⟧[Σ, gas] τ e`, `⟦ty⟧[Δ] τ e`, `TyDenote[Δ; τ; e]` | Gas-indexed and saturated type denotation; `TyDenote[...]` is the stable definition-facing form used when bracket notation would be hard to parse. |
 | `[[Γ]]Σ` | `⟦ctx⟧[Σ] Γ` | Context denotation. |
 | Typing judgment | `Φ ⊢ᶜ [Σ; Γ] e ⋮ τ` | Main checked context typing judgment. |
 | Typing side condition | `wf[Σ; Γ] e ⋮ τ` | Abbreviation for `context_typing_wf Σ Γ e τ`. |
@@ -243,8 +243,9 @@ Theorem denotational_soundness e τ :
   forall x,
     exists mres : WfWorldT,
       closed_result_world_of e x mres /\
-      mres ⊨ ty_denote ({[x := erase_ty τ]} : gmap atom ty) τ
-        (tret (vfvar x)).
+      mres ⊨ TyDenote[({[x := ⌊τ⌋]} : gmap atom ty);
+                       τ;
+                       (ret (vfvar x))%core].
 ```
 
 The concrete primitive context is supplied in
@@ -352,23 +353,26 @@ Fixpoint ty_denote_gas
 Each denotation starts with:
 
 ```coq
-FAnd (ty_guard_formula (relevant_env Σ τ e) τ e) ...
+guard[rel[Σ | τ] e; τ; e] ∧ ...
 ```
 
 The guard proves well-formedness of the context type, a basic world, erased
 basic typing of the term, and totality of the term.  The recursive body uses
 the result-first shape for result-sensitive types:
 
-- `CTOver` / `CTUnder`: quantify over a result slot and then check the opened
-  over/under body.  The body is typed: `over_result_body b φ` and
-  `under_result_body b φ` combine the refinement atom with
-  `result_basic_typing_formula b`.
+- `CTOver` / `CTUnder`: quantify over a result slot with `∀.` and
+  `FResult[⇑ₗ (dom Σg) ⊢ e ↑ ⇓ #ₗ 0]`, then check the opened typed
+  over/under body.  In the defining equation this is expanded down to the
+  formula level:
+  `fib (qual_vars φ ∖ {[#ₗ0]}) |> over (@atom φ ∧ FHasType[∅ ▷ TBase b ⊢ ret #0 ⋮ TBase b])`
+  and similarly for `under`.  Proof scripts may temporarily `change` this
+  expanded body back to `over_result_body b φ` or `under_result_body b φ`.
 - `CTSum`: quantify over a result slot and split the result resource with
   `FPlus`.
 - `CTArrow` / `CTWand`: first quantify over the function result, then check
   `arrow_value_denote_gas_with` or `wand_value_denote_gas_with` for `ret f`.
 - `CTPersist`: quantify over the value result and wrap the inner denotation in
-  `FPersist`.
+  `□`.
 
 Important support lemmas:
 

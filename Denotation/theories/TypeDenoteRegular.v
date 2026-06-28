@@ -141,7 +141,7 @@ Ltac denot_open_env_child_fresh Hfresh :=
   intros v Hv; cbn [context_ty_lvars context_ty_lvars_at] in *;
   set_solver.
 
-Ltac denot_open_env_qual_case η Hfresh Hinj φ e :=
+Ltac denot_open_env_qual_case η Hfresh Hinj Σ τcase φ e :=
   let Hfreshφ := fresh "Hfreshφ" in
   let Hfreshe := fresh "Hfreshe" in
   let HfreshD := fresh "HfreshD" in
@@ -155,24 +155,18 @@ Ltac denot_open_env_qual_case η Hfresh Hinj φ e :=
   | assert (Hfreshe : open_env_fresh_for_lvars η (tm_lvars e));
     [ eapply open_env_fresh_for_lvars_mono; [|exact Hfresh];
 	      unfold relevant_lvars; set_solver
-    | cbn [ty_denote_gas];
-      match goal with
-      | |- context [
-          expr_result_formula_at
-            (lvars_shift_from 0 (dom (relevant_env ?Σ ?τ ?e0)))
-            (tm_shift 0 ?e0) (LVBound 0)] =>
-          assert (HfreshD :
-            open_env_fresh_for_lvars (kmap S η)
-              (lvars_shift_from 0 (dom (relevant_env Σ τ e0))));
-          [ rewrite <- open_env_shift_from_zero;
-            apply open_env_shift_from_fresh_for_lvars;
-            eapply open_env_fresh_for_lvars_mono; [|exact Hfresh];
-            intros v Hv;
-            pose proof (relevant_env_dom_subset_direct Σ τ e0);
-            set_solver
-          | idtac ]
-      end;
-      rewrite formula_open_env_and;
+	    | cbn [ty_denote_gas];
+	      assert (HfreshD :
+	        open_env_fresh_for_lvars (kmap S η)
+	          (lvars_shift_from 0 (dom (relevant_env Σ τcase e))));
+	      [ rewrite <- open_env_shift_from_zero;
+	        apply open_env_shift_from_fresh_for_lvars;
+	        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh];
+	        intros v Hv;
+	        pose proof (relevant_env_dom_subset_direct Σ τcase e);
+	        set_solver
+	      | idtac ];
+	      rewrite formula_open_env_and;
       rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj);
       first [rewrite open_cty_env_over by exact Hinj
             |rewrite open_cty_env_under by exact Hinj];
@@ -190,13 +184,23 @@ Ltac denot_open_env_qual_case η Hfresh Hinj φ e :=
 	      rewrite open_env_lift_qual_diff_bound0
 	        by exact Hfreshφ;
 	      unfold over_result_body, under_result_body;
-	      first [rewrite formula_open_env_over
-	            |rewrite formula_open_env_under];
-	      rewrite formula_open_env_and;
-	      rewrite formula_open_env_atom;
-	      rewrite formula_open_env_lift_result_basic_typing_formula
-	        by exact Hinj;
-	      reflexivity ] ].
+		      first [rewrite formula_open_env_over
+		            |rewrite formula_open_env_under];
+		      rewrite formula_open_env_and;
+		      rewrite formula_open_env_atom;
+		      match goal with
+		      | |- context [
+		            expr_basic_typing_formula
+		              (typed_lty_env_bind ∅ (TBase ?b0))
+		              (tret (vbvar 0)) (TBase ?b0)] =>
+		          change (expr_basic_typing_formula
+		            (typed_lty_env_bind ∅ (TBase b0))
+		            (tret (vbvar 0)) (TBase b0))
+		            with (result_basic_typing_formula b0)
+		      end;
+		      rewrite formula_open_env_lift_result_basic_typing_formula
+		        by exact Hinj;
+		      reflexivity ] ].
 
 Ltac denot_open_env_binary_case IH Hfresh Hinj :=
   cbn [ty_denote_gas];
@@ -386,8 +390,8 @@ Proof.
   induction gas as [|gas IH]; intros Σ τ e η Hfresh Hinj.
   - apply formula_open_env_ty_denote_gas_zero; assumption.
   - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr|τ1].
-    + denot_open_env_qual_case η Hfresh Hinj φ e.
-    + denot_open_env_qual_case η Hfresh Hinj φ e.
+	    + denot_open_env_qual_case η Hfresh Hinj Σ (CTOver b φ) φ e.
+	    + denot_open_env_qual_case η Hfresh Hinj Σ (CTUnder b φ) φ e.
     + denot_open_env_binary_case IH Hfresh Hinj.
     + denot_open_env_binary_case IH Hfresh Hinj.
     + assert (HfreshΣg :
@@ -1457,13 +1461,22 @@ Ltac solve_lvars_element v :=
   | H : context [?n + 1] |- _ =>
       replace (n + 1) with (S n) in H by lia
   end;
-  repeat match goal with
-  | H : context [lvars_at_depth (S ?d) (lvars_shift_from 0 ?D)] |- _ =>
-      rewrite lvars_at_depth_shift_under in H by lia
-  | H : context [tm_lvars_at (S ?d) (tm_shift 0 ?e)] |- _ =>
-      rewrite tm_lvars_at_shift_under in H by lia
-  | H : context [context_ty_lvars_at (S ?d) (cty_shift 0 ?τ)] |- _ =>
-      rewrite context_ty_lvars_at_shift_under in H by lia
+	  repeat match goal with
+	  | H : context [lvars_at_depth (S ?d) (lvars_shift_from 0 ?D)] |- _ =>
+	      rewrite lvars_at_depth_shift_under in H by lia
+	  | H : context [lvars_at_depth (S ?d) (shift_from 0 ?D)] |- _ =>
+	      change (shift_from 0 D) with (lvars_shift_from 0 D) in H;
+	      rewrite lvars_at_depth_shift_under in H by lia
+	  | H : context [tm_lvars_at (S ?d) (tm_shift 0 ?e)] |- _ =>
+	      rewrite tm_lvars_at_shift_under in H by lia
+	  | H : context [tm_lvars_at (S ?d) (shift_from 0 ?e)] |- _ =>
+	      change (shift_from 0 e) with (tm_shift 0 e) in H;
+	      rewrite tm_lvars_at_shift_under in H by lia
+	  | H : context [context_ty_lvars_at (S ?d) (cty_shift 0 ?τ)] |- _ =>
+	      rewrite context_ty_lvars_at_shift_under in H by lia
+	  | H : context [context_ty_lvars_at (S ?d) (shift_from 0 ?τ)] |- _ =>
+	      change (shift_from 0 τ) with (cty_shift 0 τ) in H;
+	      rewrite context_ty_lvars_at_shift_under in H by lia
   | H : context [lvars_at_depth (S ?d) ({[LVBound 0]} : lvset)] |- _ =>
       rewrite lvars_at_depth_singleton_bound0_succ in H
   | H : context [lvars_at_depth (S ?d)
@@ -1537,8 +1550,9 @@ Proof.
     end;
       try solve [specialize (Hrel_sub v Hcase); better_set_solver
         | better_set_solver].
-  - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr|τ1];
-      cbn [ty_denote_gas formula_lvars_at].
+	  - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr|τ1];
+	      cbn [ty_denote_gas formula_lvars_at
+	        shift_from shift_tm_inst shift_value_inst shift_cty_inst shift_lvars_inst].
     + normalize_denot_formula_lvars.
 	      pose proof (lvars_at_depth_relevant_env_subset_relevant
 	        d Σ (CTOver b φ) e) as Hrel.
@@ -1670,10 +1684,10 @@ Proof.
 	      set_unfold in Hrel.
 	      set_unfold in Hresult.
 	      set_unfold in Hleft.
-	      set_unfold in Hright.
-	      set_unfold in Hv.
-	      set_unfold.
-	      solve_lvars_element v.
+		      set_unfold in Hright.
+		      set_unfold in Hv.
+		      set_unfold.
+		      solve_lvars_element v.
 	    + unfold_formula_lvars_atoms.
 	      unfold arrow_value_denote_gas_with.
 	      repeat rewrite ?lvars_at_depth_union.

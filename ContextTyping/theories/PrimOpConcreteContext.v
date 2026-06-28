@@ -36,6 +36,124 @@ Definition primop_R (op : prim_op) (vx vy : value) : Prop :=
 Definition primop_graph_qual (op : prim_op) : type_qualifier :=
   expr_result_qual (tprim op (vbvar 1)) (LVBound 0).
 
+Ltac fold_over_result_body_in_goal :=
+  match goal with
+  | |- context [formula_open 0 ?y
+        (FFibVars ?D
+          (FOver (FAnd (FAtom ?φ)
+            (expr_basic_typing_formula
+              (typed_lty_env_bind ∅ (TBase ?b))
+              (tret (vbvar 0)) (TBase ?b)))))] =>
+      change (formula_open 0 y
+        (FFibVars D
+          (FOver (FAnd (FAtom φ)
+            (expr_basic_typing_formula
+              (typed_lty_env_bind ∅ (TBase b))
+              (tret (vbvar 0)) (TBase b))))))
+        with (formula_open 0 y (FFibVars D (over_result_body b φ)))
+  | |- context [FOver (FAnd (FAtom ?φ)
+        (expr_basic_typing_formula
+          (typed_lty_env_bind ∅ (TBase ?b))
+          (tret (vbvar 0)) (TBase ?b)))] =>
+      change (FOver (FAnd (FAtom φ)
+        (expr_basic_typing_formula
+          (typed_lty_env_bind ∅ (TBase b))
+          (tret (vbvar 0)) (TBase b))))
+        with (over_result_body b φ)
+  | H : context [FOver (FAnd (FAtom ?φ)
+        (expr_basic_typing_formula
+          (typed_lty_env_bind ∅ (TBase ?b))
+          (tret (vbvar 0)) (TBase ?b)))] |- _ =>
+      change (FOver (FAnd (FAtom φ)
+        (expr_basic_typing_formula
+          (typed_lty_env_bind ∅ (TBase b))
+          (tret (vbvar 0)) (TBase b))))
+        with (over_result_body b φ) in H
+  | H : context [formula_open 0 ?y
+        (FFibVars ?D
+          (FOver (FAnd (FAtom ?φ)
+            (expr_basic_typing_formula
+              (typed_lty_env_bind ∅ (TBase ?b))
+              (tret (vbvar 0)) (TBase ?b)))))] |- _ =>
+      change (formula_open 0 y
+        (FFibVars D
+          (FOver (FAnd (FAtom φ)
+            (expr_basic_typing_formula
+              (typed_lty_env_bind ∅ (TBase b))
+              (tret (vbvar 0)) (TBase b))))))
+        with (formula_open 0 y (FFibVars D (over_result_body b φ))) in H
+  end.
+
+Ltac fold_under_result_body_in_goal :=
+  match goal with
+  | |- context [formula_open 0 ?y
+        (FFibVars ?D
+          (FUnder (FAnd (FAtom ?φ)
+            (expr_basic_typing_formula
+              (typed_lty_env_bind ∅ (TBase ?b))
+              (tret (vbvar 0)) (TBase ?b)))))] =>
+      change (formula_open 0 y
+        (FFibVars D
+          (FUnder (FAnd (FAtom φ)
+            (expr_basic_typing_formula
+              (typed_lty_env_bind ∅ (TBase b))
+              (tret (vbvar 0)) (TBase b))))))
+        with (formula_open 0 y (FFibVars D (under_result_body b φ)))
+  | |- context [FUnder (FAnd (FAtom ?φ)
+        (expr_basic_typing_formula
+          (typed_lty_env_bind ∅ (TBase ?b))
+          (tret (vbvar 0)) (TBase ?b)))] =>
+      change (FUnder (FAnd (FAtom φ)
+        (expr_basic_typing_formula
+          (typed_lty_env_bind ∅ (TBase b))
+          (tret (vbvar 0)) (TBase b))))
+        with (under_result_body b φ)
+  | H : context [FUnder (FAnd (FAtom ?φ)
+        (expr_basic_typing_formula
+          (typed_lty_env_bind ∅ (TBase ?b))
+          (tret (vbvar 0)) (TBase ?b)))] |- _ =>
+      change (FUnder (FAnd (FAtom φ)
+        (expr_basic_typing_formula
+          (typed_lty_env_bind ∅ (TBase b))
+          (tret (vbvar 0)) (TBase b))))
+        with (under_result_body b φ) in H
+  | H : context [formula_open 0 ?y
+        (FFibVars ?D
+          (FUnder (FAnd (FAtom ?φ)
+            (expr_basic_typing_formula
+              (typed_lty_env_bind ∅ (TBase ?b))
+              (tret (vbvar 0)) (TBase ?b)))))] |- _ =>
+      change (formula_open 0 y
+        (FFibVars D
+          (FUnder (FAnd (FAtom φ)
+            (expr_basic_typing_formula
+              (typed_lty_env_bind ∅ (TBase b))
+              (tret (vbvar 0)) (TBase b))))))
+        with (formula_open 0 y (FFibVars D (under_result_body b φ))) in H
+  end.
+
+Ltac fold_result_basic_typing_formula_open :=
+  match goal with
+  | |- context [formula_open 0 ?y
+        (expr_basic_typing_formula
+          (typed_lty_env_bind ∅ (TBase ?b))
+          (tret (vbvar 0)) (TBase ?b))] =>
+      change (formula_open 0 y
+        (expr_basic_typing_formula
+          (typed_lty_env_bind ∅ (TBase b))
+          (tret (vbvar 0)) (TBase b)))
+        with (formula_open 0 y (result_basic_typing_formula b))
+  | H : context [formula_open 0 ?y
+        (expr_basic_typing_formula
+          (typed_lty_env_bind ∅ (TBase ?b))
+          (tret (vbvar 0)) (TBase ?b))] |- _ =>
+      change (formula_open 0 y
+        (expr_basic_typing_formula
+          (typed_lty_env_bind ∅ (TBase b))
+          (tret (vbvar 0)) (TBase b)))
+        with (formula_open 0 y (result_basic_typing_formula b)) in H
+  end.
+
 Definition concrete_primop_sig (op : prim_op) : primop_sig :=
   match op with
   | op_eq0 =>
@@ -627,7 +745,11 @@ Proof.
       y (dom (relevant_env Σ
         (CTOver b (expr_result_qual e (LVBound 0))) e)) e
       HlcD HyD Hlce Hye) in Hres.
-	    rewrite formula_open_over_result_body.
+	    fold_over_result_body_in_goal.
+	    try rewrite formula_open_fibvars.
+	    try rewrite formula_open_over_result_body.
+	    repeat fold_result_basic_typing_formula_open.
+	    try rewrite formula_open_result_basic_typing_formula.
 	    rewrite qual_open_expr_result_qual_bound0 by (exact Hlce || set_solver).
 	    replace (set_swap (LVBound 0) (LVFree y)
 	        (qual_vars (expr_result_qual e (LVBound 0)) ∖ {[LVBound 0]}))
@@ -650,8 +772,13 @@ Proof.
 	    }
 	    pose proof (over_open_body_to_typed b
 	      (expr_result_qual e (LVBound 0)) y my Hiny Hold) as Htyped.
-	    rewrite formula_open_over_result_body in Htyped.
+	    fold_over_result_body_in_goal.
+	    try rewrite formula_open_fibvars in Htyped.
+	    try rewrite formula_open_over_result_body in Htyped.
+	    repeat fold_result_basic_typing_formula_open.
+	    try rewrite formula_open_result_basic_typing_formula in Htyped.
 	    rewrite qual_open_expr_result_qual_bound0 in Htyped by (exact Hlce || set_solver).
+	    rewrite <- formula_open_result_basic_typing_formula in Htyped.
 	    exact Htyped.
 Qed.
 
@@ -714,7 +841,11 @@ Proof.
       y (dom (relevant_env Σ
         (CTUnder b (expr_result_qual e (LVBound 0))) e)) e
       HlcD HyD Hlce Hye) in Hres.
-	    rewrite formula_open_under_result_body.
+	    fold_under_result_body_in_goal.
+	    try rewrite formula_open_fibvars.
+	    try rewrite formula_open_under_result_body.
+	    repeat fold_result_basic_typing_formula_open.
+	    try rewrite formula_open_result_basic_typing_formula.
 	    rewrite qual_open_expr_result_qual_bound0 by (exact Hlce || set_solver).
 	    replace (set_swap (LVBound 0) (LVFree y)
 	        (qual_vars (expr_result_qual e (LVBound 0)) ∖ {[LVBound 0]}))
@@ -737,8 +868,13 @@ Proof.
 	    }
 	    pose proof (under_open_body_to_typed b
 	      (expr_result_qual e (LVBound 0)) y my Hiny Hold) as Htyped.
-	    rewrite formula_open_under_result_body in Htyped.
+	    fold_under_result_body_in_goal.
+	    try rewrite formula_open_fibvars in Htyped.
+	    try rewrite formula_open_under_result_body in Htyped.
+	    repeat fold_result_basic_typing_formula_open.
+	    try rewrite formula_open_result_basic_typing_formula in Htyped.
 	    rewrite qual_open_expr_result_qual_bound0 in Htyped by (exact Hlce || set_solver).
+	    rewrite <- formula_open_result_basic_typing_formula in Htyped.
 	    exact Htyped.
 Qed.
 
@@ -939,7 +1075,11 @@ Proof.
     rewrite (formula_open_result_first_expr_result_formula_at_shift0
       y (dom (relevant_env Σ (CTOver b topq) e)) e
       HlcD HyD Hlce Hye) in Hres.
-    rewrite formula_open_over_result_body.
+	    fold_over_result_body_in_goal.
+	    try rewrite formula_open_fibvars.
+	    try rewrite formula_open_over_result_body.
+	    repeat fold_result_basic_typing_formula_open.
+	    try rewrite formula_open_result_basic_typing_formula.
     replace (set_swap (LVBound 0) (LVFree y)
         (qual_vars topq ∖ {[LVBound 0]}))
       with (qual_vars (qual_open_atom 0 y topq) ∖ {[LVFree y]}).
@@ -948,8 +1088,8 @@ Proof.
       rewrite <- qual_open_atom_vars.
       reflexivity.
     }
-    rewrite <- formula_open_over_result_body.
-    exact (topq_over_typed_body y b my Hiny).
+	    pose proof (topq_over_typed_body y b my Hiny) as Htop.
+	    exact Htop.
 Qed.
 
 Lemma over_top_denotation_gas gas b Σ e (m : WfWorldT) :

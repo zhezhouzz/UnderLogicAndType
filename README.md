@@ -26,7 +26,7 @@ work and remains fully checked.
     wf_primop_ctx Φ ->
     forall Σ Γ e τ,
       Φ ⊢ᶜ [Σ; Γ] e ⋮ τ ->
-    ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ e.
+    ⟦ctx Γ⟧[Σ] ⊫ ty_denote_under Σ Γ τ e.
   ```
 
   The concrete wrapper is `concrete_Fundamental` in
@@ -42,7 +42,7 @@ work and remains fully checked.
     forall x,
       exists mres,
         closed_result_world_of e x mres /\
-        mres ⊨ ty_denote ({[x := erase_ty τ]}) τ (tret (vfvar x)).
+        mres ⊨ TyDenote[{[x := ⌊τ⌋]}; τ; ret (vfvar x)].
   ```
 
   The concrete wrapper is `concrete_denotational_soundness`.
@@ -151,6 +151,11 @@ ContextBase -> ContextStore -> ContextAlgebra -> ContextLogic
 - `CTOver` and `CTUnder` result bodies are typed: the qualifier atom is paired
   with the result slot's basic typing formula, so `CTUnder b qual_top` covers
   all and only values of base type `b`.
+- Reviewer-facing definitions use notation where possible: erased types and
+  contexts are written `⌊τ⌋` and `⌊Γ⌋`; context-type denotation in definitions
+  can be read as `TyDenote[Δ; τ; e]`; typing rules use
+  `Φ ⊢ᶜ [Σ; Γ] e ⋮ τ`, `wf[Σ; Γ] e ⋮ τ`, `sub[Σ; Γ](τ1, τ2)`, and
+  `ctxsub[Σ; X](Γ1, Γ2)`.
 - Keep helper statements semantic and short. If a premise contains only
   syntactic noise, normalize earlier or move the fact to the lower layer.
 - Prefer existing `better_*` solvers for set/store side conditions. For slow

@@ -256,10 +256,16 @@ Proof.
             intros Hy. unfold empty_lvset in Hy.
             rewrite lvars_fv_empty in Hy.
             rewrite elem_of_empty in Hy. contradiction.
-          }
-          2:{ constructor. constructor. }
-          2:{ cbn [fv_tm fv_value]. set_solver. }
-          rewrite formula_open_over_typed_body_normalize.
+	          }
+	          2:{ constructor. constructor. }
+	          2:{ cbn [fv_tm fv_value]. set_solver. }
+	          change (FOver (FAnd (FAtom (mk_q_eq (vbvar 0) (vconst c)))
+	            (expr_basic_typing_formula
+	              (typed_lty_env_bind ∅ (TBase (base_ty_of_const c)))
+	              (tret (vbvar 0)) (TBase (base_ty_of_const c)))))
+	            with (over_result_body (base_ty_of_const c)
+	              (mk_q_eq (vbvar 0) (vconst c))).
+	          rewrite formula_open_over_typed_body_normalize.
           2:{ apply const_qual_bound_no_free. }
           rewrite const_qual_open_eq.
 			      eapply res_models_impl_intro_scoped.
@@ -307,10 +313,16 @@ Proof.
             intros Hy. unfold empty_lvset in Hy.
             rewrite lvars_fv_empty in Hy.
             rewrite elem_of_empty in Hy. contradiction.
-          }
-          2:{ constructor. constructor. }
-          2:{ cbn [fv_tm fv_value]. set_solver. }
-          rewrite formula_open_under_typed_body_normalize.
+	          }
+	          2:{ constructor. constructor. }
+	          2:{ cbn [fv_tm fv_value]. set_solver. }
+	          change (FUnder (FAnd (FAtom (mk_q_eq (vbvar 0) (vconst c)))
+	            (expr_basic_typing_formula
+	              (typed_lty_env_bind ∅ (TBase (base_ty_of_const c)))
+	              (tret (vbvar 0)) (TBase (base_ty_of_const c)))))
+	            with (under_result_body (base_ty_of_const c)
+	              (mk_q_eq (vbvar 0) (vconst c))).
+	          rewrite formula_open_under_typed_body_normalize.
           2:{ apply const_qual_bound_no_free. }
           rewrite const_qual_open_eq.
 			      eapply res_models_impl_intro_scoped.

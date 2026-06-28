@@ -137,7 +137,7 @@ Proof.
       intros r Hr.
       rewrite formula_open_impl.
       apply fiberwise_joinable_on_impl.
-      * rewrite formula_open_expr_result_formula_at_shift0.
+	      * rewrite formula_open_expr_result_formula_at_shift0.
         2:{ apply lvars_shift_from_lc. apply relevant_env_closed. exact HΣclosed. }
         2:{ rewrite lvars_shift_from_fv. clear -Hr. set_solver. }
         2:{ exact Hlce. }
@@ -154,10 +154,15 @@ Proof.
              lvars_fv (dom (relevant_env Σ (CTOver b φ) e))).
            { apply lvars_fv_elem. exact HrD. }
            apply Hr. clear -HrDfv. set_solver.
-        -- exact Hproj.
-        -- exact Hres.
-      * rewrite formula_open_over_typed_body_normalize.
-        apply fiberwise_joinable_on_over_open_typed_body.
+	        -- exact Hproj.
+	        -- exact Hres.
+	      * change (FOver (FAnd (FAtom φ)
+	            (expr_basic_typing_formula
+	              (typed_lty_env_bind ∅ (TBase b))
+	              (tret (vbvar 0)) (TBase b))))
+	          with (over_result_body b φ).
+	        rewrite formula_open_over_typed_body_normalize.
+	        apply fiberwise_joinable_on_over_open_typed_body.
         clear -Hr. set_solver.
         intros Hrvars.
         assert (Hrφ : r ∈ qual_dom φ).
@@ -207,8 +212,13 @@ Proof.
            apply Hr. clear -HrDfv. set_solver.
         -- exact Hproj.
         -- exact Hres.
-      * rewrite formula_open_under_typed_body_normalize.
-        apply fiberwise_joinable_on_under_open_typed_body.
+	      * change (FUnder (FAnd (FAtom φ)
+	            (expr_basic_typing_formula
+	              (typed_lty_env_bind ∅ (TBase b))
+	              (tret (vbvar 0)) (TBase b))))
+	          with (under_result_body b φ).
+	        rewrite formula_open_under_typed_body_normalize.
+	        apply fiberwise_joinable_on_under_open_typed_body.
         clear -Hr. set_solver.
         intros Hrvars.
         assert (Hrφ : r ∈ qual_dom φ).

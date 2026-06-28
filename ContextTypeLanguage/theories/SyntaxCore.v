@@ -140,6 +140,9 @@ Notation "'FV' '(' D ')'" := (lvars_fv D)
   (at level 10, only printing,
    format "FV ( D )") : lvar_scope.
 
+Notation "'⇑ₗ' D" := (lvars_shift_from 0 D)
+  (at level 20, format "⇑ₗ  D") : lvar_scope.
+
 Fixpoint cty_depth (τ : context_ty) : nat :=
   match τ with
   | CTOver _ _ | CTUnder _ _ => 1
@@ -227,10 +230,10 @@ Fixpoint cty_shift (k : nat) (τ : context_ty) : context_ty :=
 Arguments shift_cty_inst /.
 
 Notation "'↑{' k '}' τ" := (cty_shift k τ)
-  (at level 20, k constr, only printing,
+  (at level 20, k constr,
    format "↑{ k }  τ") : cty_scope.
 Notation "τ '↑'" := (cty_shift 0 τ)
-  (at level 20, only printing,
+  (at level 20,
    format "τ  ↑") : cty_scope.
 
 Fixpoint context_ty_msubst_store
@@ -284,11 +287,11 @@ Arguments erase_cty_inst /.
 Arguments erase_ctx_inst /.
 
 Notation "'⌊' τ '⌋'" := (erase_ty τ)
-  (at level 20, only printing,
+  (at level 20,
    format "⌊ τ ⌋") : cty_scope.
 
 Notation "'⌊' Γ '⌋'" := (erase_ctx Γ)
-  (at level 20, only printing,
+  (at level 20,
    format "⌊ Γ ⌋") : ctx_scope.
 
 

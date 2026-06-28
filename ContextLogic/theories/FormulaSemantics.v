@@ -886,6 +886,9 @@ Qed.
 Definition res_models (m : WfWorldT) (φ : FormulaT) : Prop :=
   res_models_fuel (formula_measure φ) m φ.
 
+Notation "m '⊨[' gas ']' φ" := (res_models_fuel gas m φ)
+  (at level 70, gas at level 9, format "m  ⊨[ gas ]  φ").
+
 Lemma res_models_true (m : WfWorldT) :
   res_models m FTrue.
 Proof.

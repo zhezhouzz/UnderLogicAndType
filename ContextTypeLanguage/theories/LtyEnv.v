@@ -44,6 +44,10 @@ Notation lty_env_swap :=
 Notation typed_lty_env_bind :=
   (@lvar_store_bind ty) (only parsing).
 
+Notation "Σ '▷' T" := (typed_lty_env_bind Σ T)
+  (at level 30, right associativity,
+   format "Σ  ▷  T") : lvar_scope.
+
 Notation "'↑ₗ' Σ" := (atom_env_to_lty_env Σ)
   (at level 20, format "↑ₗ Σ").
 
