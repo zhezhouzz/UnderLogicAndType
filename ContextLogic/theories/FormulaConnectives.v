@@ -1110,87 +1110,6 @@ Proof.
       rewrite Hσdom in Ha. set_solver.
 Qed.
 
-Local Lemma store_restrict_fixed_union_piece
-    (Y X : aset) (σall σfix : Store (V := V)) :
-  dom (σall : Store (V := V)) ⊆ Y ->
-  X ⊆ Y ->
-  store_restrict σall X = σfix ->
-  σall =
-    store_restrict σfix Y ∪ store_restrict σall (Y ∖ X).
-Proof.
-  intros Hall HY Hfix.
-  apply storeA_map_eq. intros a.
-  destruct (decide (a ∈ X)) as [HaX|HaX].
-  - assert (HaY : a ∈ Y) by set_solver.
-    assert (Hfix_lookup :
-        (store_restrict σall X : Store (V := V)) !! a =
-        σfix !! a) by (rewrite Hfix; reflexivity).
-    destruct (σall !! a) as [va|] eqn:Ha.
-    + assert (Hσfixa : σfix !! a = Some va).
-      {
-        assert (Hr : (store_restrict σall X : Store (V := V)) !! a = Some va).
-	        { apply (storeA_restrict_lookup_some_2 _ _ _ _ Ha HaX). }
-        rewrite Hr in Hfix_lookup. symmetry. exact Hfix_lookup.
-      }
-      transitivity (Some va); [exact Ha|].
-      symmetry. apply map_lookup_union_Some_raw. left.
-	      apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσfixa HaY).
-    + assert (Hσfixa : σfix !! a = None).
-      {
-        assert (Hr : (store_restrict σall X : Store (V := V)) !! a = None).
-        { apply storeA_restrict_lookup_none_l. exact Ha. }
-        rewrite Hr in Hfix_lookup. symmetry. exact Hfix_lookup.
-      }
-      transitivity (@None V); [exact Ha|].
-      symmetry. apply map_lookup_union_None. split.
-      * apply storeA_restrict_lookup_none_l. exact Hσfixa.
-      * apply storeA_restrict_lookup_none_l. exact Ha.
-  - destruct (decide (a ∈ Y)) as [HaY|HaY].
-    + destruct (σall !! a) as [va|] eqn:Ha.
-      * transitivity (Some va); [exact Ha|].
-        symmetry. apply map_lookup_union_Some_raw. right. split.
-        -- apply storeA_restrict_lookup_none_l.
-           apply not_elem_of_dom_1. intros Hσfix_dom.
-           apply elem_of_dom in Hσfix_dom as [u Hσfixa].
-           assert (Hr :
-             (store_restrict σall X : Store (V := V)) !! a = Some u).
-           { rewrite Hfix. exact Hσfixa. }
-           apply storeA_restrict_lookup_some in Hr as [HaX' _].
-           contradiction.
-	        -- apply (storeA_restrict_lookup_some_2 _ _ _ _ Ha). better_set_solver.
-      * transitivity (@None V); [exact Ha|].
-        symmetry. apply map_lookup_union_None. split.
-        -- apply storeA_restrict_lookup_none_l.
-           apply not_elem_of_dom_1. intros Hσfix_dom.
-           apply elem_of_dom in Hσfix_dom as [u Hσfixa].
-           assert (Hr :
-             (store_restrict σall X : Store (V := V)) !! a = Some u).
-           { rewrite Hfix. exact Hσfixa. }
-           apply storeA_restrict_lookup_some in Hr as [HaX' _].
-           contradiction.
-        -- apply storeA_restrict_lookup_none_l. exact Ha.
-    + assert (Ha_none : σall !! a = None).
-      {
-        change ((σall : gmap atom V) !! a = None).
-        apply not_elem_of_dom_1.
-        change (a ∉ dom (σall : gmap atom V)).
-        intros Hadom. apply HaY. apply Hall. exact Hadom.
-      }
-      transitivity (@None V); [exact Ha_none|].
-      symmetry. apply map_lookup_union_None. split.
-      * apply storeA_restrict_lookup_none_l.
-        apply not_elem_of_dom_1.
-        change (a ∉ dom (σfix : gmap atom V)).
-        intros Hσfix_dom.
-        apply elem_of_dom in Hσfix_dom as [u Hσfixa].
-        assert (Hr :
-          (store_restrict σall X : Store (V := V)) !! a = Some u).
-        { rewrite Hfix. exact Hσfixa. }
-        apply storeA_restrict_lookup_some in Hr as [HaX' _].
-        contradiction.
-      * apply storeA_restrict_lookup_none_l. exact Ha_none.
-Qed.
-
 Local Lemma store_restrict_fixed_union_piece_lvars
     (D : lvset) (X : aset) (σall σfix : Store (V := V)) :
   dom (σall : Store (V := V)) ⊆ lvars_fv D ->
@@ -1209,7 +1128,7 @@ Proof.
   }
   rewrite <- (storeA_restrict_idemp σfix (lvars_fv D) HσfixD) at 1.
   symmetry.
-  eapply store_restrict_fixed_union_piece; eauto.
+  eapply storeA_restrict_fixed_union_piece; eauto.
 Qed.
 
 Lemma res_models_fibvars_msubst_store_fixed

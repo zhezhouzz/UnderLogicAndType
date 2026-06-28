@@ -64,6 +64,78 @@ Proof.
   destruct (decide (z ∈ X)); exact Hlook || reflexivity.
 Qed.
 
+Lemma storeA_restrict_fixed_union_piece {K : Type} `{Countable K}
+    (Y X : gset K) (sall sfix : gmap K V) :
+  dom (sall : gmap K V) ⊆ Y ->
+  X ⊆ Y ->
+  storeA_restrict sall X = sfix ->
+  sall = storeA_restrict sfix Y ∪ storeA_restrict sall (Y ∖ X).
+Proof.
+  intros Hall HY Hfix.
+  apply storeA_map_eq. intros a.
+  destruct (decide (a ∈ X)) as [HaX|HaX].
+  - assert (HaY : a ∈ Y) by set_solver.
+    assert (Hfix_lookup :
+        (storeA_restrict sall X : gmap K V) !! a =
+        sfix !! a) by (rewrite Hfix; reflexivity).
+    destruct (sall !! a) as [va|] eqn:Ha.
+    + assert (Hσfixa : sfix !! a = Some va).
+      {
+        assert (Hr : (storeA_restrict sall X : gmap K V) !! a = Some va).
+        { apply (storeA_restrict_lookup_some_2 _ _ _ _ Ha HaX). }
+        rewrite Hr in Hfix_lookup. symmetry. exact Hfix_lookup.
+      }
+      symmetry. apply map_lookup_union_Some_raw. left.
+      apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσfixa HaY).
+    + assert (Hσfixa : sfix !! a = None).
+      {
+        assert (Hr : (storeA_restrict sall X : gmap K V) !! a = None).
+        { apply storeA_restrict_lookup_none_l. exact Ha. }
+        rewrite Hr in Hfix_lookup. symmetry. exact Hfix_lookup.
+      }
+      symmetry. apply map_lookup_union_None. split.
+      * apply storeA_restrict_lookup_none_l. exact Hσfixa.
+      * apply storeA_restrict_lookup_none_l. exact Ha.
+  - destruct (decide (a ∈ Y)) as [HaY|HaY].
+    + destruct (sall !! a) as [va|] eqn:Ha.
+      * symmetry. apply map_lookup_union_Some_raw. right. split.
+        -- apply storeA_restrict_lookup_none_l.
+           apply not_elem_of_dom_1. intros Hσfix_dom.
+           apply elem_of_dom in Hσfix_dom as [u Hσfixa].
+           assert (Hr :
+             (storeA_restrict sall X : gmap K V) !! a = Some u).
+           { rewrite Hfix. exact Hσfixa. }
+           apply storeA_restrict_lookup_some in Hr as [HaX' _].
+           contradiction.
+        -- apply (storeA_restrict_lookup_some_2 _ _ _ _ Ha). set_solver.
+      * symmetry. apply map_lookup_union_None. split.
+        -- apply storeA_restrict_lookup_none_l.
+           apply not_elem_of_dom_1. intros Hσfix_dom.
+           apply elem_of_dom in Hσfix_dom as [u Hσfixa].
+           assert (Hr :
+             (storeA_restrict sall X : gmap K V) !! a = Some u).
+           { rewrite Hfix. exact Hσfixa. }
+           apply storeA_restrict_lookup_some in Hr as [HaX' _].
+           contradiction.
+        -- apply storeA_restrict_lookup_none_l. exact Ha.
+    + assert (Ha_none : sall !! a = None).
+      {
+        apply not_elem_of_dom_1.
+        intros Hadom. apply HaY. apply Hall. exact Hadom.
+      }
+      rewrite Ha_none. symmetry. apply map_lookup_union_None. split.
+      * apply storeA_restrict_lookup_none_l.
+        apply not_elem_of_dom_1.
+        intros Hσfix_dom.
+        apply elem_of_dom in Hσfix_dom as [u Hσfixa].
+        assert (Hr :
+          (storeA_restrict sall X : gmap K V) !! a = Some u).
+        { rewrite Hfix. exact Hσfixa. }
+        apply storeA_restrict_lookup_some in Hr as [HaX' _].
+        contradiction.
+      * apply storeA_restrict_lookup_none_l. exact Ha_none.
+Qed.
+
 Lemma storeA_restrict_lookup_none_r {K : Type} `{Countable K}
     (s : gmap K V) (X : gset K) (z : K) :
   z ∉ X →
