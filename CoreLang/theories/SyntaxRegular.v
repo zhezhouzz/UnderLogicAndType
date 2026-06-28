@@ -81,5 +81,11 @@ Proof.
   better_base_solver.
 Qed.
 
-(** ** Single-variable substitution *)
+Lemma vfix_fresh_notin Tf vf z :
+  z ∉ fv_value vf ->
+  z ∉ fv_value (vfix Tf vf).
+Proof.
+  intros Hfresh. cbn [fv_value]. exact Hfresh.
+Qed.
 
+(** ** Single-variable substitution *)

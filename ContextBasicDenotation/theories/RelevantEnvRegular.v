@@ -210,6 +210,20 @@ Proof.
   set_solver.
 Qed.
 
+Lemma relevant_lvars_tapp_values_fresh τ body self z :
+  z ∉ fv_cty τ ->
+  z ∉ fv_value body ->
+  z ∉ fv_value self ->
+  LVFree z ∉ relevant_lvars τ (tapp_tm (tret body) self).
+Proof.
+  intros Hzτ Hzbody Hzself Hbad.
+  apply lvars_fv_elem in Hbad.
+  rewrite relevant_lvars_fv in Hbad.
+  rewrite fv_tapp_tm in Hbad.
+  cbn [fv_tm fv_value] in Hbad.
+  clear -Hzτ Hzbody Hzself Hbad. set_solver.
+Qed.
+
 Lemma lvars_of_atoms_empty :
   lvars_of_atoms (∅ : aset) = (∅ : lvset).
 Proof.

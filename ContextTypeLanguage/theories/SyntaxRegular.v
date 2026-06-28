@@ -636,6 +636,17 @@ Proof.
   better_set_solver.
 Qed.
 
+Lemma fv_cty_fix_rec_call_ty_fresh_union b x τx τ z :
+  z ∉ fv_cty τx ∪ fv_cty τ ∪ {[x]} ->
+  z ∉ fv_cty (fix_rec_call_ty b x τx τ).
+Proof.
+  intros Hfresh.
+  apply fv_cty_fix_rec_call_ty_fresh.
+  - clear -Hfresh. set_solver.
+  - clear -Hfresh. set_solver.
+  - clear -Hfresh. set_solver.
+Qed.
+
 Lemma fv_cty_over_lt_bound_fvar b x :
   fv_cty (over_ty b (mk_q_lt_base b (vbvar 0) (vfvar x))) = {[x]}.
 Proof.
