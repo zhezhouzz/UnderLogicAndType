@@ -20,7 +20,7 @@ From Denotation Require Import Context
   TypeEquiv
   TypePersistArrow
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLam
+From ContextTyping Require Import Typing TypingRegular SoundnessLam
   SoundnessLam
   SoundnessFixBase SoundnessFixApply
   SoundnessFixSelf.

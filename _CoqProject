@@ -108,6 +108,7 @@ Denotation/theories/ConstDenote.v
 ContextTyping/theories/PrimOpContext.v
 ContextTyping/theories/PrimOpConcreteContext.v
 ContextTyping/theories/Typing.v
+ContextTyping/theories/TypingRegular.v
 ContextTyping/theories/SoundnessLam.v
 ContextTyping/theories/SoundnessApp.v
 ContextTyping/theories/SoundnessMatch.v

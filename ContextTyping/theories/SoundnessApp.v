@@ -24,7 +24,7 @@ From Denotation Require Import Context
   TypePersistArrow
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLam.
+From ContextTyping Require Import Typing TypingRegular SoundnessLam.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 

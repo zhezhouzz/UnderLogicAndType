@@ -10,7 +10,7 @@ From Denotation Require Import Context DenotationSetMapFacts TypeEquiv
   TypeEquivCore TypeEquivTermBase TypeEquivTermResult TypeEquivFiberBaseCore
   TypePersistBase TypePersistArrow TypePersistSingleton
   TypePersistWandForward TypePersistWandReverse.
-From ContextTyping Require Import Typing.
+From ContextTyping Require Import Typing TypingRegular.
 
 Local Notation StoreT := (gmap atom value) (only parsing).
 Local Notation WorldT := (World (V := value)) (only parsing).

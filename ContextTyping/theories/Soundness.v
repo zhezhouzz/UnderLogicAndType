@@ -24,7 +24,7 @@ From Denotation Require Import Context
   TypePersistArrow
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import PrimOpContext PrimOpConcreteContext Typing
+From ContextTyping Require Import PrimOpContext PrimOpConcreteContext Typing TypingRegular
   SoundnessLam
   SoundnessApp SoundnessMatch SoundnessFix SoundnessPersist.
 
