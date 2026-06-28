@@ -77,6 +77,8 @@ ContextBasicDenotation/theories/Qualifier.v
 ContextBasicDenotation/theories/BasicTypingFormula.v
 ContextBasicDenotation/theories/BasicFormulaFiberwise.v
 ContextBasicDenotation/theories/BasicTypingOpen.v
+ContextBasicDenotation/theories/RelevantEnvCore.v
+ContextBasicDenotation/theories/RelevantEnvRegular.v
 ContextBasicDenotation/theories/RelevantEnv.v
 
 Denotation/theories/Notation.v

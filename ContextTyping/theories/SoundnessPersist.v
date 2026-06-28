@@ -218,7 +218,7 @@ Lemma insert_relevant_env_ret_value_restrict_eq Σ τ v y :
     (<[LVFree y := erase_ty τ]> Σ)
     (relevant_lvars τ (tret (vfvar y))).
 Proof.
-  apply RelevantEnv.insert_relevant_env_ret_value_restrict_eq.
+  apply RelevantEnvRegular.insert_relevant_env_ret_value_restrict_eq.
 Qed.
 
 Lemma res_restrict_singleton_push_ret_value_result
