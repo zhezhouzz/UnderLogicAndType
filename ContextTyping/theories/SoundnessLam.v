@@ -11,7 +11,7 @@ From ContextAlgebra Require Import ResourceInterface ResourceExtension.
 From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import Context
-  TypeDenote
+  TypeDenote TypeDenoteRegular
   TypeEquivCore
   DenotationSetMapFacts
   TypeEquivTermBase TypeEquivTermResult

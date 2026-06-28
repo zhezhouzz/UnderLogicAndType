@@ -3,8 +3,9 @@
     Denotation of type contexts, expressed directly with the new recursive
     context-type denotation. *)
 
-From Denotation Require Export Notation TypeDenote TypePersistBase TypePersistArrow
-  TypePersistSingleton TypePersistWandForward TypePersistWandReverse.
+From Denotation Require Export Notation TypeDenote TypeDenoteRegular
+  TypePersistBase TypePersistArrow TypePersistSingleton TypePersistWandForward
+  TypePersistWandReverse.
 From Denotation Require Import TypeEquivCore TypeEquiv TypeEquivFiberBaseCore.
 From ContextBasicDenotation Require Import TermExtension.
 

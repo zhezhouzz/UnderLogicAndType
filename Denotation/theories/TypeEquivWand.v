@@ -2,7 +2,7 @@
 
     Wand case for term-result-equivalence transport. *)
 
-From Denotation Require Import Notation TypeDenote ResultFirstOpen.
+From Denotation Require Import Notation TypeDenote ResultFirstOpen TypeDenoteRegular.
 From Denotation Require Import
   TypeEquivCore
   TypeEquivTermBase

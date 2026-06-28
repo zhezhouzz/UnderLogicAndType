@@ -9,7 +9,7 @@
     shapes.  Those old helper proofs are no longer on the compile path; use
     git history for the detailed script when reproving this theorem. *)
 
-From Denotation Require Import Notation TypeDenote.
+From Denotation Require Import Notation TypeDenote TypeDenoteRegular.
 From Denotation Require Import TypeEquivCore TypeEquivTermBase TypeEquivTermResult DenotationSetMapFacts.
 From ContextBasicDenotation Require Import StoreTyping TermEval.
 From CoreLang Require Import StrongNormalization InstantiationProps.

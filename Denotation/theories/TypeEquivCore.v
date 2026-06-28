@@ -2,7 +2,7 @@
 
     Core support for result-equivalence and result-extension transport. *)
 
-From Denotation Require Import Notation TypeDenote.
+From Denotation Require Import Notation TypeDenote TypeDenoteRegular.
 From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.

@@ -2,7 +2,7 @@
 
     Semantic support lemmas for the type-level persistency modality. *)
 
-From Denotation Require Import Notation TypeDenote ResultFirstOpen
+From Denotation Require Import Notation TypeDenote TypeDenoteRegular ResultFirstOpen
   DenotationSetMapFacts TypeEquivCore TypeEquivFiberBaseCore TypeEquivFiberBaseProjected TypeEquivBody TypeEquiv.
 From ContextAlgebra Require Import ResourceAlgebra.
 

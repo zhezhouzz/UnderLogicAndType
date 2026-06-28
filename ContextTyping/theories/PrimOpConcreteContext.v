@@ -10,7 +10,7 @@ From CoreLang Require Import BasicTyping BasicTypingProps SmallStep StrongNormal
 From ContextBase Require Import BaseTactics.
 From ContextLogic Require Import FormulaSemantics.
 From ContextTypeLanguage Require Import WF.
-From Denotation Require Import Context ConstDenote TypeDenote TypeEquivCore
+From Denotation Require Import Context ConstDenote TypeDenote TypeDenoteRegular TypeEquivCore
   TypeEquivFiberBaseCore TypeEquiv DenotationSetMapFacts TypePersistBase.
 From ContextTyping Require Import PrimOpContext.
 

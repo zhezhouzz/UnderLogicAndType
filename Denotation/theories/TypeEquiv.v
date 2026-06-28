@@ -2,7 +2,7 @@
 
     Main term-result-equivalence transport theorem. *)
 
-From Denotation Require Import Notation TypeDenote.
+From Denotation Require Import Notation TypeDenote TypeDenoteRegular.
 From Denotation Require Import
   TypeEquivCore
   TypeEquivTermBase TypeEquivTermResult

@@ -2,7 +2,7 @@
 
     Singleton and result-slot support for type-level persistency. *)
 
-From Denotation Require Import Notation TypeDenote ResultFirstOpen
+From Denotation Require Import Notation TypeDenote TypeDenoteRegular ResultFirstOpen
   DenotationSetMapFacts TypeEquivCore TypeEquivFiberBaseCore TypeEquivFiberBaseProjected TypeEquivBody TypeEquiv
   TypePersistBase.
 From ContextAlgebra Require Import ResourceAlgebra.

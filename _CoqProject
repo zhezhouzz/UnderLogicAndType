@@ -81,6 +81,7 @@ ContextBasicDenotation/theories/RelevantEnv.v
 
 Denotation/theories/Notation.v
 Denotation/theories/TypeDenote.v
+Denotation/theories/TypeDenoteRegular.v
 Denotation/theories/TypeEquivCore.v
 Denotation/theories/DenotationSetMapFacts.v
 Denotation/theories/ResultFirstOpen.v

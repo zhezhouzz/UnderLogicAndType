@@ -2,7 +2,7 @@
 
     Result-graph, result-alias, and result-extension support for term transport. *)
 
-From Denotation Require Import Notation TypeDenote TypeEquivCore DenotationSetMapFacts TypeEquivTermBase.
+From Denotation Require Import Notation TypeDenote TypeEquivCore DenotationSetMapFacts TypeEquivTermBase TypeDenoteRegular.
 From ContextBasicDenotation Require Import TermSyntax.
 From CoreLang Require Import StrongNormalization.
 

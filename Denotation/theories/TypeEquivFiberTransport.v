@@ -4,7 +4,7 @@
     [TypeEquivTermBase TypeEquivTermResult].  Kept separate so the core term/fiber definitions stay
     small and lower-level. *)
 
-From Denotation Require Import Notation TypeDenote TypeEquivCore TypeEquivTermBase TypeEquivTermResult
+From Denotation Require Import Notation TypeDenote TypeDenoteRegular TypeEquivCore TypeEquivTermBase TypeEquivTermResult
   DenotationSetMapFacts.
 From CoreLang Require Import StrongNormalization.
 

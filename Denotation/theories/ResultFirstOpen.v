@@ -2,7 +2,7 @@
 
     Shared opening and scope facts for result-first Arrow/Wand denotations. *)
 
-From Denotation Require Import Notation TypeDenote TypeEquivCore.
+From Denotation Require Import Notation TypeDenote TypeEquivCore TypeDenoteRegular.
 
 Section TypeDenote.
 

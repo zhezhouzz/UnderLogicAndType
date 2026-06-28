@@ -2,7 +2,7 @@
 
     Term, totality, and fiber-result equivalence support for type denotation transport. *)
 
-From Denotation Require Import Notation TypeDenote TypeEquivCore
+From Denotation Require Import Notation TypeDenote TypeDenoteRegular TypeEquivCore
   DenotationSetMapFacts.
 From CoreLang Require Import StrongNormalization.
 
