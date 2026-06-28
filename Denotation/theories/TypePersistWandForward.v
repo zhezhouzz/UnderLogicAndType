@@ -5,7 +5,7 @@
 From Denotation Require Import Notation TypeDenote TypeDenoteRegular ResultFirstOpen
   DenotationSetMapFacts TypeEquivCore TypeEquivFiberBaseCore TypeEquivFiberBaseProjected TypeEquivBody TypeEquiv
   TypePersistBase TypePersistArrow TypePersistSingleton.
-From ContextAlgebra Require Import ResourceAlgebra.
+From ContextAlgebra Require Import ResourceAlgebra ResourceInterfaceFacts.
 
 Section TypePersist.
 
@@ -17,47 +17,6 @@ Local Ltac persist_outer_fresh_from H :=
 
 Local Ltac persist_lvar_fresh_from H :=
   intros Hbad; apply lvars_fv_elem in Hbad; clear -H Hbad; set_solver.
-
-Local Lemma over_y_fiber_store_dom
-    bx φx y σy (n nfib : WfWorldT) :
-  basic_context_ty ∅ (CTOver bx φx) ->
-  y ∈ world_dom (n : WorldT) ->
-  res_fiber_from_projection n {[y]} σy nfib ->
-  dom (σy : StoreT) = fv_cty (CTOver bx φx) ∪ {[y]}.
-Proof.
-  intros Hbasic_over Hy_world Hproj.
-  pose proof (basic_over_empty_fv bx φx Hbasic_over) as Hfv_empty.
-  destruct Hproj as [Hσproj _].
-  pose proof (wfworld_store_dom (res_restrict n {[y]}) σy Hσproj)
-    as Hdom.
-  change (dom (σy : StoreT) =
-    world_dom (res_restrict n {[y]} : WorldT)) in Hdom.
-  rewrite res_restrict_dom in Hdom.
-  rewrite Hdom, Hfv_empty.
-  set_solver.
-Qed.
-
-Local Lemma over_y_fiber_restrict_singleton
-    bx φx y σy (n nfib : WfWorldT) :
-  basic_context_ty ∅ (CTOver bx φx) ->
-  y ∈ world_dom (n : WorldT) ->
-  res_fiber_from_projection n {[y]} σy nfib ->
-  res_restrict nfib (fv_cty (CTOver bx φx) ∪ {[y]}) =
-    (exist _ (singleton_world σy) (wf_singleton_world σy) : WfWorldT).
-Proof.
-  intros Hbasic_over Hy_world Hproj.
-  pose proof (basic_over_empty_fv bx φx Hbasic_over) as Hfv_empty.
-  pose proof (over_y_fiber_store_dom
-    bx φx y σy n nfib Hbasic_over Hy_world Hproj) as Hdomσ.
-  assert (Hdomσy : dom (σy : StoreT) = {[y]}).
-  { rewrite Hdomσ, Hfv_empty. set_solver. }
-  rewrite Hfv_empty.
-  replace (∅ ∪ {[y]} : aset) with ({[y]} : aset)
-    by (symmetry; apply empty_union_singleton_l).
-  apply (res_fiber_from_projection_restrict_singleton n nfib {[y]} σy).
-  - exact Hdomσy.
-  - exact Hproj.
-Qed.
 
 Lemma ty_denote_gas_over_ret_fvar_fiber_stable
     gas (Σ : lty_env) b φ y X σ
@@ -98,7 +57,7 @@ Lemma wand_arg_fiber_models_persist_over_arg
     (CTPersist (CTOver bx φx)) (tret (vfvar y)).
 Proof.
   intros Hbasic_over HΣclosed HyΣ Hyφ Hproj Harg_over.
-  pose proof (basic_over_empty_fv bx φx Hbasic_over) as Hfv_empty.
+  pose proof (basic_over_empty_fv bx φx Hbasic_over) as Hfv_over_empty.
   assert (HΣy_closed : lty_env_closed (<[LVFree y := TBase bx]> Σ)).
   { apply lty_env_closed_insert_free. exact HΣclosed. }
   assert (Hy_world : y ∈ world_dom (n : WorldT)).
@@ -125,10 +84,21 @@ Proof.
     - apply elem_of_dom. exists (TBase bx). rewrite lookup_insert_eq. reflexivity.
     - apply elem_of_union_r. apply elem_of_singleton. reflexivity.
   }
-  pose proof (over_y_fiber_store_dom
-    bx φx y σy n nfib Hbasic_over Hy_world Hproj) as Hdomσ.
-  pose proof (over_y_fiber_restrict_singleton
-    bx φx y σy n nfib Hbasic_over Hy_world Hproj) as Hsingle.
+  pose proof (basic_over_empty_fv bx φx Hbasic_over) as Hfv_empty.
+  pose proof (y_fiber_store_dom y σy n nfib Hy_world Hproj)
+    as Hdom_y.
+  change (dom (σy : StoreT) = {[y]}) in Hdom_y.
+  assert (Hdomσ : dom (σy : StoreT) = fv_cty (CTOver bx φx) ∪ {[y]}).
+  { rewrite Hdom_y, Hfv_over_empty. set_solver. }
+  assert (Hsingle :
+      res_restrict nfib (fv_cty (CTOver bx φx) ∪ {[y]}) =
+        (exist _ (singleton_world σy) (wf_singleton_world σy) : WfWorldT)).
+  {
+    rewrite Hfv_over_empty.
+    replace (∅ ∪ {[y]} : aset) with ({[y]} : aset)
+      by (symmetry; apply empty_union_singleton_l).
+    apply (y_fiber_restrict_singleton y σy n nfib); assumption.
+  }
   assert (Harg_over_fib :
       nfib ⊨ ty_denote_gas gas
         (<[LVFree y := TBase bx]> Σ)

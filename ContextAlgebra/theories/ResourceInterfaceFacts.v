@@ -1630,6 +1630,35 @@ Proof.
       * exact Hτ0X.
 Qed.
 
+Lemma y_fiber_store_dom
+    y σy (m mfib : WfWorld) :
+  y ∈ world_dom (m : World) ->
+  res_fiber_from_projection m {[y]} σy mfib ->
+  dom (σy : StoreT) = {[y]}.
+Proof.
+  intros Hy_world Hproj.
+  destruct Hproj as [Hσproj _].
+  pose proof (wfworld_store_dom (res_restrict m {[y]}) σy Hσproj)
+    as Hdom.
+  change (dom (σy : StoreT) =
+    world_dom (res_restrict m {[y]} : World)) in Hdom.
+  rewrite res_restrict_dom in Hdom.
+  rewrite Hdom. set_solver.
+Qed.
+
+Lemma y_fiber_restrict_singleton
+    y σy (m mfib : WfWorld) :
+  y ∈ world_dom (m : World) ->
+  res_fiber_from_projection m {[y]} σy mfib ->
+  res_restrict mfib {[y]} =
+    (exist _ (singleton_world σy) (wf_singleton_world σy) : WfWorld).
+Proof.
+  intros Hy_world Hproj.
+  apply (res_fiber_from_projection_restrict_singleton m mfib {[y]} σy).
+  - apply y_fiber_store_dom with (m := m) (mfib := mfib); assumption.
+  - exact Hproj.
+Qed.
+
 Lemma store_singleton_dom_value y (v : V) :
   dom ({[y := v]} : StoreT) = {[y]}.
 Proof.
