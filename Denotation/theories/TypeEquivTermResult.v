@@ -1426,19 +1426,6 @@ End TypeDenote.
 
 Section TypeDenote.
 
-Local Lemma tlet_fresh_for_parts
-    (σ : StoreT) e1 e2 X x z :
-  z ∉ dom (σ : StoreT) ∪ fv_tm e1 ∪ fv_tm e2 ∪ X ∪ {[x]} ->
-  z ∉ dom (σ : StoreT) /\
-  z ∉ fv_tm e1 /\
-  z ∉ fv_tm e2 /\
-  z ∉ X /\
-  z <> x.
-Proof.
-  intros Hz.
-  repeat split; set_solver.
-Qed.
-
 Lemma tm_total_equiv_res_store_subset
     (m0 m : WfWorldT) e1 e2 :
   res_subset m0 m ->
@@ -1494,8 +1481,10 @@ Proof.
     assert (Hzfresh :
         z ∉ dom (σ : StoreT) ∪ fv_tm e1 ∪ fv_tm e2 ∪ X ∪ {[x]})
       by (subst z; apply fresh_for_not_in).
-    destruct (tlet_fresh_for_parts σ e1 e2 X x z Hzfresh)
-      as [Hzσ [Hze1 [Hze2 [_ Hz_ne_x]]]].
+    assert (Hzσ : z ∉ dom (σ : StoreT)) by set_solver.
+    assert (Hze1 : z ∉ fv_tm e1) by set_solver.
+    assert (Hze2 : z ∉ fv_tm e2) by set_solver.
+    assert (Hz_ne_x : z <> x) by set_solver.
     assert (Hscope_x :
         tm_lvars (e2 ^^ x) ⊆ lvars_of_atoms (dom (σ : StoreT))).
     {
@@ -1569,8 +1558,9 @@ Proof.
     assert (Hzfresh :
         z ∉ dom (σ : StoreT) ∪ fv_tm e1 ∪ fv_tm e2 ∪ X ∪ {[x]})
       by (subst z; apply fresh_for_not_in).
-    destruct (tlet_fresh_for_parts σ e1 e2 X x z Hzfresh)
-      as [_ [Hze1 [Hze2 [_ Hz_ne_x]]]].
+    assert (Hze1 : z ∉ fv_tm e1) by set_solver.
+    assert (Hze2 : z ∉ fv_tm e2) by set_solver.
+    assert (Hz_ne_x : z <> x) by set_solver.
     assert (Hztlet : z ∉ fv_tm (tlete e1 e2)).
     { apply notin_fv_tm_tlete; assumption. }
     destruct (tm_eval_in_store_tlete_elim_closed_on e1 e2 z σ v
