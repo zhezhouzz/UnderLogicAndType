@@ -49,11 +49,13 @@ Proof.
   pose proof (basic_over_empty_fv bx φx Hbasic_over) as Hfv_empty.
   pose proof (over_y_fiber_store_dom
     bx φx y σy n nfib Hbasic_over Hy_world Hproj) as Hdomσ.
+  assert (Hdomσy : dom (σy : StoreT) = {[y]}).
+  { rewrite Hdomσ, Hfv_empty. set_solver. }
   rewrite Hfv_empty.
   replace (∅ ∪ {[y]} : aset) with ({[y]} : aset)
     by (symmetry; apply empty_union_singleton_l).
-  eapply res_fiber_from_projection_restrict_singleton.
-  - rewrite Hdomσ, Hfv_empty. set_solver.
+  apply (res_fiber_from_projection_restrict_singleton n nfib {[y]} σy).
+  - exact Hdomσy.
   - exact Hproj.
 Qed.
 

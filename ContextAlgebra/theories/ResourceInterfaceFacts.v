@@ -1571,6 +1571,81 @@ Proof.
   exact Hrestrict.
 Qed.
 
+Lemma res_restrict_singleton_exact_dom_subset
+    (m : WfWorld) X σ :
+  dom (σ : StoreT) = X ->
+  res_restrict m X =
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorld) ->
+  X ⊆ world_dom (m : World).
+Proof.
+  intros Hdomσ Hsingle a Ha.
+  assert (Hdom_eq :
+      world_dom (res_restrict m X : World) = dom (σ : StoreT)).
+  { rewrite Hsingle. reflexivity. }
+  rewrite res_restrict_dom, Hdomσ in Hdom_eq.
+  set_solver.
+Qed.
+
+Lemma res_fiber_from_projection_restrict_singleton
+    (m mfib : WfWorld) X σ :
+  dom (σ : StoreT) = X ->
+  res_fiber_from_projection m X σ mfib ->
+  res_restrict mfib X =
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorld).
+Proof.
+  intros Hdomσ Hproj.
+  apply wfworld_ext. apply world_ext.
+  - rewrite res_restrict_dom.
+    rewrite (res_fiber_from_projection_world_dom m mfib X σ Hproj).
+    destruct Hproj as [Hσproj _].
+    pose proof (wfworld_store_dom (res_restrict m X) σ Hσproj)
+      as Hdom_proj.
+    change (dom (σ : StoreT) = world_dom (res_restrict m X : World))
+      in Hdom_proj.
+    rewrite res_restrict_dom in Hdom_proj.
+    cbn [world_dom raw_world raw_worldA singleton_world singleton_worldA].
+    symmetry. exact Hdom_proj.
+  - intros τ. split.
+    + intros [τ0 [Hτ0 Hτ]].
+      pose proof (res_fiber_from_projection_store_restrict
+        m mfib X σ τ0 Hproj Hτ0) as Hτ0σ.
+      change (store_restrict τ0 (dom (σ : StoreT)) = σ) in Hτ0σ.
+      rewrite Hdomσ in Hτ0σ.
+      assert (τ = σ) as ->.
+      { rewrite <- Hτ. exact Hτ0σ. }
+      unfold singleton_world. cbn [raw_world raw_worldA singleton_worldA].
+      reflexivity.
+    + intros Hτ.
+      unfold singleton_world in Hτ.
+      cbn [raw_world raw_worldA singleton_worldA] in Hτ.
+      rewrite Hτ.
+      destruct Hproj as [[τ0 [Hτ0 Hτ0X]] Hfib].
+      exists τ0. split.
+      * destruct mfib as [wmfib Hwmfib].
+        cbn [proj1_sig raw_world raw_worldA world_stores] in Hfib |- *.
+        change (wmfib = rawA_fiber (m : World) σ) in Hfib.
+        rewrite Hfib. split; [exact Hτ0|].
+        change (store_restrict τ0 (dom (σ : StoreT)) = σ).
+        rewrite Hdomσ. exact Hτ0X.
+      * exact Hτ0X.
+Qed.
+
+Lemma store_singleton_dom_value y (v : V) :
+  dom ({[y := v]} : StoreT) = {[y]}.
+Proof.
+  change (dom ({[y := v]} : gmap atom V) = ({[y]} : aset)).
+  apply dom_singleton_L.
+Qed.
+
+Lemma singleton_world_member_eq (σ τ : StoreT) :
+  (singleton_world σ : World) τ ->
+  τ = σ.
+Proof.
+  unfold singleton_world.
+  cbn [raw_world raw_worldA singleton_worldA].
+  intros ->. reflexivity.
+Qed.
+
 Lemma res_extend_by_singleton_output_in_world
     (m mx : WfWorld) F x :
   res_extend_by m F mx ->
@@ -1622,6 +1697,90 @@ Lemma res_extend_by_exists (m : WfWorld) (F : fiber_extension) :
   extension_applicable F m →
   ∃ n, m #> F ~~> n.
 Proof. apply resA_extend_by_exists. Qed.
+
+Definition const_fresh_value_extension
+    (X : aset) (y : atom) (v : V) (HyX : y ∉ X) : fiber_extension :=
+  mk_fiber_extensionA X {[y]}
+    (fun _ w =>
+      w =
+        (exist _ (singleton_world ({[y := v]} : StoreT))
+          (wf_singleton_world ({[y := v]} : StoreT)) : WfWorld))
+    ltac:(set_solver)
+    ltac:(intros σ w Hσ ->;
+      cbn [world_dom raw_world raw_worldA singleton_world];
+      apply store_singleton_dom_value)
+    ltac:(intros σ Hσ;
+      exists (exist _ (singleton_world ({[y := v]} : StoreT))
+        (wf_singleton_world ({[y := v]} : StoreT)) : WfWorld);
+      exists ({[y := v]} : StoreT);
+      cbn [raw_world raw_worldA singleton_world];
+      split; reflexivity)
+    ltac:(intros σ w1 w2 σe _ -> ->; reflexivity).
+
+Lemma res_extend_by_const_fresh_value_exact
+    (m : WfWorld) y v (Hy : y ∉ world_dom (m : World)) :
+  exists my,
+    res_extend_by m
+      (const_fresh_value_extension (world_dom (m : World)) y v Hy) my /\
+    world_dom (my : World) = world_dom (m : World) ∪ {[y]} /\
+    res_restrict my (world_dom (m : World)) = m /\
+    forall σ, (my : World) σ -> σ !! y = Some v.
+Proof.
+  set (F := const_fresh_value_extension (world_dom (m : World)) y v Hy).
+  assert (Happ : extension_applicable F m).
+  {
+    constructor.
+    - subst F. cbn [const_fresh_value_extension extA_in].
+      reflexivity.
+    - subst F. cbn [const_fresh_value_extension extA_out].
+      set_solver.
+  }
+  destruct (res_extend_by_exists m F Happ) as [my Hext].
+  exists my.
+  split; [exact Hext|].
+  split.
+  - rewrite (res_extend_by_dom m F my Hext).
+    subst F. reflexivity.
+  - split; [exact (res_extend_by_restrict_base m F my Hext)|].
+    intros σ Hσ.
+    pose proof (resA_extend_by_store_iff m F my σ Hext) as Hiff.
+    destruct (proj1 Hiff Hσ) as [σm [we [σe [Hσm [Hrel [Hσe ->]]]]]].
+    subst F.
+    change (we =
+      (exist _ (singleton_world ({[y := v]} : StoreT))
+        (wf_singleton_world ({[y := v]} : StoreT)) : WfWorld)) in Hrel.
+    rewrite Hrel in Hσe.
+    apply singleton_world_member_eq in Hσe. subst σe.
+    rewrite (lookup_union_r (M:=gmap atom) (A:=V)
+      σm ({[y := v]} : gmap atom V) y).
+    + apply map_lookup_insert.
+    + apply not_elem_of_dom.
+      rewrite (wfworld_store_dom m σm Hσm).
+      exact Hy.
+Qed.
+
+Lemma res_extend_by_const_fresh_value
+    (m : WfWorld) y v :
+  y ∉ world_dom (m : World) ->
+  exists F my,
+    extA_in F = world_dom (m : World) /\
+    extA_out F = {[y]} /\
+    res_extend_by m F my /\
+    world_dom (my : World) = world_dom (m : World) ∪ {[y]} /\
+    res_restrict my (world_dom (m : World)) = m /\
+    forall σ, (my : World) σ -> σ !! y = Some v.
+Proof.
+  intros Hy.
+  set (F := const_fresh_value_extension (world_dom (m : World)) y v Hy).
+  destruct (res_extend_by_const_fresh_value_exact m y v Hy)
+    as [my [Hext [Hdom [Hbase Hlookup]]]].
+  exists F, my.
+  split; [subst F; reflexivity|].
+  split; [subst F; reflexivity|].
+  split; [exact Hext|].
+  split; [exact Hdom|].
+  split; [exact Hbase|exact Hlookup].
+Qed.
 
 Lemma res_extend_by_projection_eq
     (m n : WfWorld) (F : fiber_extension) (my ny : WfWorld) :
