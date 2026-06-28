@@ -200,6 +200,16 @@ Proof.
   eapply soundness_relevant_env_wand_value_fresh; eauto.
 Qed.
 
+Lemma value_open_result_alias_fresh vf τ y z :
+  z ∉ fv_value vf ∪ {[y]} ∪ fv_cty τ ->
+  z ∉ fv_value vf ∪ {[y]} ∪ fv_cty (cty_open 0 y τ).
+Proof.
+  intros Hz.
+  pose proof (cty_open_fv_subset 0 y τ) as Hτopen.
+  cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at] in *.
+  set_solver.
+Qed.
+
 Lemma lvars_of_atoms_empty :
   lvars_of_atoms (∅ : aset) = (∅ : lvset).
 Proof.
