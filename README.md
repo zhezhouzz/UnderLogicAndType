@@ -158,7 +158,6 @@ ContextBase -> ContextStore -> ContextAlgebra -> ContextLogic
 
 ## Notes
 
-Historical analysis reports and obsolete proof-plan TXT files have been
-removed from the repository.  Durable explanations should live either in Rocq
-comments near the definitions/theorems they justify, or in this README when
-they affect repository-level workflow.
+Durable explanations should live either in Rocq comments near the
+definitions/theorems they justify, or in this README when they affect
+repository-level workflow.  Temporary analysis files should not be committed.
