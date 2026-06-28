@@ -422,6 +422,20 @@ Proof.
   - eauto.
 Qed.
 
+Lemma context_ty_lvars_at_lc_of_cty_lc d τ :
+  cty_lc_at d τ ->
+  lc_lvars (context_ty_lvars_at d τ).
+Proof.
+  intros Hlc v Hv.
+  destruct v as [k|a]; [|exact I].
+  pose proof (cty_lc_at_lvars_bv_empty d τ Hlc) as Hempty.
+  assert (Hk : k ∈ lvars_bv (context_ty_lvars_at d τ))
+    by (rewrite lvars_bv_elem; exact Hv).
+  rewrite Hempty in Hk.
+  rewrite elem_of_empty in Hk.
+  exact Hk.
+Qed.
+
 Lemma wf_context_ty_at_fv_subset d D τ :
   wf_context_ty_at d D τ ->
   fv_cty τ ⊆ D.
