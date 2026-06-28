@@ -6,45 +6,9 @@
 
 From Denotation Require Import Notation TypeDenote TypeDenoteRegular TypeEquivCore TypeEquivTermBase TypeEquivTermResult
   DenotationSetMapFacts.
-From CoreLang Require Import StrongNormalization.
+From CoreLang Require Import StrongNormalization Sugar.
 
 Section TypeDenote.
-
-Local Lemma ret_value_alias_fv_support_parts X vx z :
-  fv_tm (tret (vfvar z)) ∪ fv_tm (tret vx) ⊆ X ->
-  z ∈ X /\ fv_value vx ⊆ X.
-Proof.
-  intros HfvX. split.
-  - apply HfvX. apply elem_of_union_l.
-    cbn [fv_tm fv_value]. set_solver.
-  - intros a Ha. apply HfvX. apply elem_of_union_r.
-    cbn [fv_tm]. exact Ha.
-Qed.
-
-Local Lemma tapp_value_arg_alias_fv_support_parts X e vx z :
-  fv_tm (tapp_tm e (vfvar z)) ∪ fv_tm (tapp_tm e vx) ⊆ X ->
-  z ∈ X /\ fv_value vx ⊆ X.
-Proof.
-  intros HfvX. split.
-  - apply HfvX. apply elem_of_union_l.
-    rewrite fv_tapp_tm. cbn [fv_tm fv_value].
-    apply elem_of_union_r. set_solver.
-  - intros a Ha. apply HfvX. apply elem_of_union_r.
-    rewrite fv_tapp_tm. cbn [fv_tm]. set_solver.
-Qed.
-
-Local Lemma tapp_value_fun_alias_fv_support_parts X vf y z :
-  fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ∪
-    fv_tm (tapp_tm (tret vf) (vfvar y)) ⊆ X ->
-  z ∈ X /\ fv_value vf ⊆ X.
-Proof.
-  intros HfvX. split.
-  - apply HfvX. apply elem_of_union_l.
-    rewrite fv_tapp_tm. cbn [fv_tm fv_value].
-    apply elem_of_union_l. set_solver.
-  - intros a Ha. apply HfvX. apply elem_of_union_r.
-    rewrite fv_tapp_tm. cbn [fv_tm]. set_solver.
-Qed.
 
 Lemma tm_equiv_tapp_value_arg_eq_on
     (m : WfWorldT) X e vx1 vx2 :
