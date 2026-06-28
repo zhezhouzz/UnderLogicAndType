@@ -5,691 +5,725 @@ Use this to find lemmas whose file imports only lower-layer definitions and may 
 
 ## Folder Summary
 - Rocq files: 24
-- Definition/notation/typeclass declarations: 95
-- Lemma/theorem declarations: 539
-- Direct imported repo folders: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, CoreLang, Denotation, LocallyNameless
+- Definition/notation/typeclass declarations: 120
+- Lemma/theorem declarations: 572
+- Direct imported repo folders: ContextAlgebra, ContextBase, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, CoreLang, Denotation, LocallyNameless
 
 ## Files
 
 ### theories/ConstDenote.v
 - Direct definition folders available to lemmas: Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]
-- Local definitions/notation/typeclasses: (none)
+- Direct import commands by folder: Denotation [From Denotation Require Import Context TypeEquivCore]
+- Local definitions/notation/typeclasses: Local ltac `solve_const_over_guard`@11, Local ltac `solve_const_under_guard`@21, Local definition `empty_lvset`@31, Local definition `bound0_lvset`@52, Local definition `const_bound_removed_qual`@54, Local ltac `const_scope_set`@185, Local ltac `const_forall_scope_norm`@188, Local ltac `solve_const_forall_closed_scope`@222, Local ltac `solve_const_forall_open_scope`@236
 - Lemmas/theorems and available definition folders:
-  - Lemma `const_over_denotation_gas` at line 266: Denotation
-  - Lemma `const_under_denotation_gas` at line 317: Denotation
-  - Lemma `const_direct_denotation_gas_in_ctx` at line 368: Denotation
-  - Lemma `appop_intro_denotation` at line 414: Denotation
+  - Local lemma `const_lc_lvars_shift_empty` at line 33: Denotation
+  - Local lemma `const_lvars_shift_empty` at line 42: Denotation
+  - Local lemma `const_expr_result_open_scoped` at line 57: Denotation
+  - Local lemma `const_open_fib_over_swapped_scoped` at line 83: Denotation
+  - Local lemma `const_open_fib_under_swapped_scoped` at line 110: Denotation
+  - Local lemma `const_open_fib_over_typed_scoped` at line 137: Denotation
+  - Local lemma `const_open_fib_under_typed_scoped` at line 161: Denotation
+  - Public lemma `const_over_denotation_gas` at line 266: Denotation
+  - Public lemma `const_under_denotation_gas` at line 317: Denotation
+  - Public lemma `const_direct_denotation_gas_in_ctx` at line 368: Denotation
+  - Public lemma `appop_intro_denotation` at line 414: Denotation
 
 ### theories/ConstDenoteBase.v
 - Direct definition folders available to lemmas: CoreLang, Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from CoreLang [CoreLang]
-- Local definitions/notation/typeclasses: (none)
+- Direct import commands by folder: CoreLang [From CoreLang Require Import StrongNormalization.] | Denotation [From Denotation Require Import Context DenotationSetMapFacts TypeEquivCore]
+- Local definitions/notation/typeclasses: Local notation `LStoreOnT`@13, Local ltac `const_fast_set_side`@15
 - Lemmas/theorems and available definition folders:
-  - Lemma `context_ty_wf_formula_const_precise_empty` at line 25: CoreLang, Denotation
-  - Lemma `context_ty_wf_formula_const_over_empty` at line 46: CoreLang, Denotation
-  - Lemma `context_ty_wf_formula_const_under_empty` at line 64: CoreLang, Denotation
-  - Lemma `expr_basic_typing_formula_ret_const_empty` at line 82: CoreLang, Denotation
-  - Lemma `expr_total_formula_ret_const` at line 94: CoreLang, Denotation
-  - Lemma `relevant_env_const_precise_atom_env_empty` at line 109: CoreLang, Denotation
-  - Lemma `relevant_env_const_over_atom_env_empty` at line 126: CoreLang, Denotation
-  - Lemma `relevant_env_const_under_atom_env_empty` at line 141: CoreLang, Denotation
-  - Lemma `const_qual_open_vars` at line 156: CoreLang, Denotation
-  - Lemma `const_qual_open_eq` at line 165: CoreLang, Denotation
-  - Lemma `const_qual_vars_bound` at line 190: CoreLang, Denotation
-  - Lemma `const_qual_vars_bound_without_bound` at line 198: CoreLang, Denotation
-  - Lemma `const_swapped_removed_vars_fv_empty` at line 205: CoreLang, Denotation
-  - Lemma `const_open_qual_vars_fv` at line 214: CoreLang, Denotation
-  - Lemma `const_qual_dom_bound_fresh` at line 221: CoreLang, Denotation
-  - Lemma `expr_result_formula_ret_const_lookup` at line 229: CoreLang, Denotation
-  - Lemma `const_qual_open_prop_iff` at line 254: CoreLang, Denotation
-  - Lemma `const_type_qualifier_open_lookup` at line 265: CoreLang, Denotation
-  - Lemma `const_type_qualifier_open_from_lookup` at line 333: CoreLang, Denotation
-  - Lemma `ty_denote_over_ret_fvar_const_lookup` at line 421: CoreLang, Denotation
-  - Lemma `bool_precise_true_ret_fvar_lookup` at line 721: CoreLang, Denotation
-  - Lemma `bool_precise_false_ret_fvar_lookup` at line 739: CoreLang, Denotation
-  - Lemma `const_fib_over_from_expr` at line 757: CoreLang, Denotation
-  - Lemma `const_fib_under_from_expr` at line 803: CoreLang, Denotation
+  - Public lemma `context_ty_wf_formula_const_precise_empty` at line 25: CoreLang, Denotation
+  - Public lemma `context_ty_wf_formula_const_over_empty` at line 46: CoreLang, Denotation
+  - Public lemma `context_ty_wf_formula_const_under_empty` at line 64: CoreLang, Denotation
+  - Public lemma `expr_basic_typing_formula_ret_const_empty` at line 82: CoreLang, Denotation
+  - Public lemma `expr_total_formula_ret_const` at line 94: CoreLang, Denotation
+  - Public lemma `relevant_env_const_precise_atom_env_empty` at line 109: CoreLang, Denotation
+  - Public lemma `relevant_env_const_over_atom_env_empty` at line 126: CoreLang, Denotation
+  - Public lemma `relevant_env_const_under_atom_env_empty` at line 141: CoreLang, Denotation
+  - Public lemma `const_qual_open_vars` at line 156: CoreLang, Denotation
+  - Public lemma `const_qual_open_eq` at line 165: CoreLang, Denotation
+  - Public lemma `const_qual_vars_bound` at line 190: CoreLang, Denotation
+  - Public lemma `const_qual_vars_bound_without_bound` at line 198: CoreLang, Denotation
+  - Public lemma `const_swapped_removed_vars_fv_empty` at line 205: CoreLang, Denotation
+  - Public lemma `const_open_qual_vars_fv` at line 214: CoreLang, Denotation
+  - Public lemma `const_qual_dom_bound_fresh` at line 221: CoreLang, Denotation
+  - Public lemma `expr_result_formula_ret_const_lookup` at line 229: CoreLang, Denotation
+  - Public lemma `const_qual_open_prop_iff` at line 254: CoreLang, Denotation
+  - Public lemma `const_type_qualifier_open_lookup` at line 265: CoreLang, Denotation
+  - Public lemma `const_type_qualifier_open_from_lookup` at line 333: CoreLang, Denotation
+  - Public lemma `ty_denote_over_ret_fvar_const_lookup` at line 421: CoreLang, Denotation
+  - Public lemma `bool_precise_true_ret_fvar_lookup` at line 721: CoreLang, Denotation
+  - Public lemma `bool_precise_false_ret_fvar_lookup` at line 739: CoreLang, Denotation
+  - Public lemma `const_fib_over_from_expr` at line 757: CoreLang, Denotation
+  - Public lemma `const_fib_under_from_expr` at line 803: CoreLang, Denotation
 
 ### theories/Context.v
 - Direct definition folders available to lemmas: ContextBasicDenotation, Denotation
-- Direct import commands by folder: Export from Denotation [Denotation]; Import from Denotation [Denotation]; Import from ContextBasicDenotation [ContextBasicDenotation]
-- Local definitions/notation/typeclasses: Definition ctx_erasure_under@14, Fixpoint ctx_denote_under@17, Definition ctx_denote@35, Definition ty_denote_under@38, Definition ty_env_agree_on@42, Notation "'⌊ctx'@1883, Notation "'⟦ctx'@1888, Notation "'⟦ctx'@1893, Notation "'⟦ty'@1898, Notation "'⟦ty'@1903, Notation "'⌊ctx⌋['@1909, Notation "'⟦ctx⟧['@1914, Notation "'⟦ctx⟧'@1919, Notation "'⟦ty⟧['@1924, Notation "'⟦ty⟧['@1929, Ltac ctx_erasure_under_norm@1935, Ltac ctx_erasure_under_norm_in@1946, Ltac ctx_erasure_set@1963
+- Direct import commands by folder: ContextBasicDenotation [From ContextBasicDenotation Require Import TermExtension.] | Denotation [From Denotation Require Export Notation TypeDenote TypeDenoteRegular; From Denotation Require Import TypeEquivCore TypeEquiv TypeEquivFiberBaseCore.]
+- Local definitions/notation/typeclasses: definition `ctx_erasure_under`@14, fixpoint `ctx_denote_under`@17, definition `ctx_denote`@35, definition `ty_denote_under`@38, definition `ty_env_agree_on`@42, notation `"'⌊ctx'`@1897, notation `"'⟦ctx'`@1902, notation `"'⟦ctx'`@1907, notation `"'⟦ty'`@1912, notation `"'⟦ty'`@1917, notation `"'⌊ctx⌋['`@1923, notation `"'⟦ctx⟧['`@1928, notation `"'⟦ctx⟧'`@1933, notation `"'⟦ty⟧['`@1938, notation `"'⟦ty⟧['`@1943, ltac `ctx_erasure_under_norm`@1949, ltac `ctx_erasure_under_norm_in`@1960, ltac `ctx_erasure_set`@1977, instance `denot_cty_inst`@1980, instance `ctx_denote_inst`@1983
 - Lemmas/theorems and available definition folders:
-  - Lemma `erase_ctx_star_bind_insert_agree_on` at line 45: ContextBasicDenotation, Denotation
-  - Lemma `ctx_erasure_under_minimal` at line 102: ContextBasicDenotation, Denotation
-  - Lemma `ctx_erasure_under_bind` at line 111: ContextBasicDenotation, Denotation
-  - Lemma `ctx_erasure_under_comma` at line 120: ContextBasicDenotation, Denotation
-  - Lemma `ctx_erasure_under_star` at line 130: ContextBasicDenotation, Denotation
-  - Lemma `erase_ctx_star_lookup_r_of_basic` at line 140: ContextBasicDenotation, Denotation
-  - Lemma `ctx_denote_under_minimal` at line 162: ContextBasicDenotation, Denotation
-  - Lemma `atom_env_to_lty_env_restrict_lvars_agree_on` at line 170: ContextBasicDenotation, Denotation
-  - Lemma `lvars_fv_atom_env_to_lty_env_dom` at line 188: ContextBasicDenotation, Denotation
-  - Lemma `ty_denote_gas_ret_fvar_insert_atom_env_agree_on` at line 195: ContextBasicDenotation, Denotation
-  - Lemma `ctx_denote_under_basic_world` at line 223: ContextBasicDenotation, Denotation
-  - Lemma `soundness_result_ext_fresh_ctx_erasure` at line 233: ContextBasicDenotation, Denotation
-  - Lemma `ctx_denote_under_bind_inv` at line 252: ContextBasicDenotation, Denotation
-  - Lemma `relevant_env_ctx_erasure_under_subenv` at line 265: ContextBasicDenotation, Denotation
-  - Lemma `basic_ctx_erase_dom_fresh_none` at line 291: ContextBasicDenotation, Denotation
-  - Lemma `erase_ctx_lookup_ctx_erasure_under_of_basic_ctx` at line 305: ContextBasicDenotation, Denotation
-  - Lemma `ty_env_agree_ctx_erasure_under_of_basic_ctx` at line 320: ContextBasicDenotation, Denotation
-  - Lemma `ctx_erasure_under_erase_ctx_dom_subset` at line 338: ContextBasicDenotation, Denotation
-  - Lemma `ctx_erasure_under_notin_erase_ctx` at line 352: ContextBasicDenotation, Denotation
-  - Lemma `ctx_erasure_under_inserted_erase_ctx_lty_env_fresh` at line 363: ContextBasicDenotation, Denotation
-  - Lemma `ctx_erasure_under_comma_bind_insert_lty_env_dom_subset` at line 379: ContextBasicDenotation, Denotation
-  - Lemma `soundness_fresh_erase_ctx_from_context_union` at line 405: ContextBasicDenotation, Denotation
-  - Lemma `ty_denote_gas_ret_fvar_insert_ctx_erasure_under` at line 421: ContextBasicDenotation, Denotation
-  - Lemma `ty_denote_gas_ret_fvar_insert_closed_atom_env` at line 450: ContextBasicDenotation, Denotation
-  - Lemma `basic_world_insert_of_arg` at line 474: ContextBasicDenotation, Denotation
-  - Lemma `ctx_denote_bind_from_arg_denotation` at line 507: ContextBasicDenotation, Denotation
-  - Lemma `ty_denote_under_comma_bind_to_lvar_insert` at line 567: ContextBasicDenotation, Denotation
-  - Lemma `ty_denote_under_star_bind_to_lvar_insert_direct` at line 597: ContextBasicDenotation, Denotation
-  - Lemma `ty_denote_under_star_bind_to_comma_bind_fresh` at line 625: ContextBasicDenotation, Denotation
-  - Lemma `ctx_bind_from_base_denotation` at line 638: ContextBasicDenotation, Denotation
-  - Lemma `ctx_bind_from_inserted_erasure_denotation` at line 768: ContextBasicDenotation, Denotation
-  - Lemma `ctx_bind_from_inserted_erasure_arg_denotation` at line 925: ContextBasicDenotation, Denotation
-  - Lemma `ty_denote_gas_result_ext_base_env_transport` at line 952: ContextBasicDenotation, Denotation
-  - Lemma `ctx_denote_under_comma_right_minimal` at line 1010: ContextBasicDenotation, Denotation
-  - Lemma `ctx_denote_under_comma_left_minimal` at line 1078: ContextBasicDenotation, Denotation
-  - Lemma `ctx_denote_under_comma_left` at line 1092: ContextBasicDenotation, Denotation
-  - Lemma `atom_env_to_lty_env_ctx_erasure_under_comma_union` at line 1110: ContextBasicDenotation, Denotation
-  - Lemma `ctx_erasure_under_comma_basic_world` at line 1144: ContextBasicDenotation, Denotation
-  - Lemma `atom_env_to_lty_env_ctx_erasure_under_star_union` at line 1175: ContextBasicDenotation, Denotation
-  - Lemma `ctx_erasure_under_star_basic_world` at line 1207: ContextBasicDenotation, Denotation
-  - Lemma `ctx_denote_under_comma_intro` at line 1238: ContextBasicDenotation, Denotation
-  - Lemma `ctx_denote_under_star_elim` at line 1263: ContextBasicDenotation, Denotation
-  - Lemma `ctx_denote_under_sum_elim` at line 1291: ContextBasicDenotation, Denotation
-  - Lemma `ctx_denote_under_star_intro_product` at line 1319: ContextBasicDenotation, Denotation
-  - Theorem `ctx_denote_under_star_comm_iff` at line 1374: ContextBasicDenotation, Denotation
-  - Lemma `ctx_denote_under_star_self_of_persistent` at line 1397: ContextBasicDenotation, Denotation
-  - Lemma `formula_fv_ctx_bind_persist_subset` at line 1435: ContextBasicDenotation, Denotation
-  - Lemma `ctx_bind_persist_singleton_projection` at line 1466: ContextBasicDenotation, Denotation
-  - Lemma `ctx_bind_persist_persistent` at line 1764: ContextBasicDenotation, Denotation
-  - Theorem `ctx_bind_persist_star_dup` at line 1781: ContextBasicDenotation, Denotation
-  - Lemma `ctx_denote_under_star_bind_closed_to_comma` at line 1795: ContextBasicDenotation, Denotation
+  - Public lemma `ty_denote_under_total` at line 45: ContextBasicDenotation, Denotation
+  - Public lemma `erase_ctx_star_bind_insert_agree_on` at line 59: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_erasure_under_minimal` at line 116: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_erasure_under_bind` at line 125: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_erasure_under_comma` at line 134: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_erasure_under_star` at line 144: ContextBasicDenotation, Denotation
+  - Public lemma `erase_ctx_star_lookup_r_of_basic` at line 154: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_denote_under_minimal` at line 176: ContextBasicDenotation, Denotation
+  - Public lemma `atom_env_to_lty_env_restrict_lvars_agree_on` at line 184: ContextBasicDenotation, Denotation
+  - Public lemma `lvars_fv_atom_env_to_lty_env_dom` at line 202: ContextBasicDenotation, Denotation
+  - Public lemma `ty_denote_gas_ret_fvar_insert_atom_env_agree_on` at line 209: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_denote_under_basic_world` at line 237: ContextBasicDenotation, Denotation
+  - Public lemma `soundness_result_ext_fresh_ctx_erasure` at line 247: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_denote_under_bind_inv` at line 266: ContextBasicDenotation, Denotation
+  - Public lemma `relevant_env_ctx_erasure_under_subenv` at line 279: ContextBasicDenotation, Denotation
+  - Public lemma `basic_ctx_erase_dom_fresh_none` at line 305: ContextBasicDenotation, Denotation
+  - Public lemma `erase_ctx_lookup_ctx_erasure_under_of_basic_ctx` at line 319: ContextBasicDenotation, Denotation
+  - Public lemma `ty_env_agree_ctx_erasure_under_of_basic_ctx` at line 334: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_erasure_under_erase_ctx_dom_subset` at line 352: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_erasure_under_notin_erase_ctx` at line 366: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_erasure_under_inserted_erase_ctx_lty_env_fresh` at line 377: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_erasure_under_comma_bind_insert_lty_env_dom_subset` at line 393: ContextBasicDenotation, Denotation
+  - Public lemma `soundness_fresh_erase_ctx_from_context_union` at line 419: ContextBasicDenotation, Denotation
+  - Public lemma `ty_denote_gas_ret_fvar_insert_ctx_erasure_under` at line 435: ContextBasicDenotation, Denotation
+  - Public lemma `ty_denote_gas_ret_fvar_insert_closed_atom_env` at line 464: ContextBasicDenotation, Denotation
+  - Public lemma `basic_world_insert_of_arg` at line 488: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_denote_bind_from_arg_denotation` at line 521: ContextBasicDenotation, Denotation
+  - Public lemma `ty_denote_under_comma_bind_to_lvar_insert` at line 581: ContextBasicDenotation, Denotation
+  - Public lemma `ty_denote_under_star_bind_to_lvar_insert_direct` at line 611: ContextBasicDenotation, Denotation
+  - Public lemma `ty_denote_under_star_bind_to_comma_bind_fresh` at line 639: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_bind_from_base_denotation` at line 652: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_bind_from_inserted_erasure_denotation` at line 782: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_bind_from_inserted_erasure_arg_denotation` at line 939: ContextBasicDenotation, Denotation
+  - Public lemma `ty_denote_gas_result_ext_base_env_transport` at line 966: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_denote_under_comma_right_minimal` at line 1024: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_denote_under_comma_left_minimal` at line 1092: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_denote_under_comma_left` at line 1106: ContextBasicDenotation, Denotation
+  - Public lemma `atom_env_to_lty_env_ctx_erasure_under_comma_union` at line 1124: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_erasure_under_comma_basic_world` at line 1158: ContextBasicDenotation, Denotation
+  - Public lemma `atom_env_to_lty_env_ctx_erasure_under_star_union` at line 1189: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_erasure_under_star_basic_world` at line 1221: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_denote_under_comma_intro` at line 1252: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_denote_under_star_elim` at line 1277: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_denote_under_sum_elim` at line 1305: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_denote_under_star_intro_product` at line 1333: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_denote_under_star_comm_iff` at line 1388: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_denote_under_star_self_of_persistent` at line 1411: ContextBasicDenotation, Denotation
+  - Public lemma `formula_fv_ctx_bind_persist_subset` at line 1449: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_bind_persist_singleton_projection` at line 1480: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_bind_persist_persistent` at line 1778: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_bind_persist_star_dup` at line 1795: ContextBasicDenotation, Denotation
+  - Public lemma `ctx_denote_under_star_bind_closed_to_comma` at line 1809: ContextBasicDenotation, Denotation
 
 ### theories/DenotationSetMapFacts.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-- Direct import commands by folder: Import from CoreLang [CoreLang]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from ContextTypeLanguage [ContextTypeLanguage]; Import from ContextBasicDenotation [ContextBasicDenotation]
-- Local definitions/notation/typeclasses: Notation StoreT@15, Notation WorldT@16, Notation WfWorldT@17, Ltac denotation_set_norm@409, Ltac denotation_set_solve@413, Ltac soundness_fresh_norm@416, Ltac soundness_fresh_solve@420, Ltac denotation_store_norm@423, Ltac denotation_regular_res_extend_dom@428, Ltac denotation_regular_res_extend_base@441, Ltac denotation_regular_res_extend_input@453, Ltac denotation_regular_res_extend_output@465, Ltac denotation_regular@477
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceExtension ResourceInterface ResourceInterfaceFacts.] | ContextBasicDenotation [From ContextBasicDenotation Require Import StoreTyping RelevantEnvRegular.] | ContextStore [From ContextStore Require Import Store StoreRestrict.] | ContextTypeLanguage [From ContextTypeLanguage Require Import Syntax LtyEnv.] | CoreLang [From CoreLang Require Import Syntax InstantiationProps.]
+- Local definitions/notation/typeclasses: notation `StoreT`@15, notation `WorldT`@16, notation `WfWorldT`@17, ltac `denotation_set_norm`@286, ltac `denotation_set_solve`@290, ltac `soundness_fresh_norm`@293, ltac `soundness_fresh_solve`@297, ltac `denotation_store_norm`@300, ltac `denotation_regular_res_extend_dom`@305, ltac `denotation_regular_res_extend_base`@318, ltac `denotation_regular_res_extend_input`@330, ltac `denotation_regular_res_extend_output`@342, ltac `denotation_regular`@354
 - Lemmas/theorems and available definition folders:
-  - Lemma `union_singleton_empty_r` at line 19: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `empty_union_singleton_l` at line 23: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `notin_union4_l` at line 27: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `notin_union4_r1` at line 32: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `notin_union4_r2` at line 37: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `notin_union4_r3` at line 42: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `elem_union_singleton_not_eq_left` at line 47: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `elem_open_world_inter_singleton` at line 53: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `store_restrict_union_singleton_ignore_r` at line 63: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `store_lookup_eq_of_restrict_eq` at line 77: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `store_lookup_eq_of_restrict_eq_full` at line 89: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `store_restrict_obs_result_eq` at line 103: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `notin_store_union_singleton_dom` at line 140: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `store_restrict_insert_same_observed` at line 165: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `store_restrict_insert_union_eq_of_restrict_eq` at line 214: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `store_restrict_insert_agree_on_observed` at line 226: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `store_restrict_insert_agree_on_subset` at line 245: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `res_extend_rel_store_dom` at line 257: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `opened_world_dom_contains_slot` at line 276: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `fvar_in_singleton_restrict_dom` at line 286: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `notin_union_singleton_of_notin_world` at line 301: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `notin_union_singleton_swap_ne` at line 314: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `singleton_subset_world_dom` at line 325: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `lty_env_insert_free_fresh` at line 332: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `value_open_result_alias_fresh` at line 347: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `cty_open_fresh_notin` at line 357: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `wfworld_closed_on_open_world_from_base` at line 366: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `wfworld_closed_on_store_restrict_closed` at line 390: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
-  - Lemma `wfworld_eq_by_dom_stores` at line 400: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `union_singleton_empty_r` at line 19: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `empty_union_singleton_l` at line 23: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `notin_union4_l` at line 27: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `notin_union4_r1` at line 32: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `notin_union4_r2` at line 37: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `notin_union4_r3` at line 42: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `elem_union_singleton_not_eq_left` at line 47: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `elem_open_world_inter_singleton` at line 53: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `store_restrict_union_singleton_ignore_r` at line 58: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `store_lookup_eq_of_restrict_eq` at line 72: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `store_lookup_eq_of_restrict_eq_full` at line 82: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `store_restrict_obs_result_eq` at line 92: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `notin_store_union_singleton_dom` at line 114: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `store_restrict_insert_same_observed` at line 123: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `store_restrict_insert_union_eq_of_restrict_eq` at line 136: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `store_restrict_insert_agree_on_observed` at line 149: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `store_restrict_insert_agree_on_subset` at line 165: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `res_extend_rel_store_dom` at line 177: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `opened_world_dom_contains_slot` at line 189: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `fvar_in_singleton_restrict_dom` at line 199: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `notin_union_singleton_of_notin_world` at line 211: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `notin_union_singleton_swap_ne` at line 221: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `singleton_subset_world_dom` at line 229: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `lty_env_insert_free_fresh` at line 236: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `value_open_result_alias_fresh` at line 245: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `cty_open_fresh_notin` at line 252: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `wfworld_closed_on_open_world_from_base` at line 259: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `wfworld_closed_on_store_restrict_closed` at line 269: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
+  - Public lemma `wfworld_eq_by_dom_stores` at line 278: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, CoreLang, Denotation
 
 ### theories/Notation.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextTypeLanguage, CoreLang, Denotation, LocallyNameless
-- Direct import commands by folder: Export from LocallyNameless [LocallyNameless]; Export from CoreLang [CoreLang]; Export from ContextAlgebra [ContextAlgebra]; Export from ContextTypeLanguage [ContextTypeLanguage]; Export from ContextBasicDenotation [ContextBasicDenotation]; Export from ContextBasicDenotation [ContextBasicDenotation]; Export from ContextLogic [ContextLogic]
-- Local definitions/notation/typeclasses: Notation FormulaT@17, Notation StoreT@18, Notation LStoreT@19, Notation WorldT@20, Notation LWorldT@21, Notation WfWorldT@22, Notation FiberExtensionT@23, Notation "m@25, Notation "φ@28
-- Lemmas/theorems and available definition folders: (none)
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Export ResourceInterface ResourceCompat ResourceExtension.] | ContextBasicDenotation [From ContextBasicDenotation Require Export Notation.; From ContextBasicDenotation Require Export StoreTyping TermSyntax TermEval TermOpen] | ContextLogic [From ContextLogic Require Export FormulaNotation FormulaSemantics FormulaConnectives] | ContextTypeLanguage [From ContextTypeLanguage Require Export WF.] | CoreLang [From CoreLang Require Export Syntax Sugar BasicTypingProps.] | LocallyNameless [From LocallyNameless Require Export Classes Tactics.]
+- Local definitions/notation/typeclasses: notation `FormulaT`@17, notation `StoreT`@18, notation `LStoreT`@19, notation `WorldT`@20, notation `LWorldT`@21, notation `WfWorldT`@22, notation `FiberExtensionT`@23, notation `"m`@25, notation `"φ`@28
+- Lemmas/theorems and available definition folders:
+  - (none)
 
 ### theories/ResultFirstOpen.v
-- Direct definition folders available to lemmas: Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]
-- Local definitions/notation/typeclasses: Ltac result_first_open_norm@840, Ltac result_first_open_norm_in@929
+- Direct definition folders available to lemmas: ContextBase, Denotation
+- Direct import commands by folder: ContextBase [From ContextBase Require Import LogicVarShift.] | Denotation [From Denotation Require Import Notation TypeDenote TypeEquivCore TypeDenoteRegular.]
+- Local definitions/notation/typeclasses: ltac `result_first_open_norm`@839, ltac `result_first_open_norm_in`@928
 - Lemmas/theorems and available definition folders:
-  - Lemma `result_first_lc_lvars_shift_from` at line 9: Denotation
-  - Lemma `result_first_lvars_shift_from_lc_eq` at line 16: Denotation
-  - Lemma `result_first_lvars_lc_at_zero_of_lc` at line 23: Denotation
-  - Lemma `result_first_forall_impl_open_elim` at line 32: Denotation
-  - Lemma `formula_fv_open_arrow_value_body_obs` at line 48: Denotation
-  - Lemma `formula_scoped_arrow_value_body_obs` at line 93: Denotation
-  - Lemma `formula_scoped_open_arrow_value_body_obs` at line 107: Denotation
-  - Lemma `result_first_result_body_relevant_subset` at line 148: Denotation
-  - Lemma `result_first_result_env_agree_general` at line 188: Denotation
-  - Lemma `formula_fv_open_wand_value_body_obs` at line 240: Denotation
-  - Lemma `formula_scoped_wand_value_body_obs` at line 285: Denotation
-  - Lemma `formula_scoped_open_wand_value_body_obs` at line 299: Denotation
-  - Lemma `formula_fv_open_persist_value_body_obs` at line 340: Denotation
-  - Lemma `formula_scoped_open_persist_value_body_obs` at line 365: Denotation
-  - Lemma `formula_fv_persist_value_body_obs` at line 382: Denotation
-  - Lemma `formula_scoped_persist_value_body_obs` at line 400: Denotation
-  - Lemma `formula_open_arrow_value_ret_bvar0` at line 415: Denotation
-  - Lemma `formula_open_result_first_arrow_value_ret_bvar0` at line 473: Denotation
-  - Lemma `formula_open_wand_value_ret_bvar0` at line 544: Denotation
-  - Lemma `formula_open_result_first_wand_value_ret_bvar0` at line 603: Denotation
-  - Lemma `arrow_value_open_arg_to_regular_imp` at line 675: Denotation
-  - Lemma `result_first_fun_arg_open_to_inserted_env` at line 730: Denotation
-  - Lemma `result_first_fun_arg_inserted_env_to_open` at line 784: Denotation
+  - Public lemma `result_first_lc_lvars_shift_from` at line 10: ContextBase, Denotation
+  - Public lemma `result_first_lvars_shift_from_lc_eq` at line 17: ContextBase, Denotation
+  - Public lemma `result_first_lvars_lc_at_zero_of_lc` at line 24: ContextBase, Denotation
+  - Public lemma `result_first_forall_impl_open_elim` at line 31: ContextBase, Denotation
+  - Public lemma `formula_fv_open_arrow_value_body_obs` at line 47: ContextBase, Denotation
+  - Public lemma `formula_scoped_arrow_value_body_obs` at line 92: ContextBase, Denotation
+  - Public lemma `formula_scoped_open_arrow_value_body_obs` at line 106: ContextBase, Denotation
+  - Public lemma `result_first_result_body_relevant_subset` at line 147: ContextBase, Denotation
+  - Public lemma `result_first_result_env_agree_general` at line 187: ContextBase, Denotation
+  - Public lemma `formula_fv_open_wand_value_body_obs` at line 239: ContextBase, Denotation
+  - Public lemma `formula_scoped_wand_value_body_obs` at line 284: ContextBase, Denotation
+  - Public lemma `formula_scoped_open_wand_value_body_obs` at line 298: ContextBase, Denotation
+  - Public lemma `formula_fv_open_persist_value_body_obs` at line 339: ContextBase, Denotation
+  - Public lemma `formula_scoped_open_persist_value_body_obs` at line 364: ContextBase, Denotation
+  - Public lemma `formula_fv_persist_value_body_obs` at line 381: ContextBase, Denotation
+  - Public lemma `formula_scoped_persist_value_body_obs` at line 399: ContextBase, Denotation
+  - Public lemma `formula_open_arrow_value_ret_bvar0` at line 414: ContextBase, Denotation
+  - Public lemma `formula_open_result_first_arrow_value_ret_bvar0` at line 472: ContextBase, Denotation
+  - Public lemma `formula_open_wand_value_ret_bvar0` at line 543: ContextBase, Denotation
+  - Public lemma `formula_open_result_first_wand_value_ret_bvar0` at line 602: ContextBase, Denotation
+  - Public lemma `arrow_value_open_arg_to_regular_imp` at line 674: ContextBase, Denotation
+  - Public lemma `result_first_fun_arg_open_to_inserted_env` at line 729: ContextBase, Denotation
+  - Public lemma `result_first_fun_arg_inserted_env_to_open` at line 783: ContextBase, Denotation
 
 ### theories/TypeDenote.v
 - Direct definition folders available to lemmas: Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]
-- Local definitions/notation/typeclasses: Definition ty_guard_formula@7, Definition ty_static_guard_formula@14, Definition result_basic_typing_formula@52, Definition over_result_body@58, Definition under_result_body@61, Definition arrow_value_denote_gas_with@75, Definition wand_value_denote_gas_with@87, Fixpoint ty_denote_gas@98, Definition arrow_value_denote_gas@170, Definition wand_value_denote_gas@173, Definition ty_denote@176, Notation "'⟦ty'@180, Notation "'⟦ty'@185, Notation "'⟦ty'@191, Notation "'⟦ty'@196, Notation "'⟦ty⟧['@201, Notation "'⟦ty⟧['@206, Notation "'⟦ty⟧['@212, Notation "'⟦ty⟧['@217, Notation "'guard['@222, Notation "'guard['@227, Notation "'static_guard['@232, Notation "'static_guard['@237
+- Direct import commands by folder: Denotation [From Denotation Require Import Notation.]
+- Local definitions/notation/typeclasses: definition `ty_guard_formula`@7, definition `ty_static_guard_formula`@14, definition `result_basic_typing_formula`@52, definition `over_result_body`@58, definition `under_result_body`@61, definition `arrow_value_denote_gas_with`@75, definition `wand_value_denote_gas_with`@87, fixpoint `ty_denote_gas`@98, definition `arrow_value_denote_gas`@170, definition `wand_value_denote_gas`@173, definition `ty_denote`@176, notation `"'⟦ty'`@180, notation `"'⟦ty'`@185, notation `"'⟦ty'`@191, notation `"'⟦ty'`@196, notation `"'⟦ty⟧['`@201, notation `"'⟦ty⟧['`@206, notation `"'⟦ty⟧['`@212, notation `"'⟦ty⟧['`@217, notation `"'guard['`@222, notation `"'guard['`@227, notation `"'static_guard['`@232, notation `"'static_guard['`@237
 - Lemmas/theorems and available definition folders:
-  - Lemma `fiberwise_joinable_on_ty_static_guard_formula` at line 20: Denotation
-  - Lemma `fiberwise_joinable_on_ty_guard_formula` at line 31: Denotation
-  - Lemma `fiberwise_joinable_ty_static_guard_formula` at line 44: Denotation
-  - Lemma `fiberwise_joinable_ty_guard_formula` at line 48: Denotation
-  - Lemma `formula_fv_result_basic_typing_formula` at line 64: Denotation
+  - Public lemma `fiberwise_joinable_on_ty_static_guard_formula` at line 20: Denotation
+  - Public lemma `fiberwise_joinable_on_ty_guard_formula` at line 31: Denotation
+  - Public lemma `fiberwise_joinable_ty_static_guard_formula` at line 44: Denotation
+  - Public lemma `fiberwise_joinable_ty_guard_formula` at line 48: Denotation
+  - Public lemma `formula_fv_result_basic_typing_formula` at line 64: Denotation
 
 ### theories/TypeDenoteRegular.v
-- Direct definition folders available to lemmas: Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]
-- Local definitions/notation/typeclasses: Ltac denot_open_env_child_fresh@137, Ltac denot_open_env_qual_case@143, Ltac denot_open_env_binary_case@200, Ltac ty_denote_open_one_side@1306, Ltac lvars_open_difference_bound0_norm@1325, Ltac lvars_open_difference_bound0_norm_in@1338, Ltac open_syntax_norm@1351, Ltac open_syntax_norm_in@1366, Ltac denotation_result_first_open_norm@1381, Ltac denotation_result_first_open_norm_in@1415, Ltac denotation_open_norm@1449, Ltac denotation_open_norm_in@1467, Ltac ty_denote_open_one_norm@1485, Ltac ty_denote_open_one_norm_in@1488, Ltac rewrite_tm_support@1495, Ltac unfold_formula_lvars_atoms@1503, Ltac normalize_denot_formula_lvars@1513, Ltac solve_lvars_element@1528
+- Direct definition folders available to lemmas: ContextBase, Denotation
+- Direct import commands by folder: ContextBase [From ContextBase Require Import LogicVarShift.] | Denotation [From Denotation Require Import Notation TypeDenote.]
+- Local definitions/notation/typeclasses: ltac `denot_open_env_child_fresh`@138, ltac `denot_open_env_qual_case`@144, ltac `denot_open_env_binary_case`@201, ltac `ty_denote_open_one_side`@1305, ltac `lvars_open_difference_bound0_norm`@1324, ltac `lvars_open_difference_bound0_norm_in`@1337, ltac `open_syntax_norm`@1350, ltac `open_syntax_norm_in`@1365, ltac `denotation_result_first_open_norm`@1380, ltac `denotation_result_first_open_norm_in`@1414, ltac `denotation_open_norm`@1448, ltac `denotation_open_norm_in`@1466, ltac `ty_denote_open_one_norm`@1484, ltac `ty_denote_open_one_norm_in`@1487, ltac `rewrite_tm_support`@1494, ltac `unfold_formula_lvars_atoms`@1502, ltac `normalize_denot_formula_lvars`@1512, ltac `solve_lvars_element`@1527
 - Lemmas/theorems and available definition folders:
-  - Lemma `open_env_lift_fresh_for_bound0_bind_dom` at line 9: Denotation
-  - Lemma `formula_open_env_lift_result_basic_typing_formula` at line 20: Denotation
-  - Lemma `formula_open_env_denot_guard` at line 47: Denotation
-  - Lemma `relevant_env_result_domain_open_lift` at line 97: Denotation
-  - Lemma `formula_open_env_ty_denote_gas_zero` at line 120: Denotation
-  - Lemma `sum_result_lift_support_subset` at line 216: Denotation
-  - Lemma `arrow_value_arg_lift2_support_subset` at line 242: Denotation
-  - Lemma `arrow_value_body_lift2_support_subset` at line 265: Denotation
-  - Lemma `wand_value_arg_lift2_support_subset` at line 290: Denotation
-  - Lemma `wand_value_body_lift2_support_subset` at line 309: Denotation
-  - Lemma `persist_body_lift_support_subset` at line 328: Denotation
-  - Lemma `expr_result_shift0_bound0_lvars_subset` at line 347: Denotation
-  - Lemma `expr_result_atom_shift0_bound0_lvars_subset` at line 361: Denotation
-  - Lemma `formula_open_env_ty_denote_gas` at line 375: Denotation
-  - Lemma `formula_open_ty_denote_gas_singleton` at line 780: Denotation
-  - Lemma `formula_open_ty_denote_gas_bind_ret_bvar0` at line 814: Denotation
-  - Lemma `formula_open_ty_denote_gas_bind_tapp_shift_bvar0` at line 843: Denotation
-  - Lemma `denotation_open_lvars_shift_from_lc` at line 871: Denotation
-  - Lemma `denotation_open_lvars_lc_at_zero_of_lc` at line 878: Denotation
-  - Lemma `set_swap_bound0_difference_free_normalize` at line 887: Denotation
-  - Lemma `lvars_open0_difference_bound0_normalize` at line 919: Denotation
-  - Lemma `formula_open_result_basic_typing_formula` at line 927: Denotation
-  - Lemma `formula_open_over_result_body` at line 946: Denotation
-  - Lemma `formula_open_under_result_body` at line 962: Denotation
-  - Lemma `set_swap_qual_vars_open_atom0` at line 978: Denotation
-  - Lemma `formula_open_result_first_expr_result_formula_at_shift0` at line 985: Denotation
-  - Lemma `formula_open_result_first_expr_result_formula_at_shift0_unfolded` at line 1005: Denotation
-  - Lemma `formula_open_result_first_expr_result_formula_at_no_shift` at line 1026: Denotation
-  - Lemma `formula_open_result_first_expr_result_formula_at_no_shift_unfolded` at line 1048: Denotation
-  - Lemma `formula_open_result_first_fun_arg_two` at line 1068: Denotation
-  - Lemma `formula_open_result_first_fun_result_two` at line 1150: Denotation
-  - Lemma `ty_denote_gas_env_agree_on` at line 1235: Denotation
-  - Lemma `res_models_ty_denote_gas_env_agree_on` at line 1294: Denotation
-  - Lemma `expr_result_shift0_lvars_subset` at line 1574: Denotation
-  - Lemma `ty_denote_gas_lvars_subset` at line 1590: Denotation
-  - Lemma `ty_denote_gas_fv_subset` at line 1847: Denotation
-  - Lemma `fv_tm_ty_denote_gas_subset_formula` at line 1862: Denotation
-  - Lemma `relevant_env_fv_ty_denote_gas_subset_formula` at line 1870: Denotation
-  - Lemma `ty_denote_gas_scope_of_guard` at line 1879: Denotation
+  - Public lemma `open_env_lift_fresh_for_bound0_bind_dom` at line 10: ContextBase, Denotation
+  - Public lemma `formula_open_env_lift_result_basic_typing_formula` at line 21: ContextBase, Denotation
+  - Public lemma `formula_open_env_denot_guard` at line 48: ContextBase, Denotation
+  - Public lemma `relevant_env_result_domain_open_lift` at line 98: ContextBase, Denotation
+  - Public lemma `formula_open_env_ty_denote_gas_zero` at line 121: ContextBase, Denotation
+  - Public lemma `sum_result_lift_support_subset` at line 217: ContextBase, Denotation
+  - Public lemma `arrow_value_arg_lift2_support_subset` at line 243: ContextBase, Denotation
+  - Public lemma `arrow_value_body_lift2_support_subset` at line 266: ContextBase, Denotation
+  - Public lemma `wand_value_arg_lift2_support_subset` at line 291: ContextBase, Denotation
+  - Public lemma `wand_value_body_lift2_support_subset` at line 310: ContextBase, Denotation
+  - Public lemma `persist_body_lift_support_subset` at line 329: ContextBase, Denotation
+  - Public lemma `expr_result_shift0_bound0_lvars_subset` at line 348: ContextBase, Denotation
+  - Public lemma `expr_result_atom_shift0_bound0_lvars_subset` at line 362: ContextBase, Denotation
+  - Public lemma `formula_open_env_ty_denote_gas` at line 376: ContextBase, Denotation
+  - Public lemma `formula_open_ty_denote_gas_singleton` at line 781: ContextBase, Denotation
+  - Public lemma `formula_open_ty_denote_gas_bind_ret_bvar0` at line 815: ContextBase, Denotation
+  - Public lemma `formula_open_ty_denote_gas_bind_tapp_shift_bvar0` at line 844: ContextBase, Denotation
+  - Public lemma `denotation_open_lvars_shift_from_lc` at line 872: ContextBase, Denotation
+  - Public lemma `denotation_open_lvars_lc_at_zero_of_lc` at line 879: ContextBase, Denotation
+  - Public lemma `set_swap_bound0_difference_free_normalize` at line 886: ContextBase, Denotation
+  - Public lemma `lvars_open0_difference_bound0_normalize` at line 918: ContextBase, Denotation
+  - Public lemma `formula_open_result_basic_typing_formula` at line 926: ContextBase, Denotation
+  - Public lemma `formula_open_over_result_body` at line 945: ContextBase, Denotation
+  - Public lemma `formula_open_under_result_body` at line 961: ContextBase, Denotation
+  - Public lemma `set_swap_qual_vars_open_atom0` at line 977: ContextBase, Denotation
+  - Public lemma `formula_open_result_first_expr_result_formula_at_shift0` at line 984: ContextBase, Denotation
+  - Public lemma `formula_open_result_first_expr_result_formula_at_shift0_unfolded` at line 1004: ContextBase, Denotation
+  - Public lemma `formula_open_result_first_expr_result_formula_at_no_shift` at line 1025: ContextBase, Denotation
+  - Public lemma `formula_open_result_first_expr_result_formula_at_no_shift_unfolded` at line 1047: ContextBase, Denotation
+  - Public lemma `formula_open_result_first_fun_arg_two` at line 1067: ContextBase, Denotation
+  - Public lemma `formula_open_result_first_fun_result_two` at line 1149: ContextBase, Denotation
+  - Public lemma `ty_denote_gas_env_agree_on` at line 1234: ContextBase, Denotation
+  - Public lemma `res_models_ty_denote_gas_env_agree_on` at line 1293: ContextBase, Denotation
+  - Public lemma `expr_result_shift0_lvars_subset` at line 1573: ContextBase, Denotation
+  - Public lemma `ty_denote_gas_lvars_subset` at line 1589: ContextBase, Denotation
+  - Public lemma `ty_denote_gas_fv_subset` at line 1846: ContextBase, Denotation
+  - Public lemma `fv_tm_ty_denote_gas_subset_formula` at line 1861: ContextBase, Denotation
+  - Public lemma `relevant_env_fv_ty_denote_gas_subset_formula` at line 1869: ContextBase, Denotation
+  - Public lemma `ty_denote_gas_scope_of_guard` at line 1878: ContextBase, Denotation
 
 ### theories/TypeEquiv.v
 - Direct definition folders available to lemmas: CoreLang, Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from Denotation [Denotation]; Import from CoreLang [CoreLang]
+- Direct import commands by folder: CoreLang [From CoreLang Require Import StrongNormalization.] | Denotation [From Denotation Require Import; From Denotation Require Import Notation TypeDenote TypeDenoteRegular.]
 - Local definitions/notation/typeclasses: (none)
 - Lemmas/theorems and available definition folders:
-  - Lemma `ty_static_guard_relevant_of_full` at line 23: CoreLang, Denotation
-  - Lemma `ty_guard_relevant_of_static_full_total` at line 57: CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_transport_static_tm_equiv` at line 76: CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_tret_of_static_guard` at line 99: CoreLang, Denotation
-  - Lemma `ty_static_guard_fv_tm_subset` at line 116: CoreLang, Denotation
-  - Lemma `basic_world_insert_result_alias` at line 139: CoreLang, Denotation
-  - Lemma `basic_tm_has_ltype_tapp_tm_fvar_fun` at line 274: CoreLang, Denotation
-  - Lemma `ty_static_guard_tapp_fun_result_alias` at line 301: CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_tapp_fun_result_alias` at line 342: CoreLang, Denotation
-  - Lemma `ty_static_guard_ret_value_result_alias` at line 418: CoreLang, Denotation
-  - Lemma `typed_total_equiv_ret_value_result_alias_static` at line 460: CoreLang, Denotation
-  - Lemma `ty_static_guard_fv_subset` at line 502: CoreLang, Denotation
-  - Lemma `ty_denote_gas_fv_tm_subset` at line 520: CoreLang, Denotation
-  - Lemma `ty_static_guard_wfworld_closed_on_term` at line 541: CoreLang, Denotation
-  - Lemma `ty_static_guard_context_wf` at line 556: CoreLang, Denotation
-  - Lemma `ty_static_guard_basic_world` at line 567: CoreLang, Denotation
-  - Lemma `ty_static_guard_basic_typing` at line 578: CoreLang, Denotation
-  - Lemma `ty_static_guard_insert_irrelevant` at line 589: CoreLang, Denotation
-  - Lemma `ty_denote_gas_tm_equiv` at line 622: CoreLang, Denotation
-  - Lemma `ty_denote_gas_tapp_fun_result_alias` at line 663: CoreLang, Denotation
-  - Lemma `ty_static_guard_tapp_fun_result_base` at line 752: CoreLang, Denotation
-  - Lemma `ty_denote_gas_tapp_fun_result_alias_back` at line 793: CoreLang, Denotation
-  - Lemma `ty_denote_gas_tapp_fun_result_alias_back_from_static` at line 883: CoreLang, Denotation
-  - Lemma `ty_denote_gas_tapp_fun_result_alias_from_static` at line 931: CoreLang, Denotation
-  - Lemma `ty_denote_gas_tapp_fun_arg_result_alias_from_static` at line 980: CoreLang, Denotation
-  - Lemma `ty_denote_gas_result_alias_at` at line 1161: CoreLang, Denotation
-  - Lemma `ty_denote_gas_result_ext` at line 1407: CoreLang, Denotation
-  - Lemma `formula_fv_ty_denote_gas_subset_relevant` at line 1516: CoreLang, Denotation
-  - Lemma `ty_denote_gas_restrict_ret_fvar_closed` at line 1523: CoreLang, Denotation
-  - Lemma `ty_denote_gas_restrict_delete_fresh` at line 1546: CoreLang, Denotation
-  - Lemma `ty_denote_ret_fvar_base_const` at line 1573: CoreLang, Denotation
-  - Lemma `ty_denote_gas_drop_fresh_ext` at line 1617: CoreLang, Denotation
-  - Lemma `expr_result_formula_of_result_extends_from_ty_guard` at line 1642: CoreLang, Denotation
-  - Lemma `expr_result_formula_at_env_of_result_extends_from_ty_guard_on` at line 1680: CoreLang, Denotation
-  - Lemma `expr_result_formula_of_result_extends_on_from_ty_guard` at line 1719: CoreLang, Denotation
-  - Lemma `denot_ty_lvar_guard_wfworld_closed_on_term` at line 1765: CoreLang, Denotation
-  - Lemma `lam_intro_denotation` at line 1779: CoreLang, Denotation
+  - Public lemma `ty_static_guard_relevant_of_full` at line 23: CoreLang, Denotation
+  - Public lemma `ty_guard_relevant_of_static_full_total` at line 57: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_transport_static_tm_equiv` at line 76: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_tret_of_static_guard` at line 99: CoreLang, Denotation
+  - Public lemma `ty_static_guard_fv_tm_subset` at line 116: CoreLang, Denotation
+  - Public lemma `basic_world_insert_result_alias` at line 139: CoreLang, Denotation
+  - Public lemma `basic_tm_has_ltype_tapp_tm_fvar_fun` at line 274: CoreLang, Denotation
+  - Public lemma `ty_static_guard_tapp_fun_result_alias` at line 301: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_tapp_fun_result_alias` at line 342: CoreLang, Denotation
+  - Public lemma `ty_static_guard_ret_value_result_alias` at line 418: CoreLang, Denotation
+  - Public lemma `typed_total_equiv_ret_value_result_alias_static` at line 460: CoreLang, Denotation
+  - Public lemma `ty_static_guard_fv_subset` at line 502: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_fv_tm_subset` at line 520: CoreLang, Denotation
+  - Public lemma `ty_static_guard_wfworld_closed_on_term` at line 541: CoreLang, Denotation
+  - Public lemma `ty_static_guard_context_wf` at line 556: CoreLang, Denotation
+  - Public lemma `ty_static_guard_basic_world` at line 567: CoreLang, Denotation
+  - Public lemma `ty_static_guard_basic_typing` at line 578: CoreLang, Denotation
+  - Public lemma `ty_static_guard_insert_irrelevant` at line 589: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_tm_equiv` at line 622: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_tapp_fun_result_alias` at line 663: CoreLang, Denotation
+  - Public lemma `ty_static_guard_tapp_fun_result_base` at line 752: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_tapp_fun_result_alias_back` at line 793: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_tapp_fun_result_alias_back_from_static` at line 883: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_tapp_fun_result_alias_from_static` at line 931: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_tapp_fun_arg_result_alias_from_static` at line 980: CoreLang, Denotation
+  - Local lemma `body_tret_bvar0` at line 1056: CoreLang, Denotation
+  - Local lemma `tm_equiv_on_tlete_ret_bvar0` at line 1065: CoreLang, Denotation
+  - Local lemma `tm_total_equiv_on_tlete_ret_bvar0` at line 1093: CoreLang, Denotation
+  - Local lemma `expr_basic_typing_tlete_ret_bvar0` at line 1120: CoreLang, Denotation
+  - Local lemma `relevant_env_tlete_ret_bvar0` at line 1145: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_result_alias_at` at line 1161: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_result_ext` at line 1407: CoreLang, Denotation
+  - Public lemma `formula_fv_ty_denote_gas_subset_relevant` at line 1516: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_restrict_ret_fvar_closed` at line 1523: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_restrict_delete_fresh` at line 1546: CoreLang, Denotation
+  - Public lemma `ty_denote_ret_fvar_base_const` at line 1573: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_drop_fresh_ext` at line 1617: CoreLang, Denotation
+  - Public lemma `expr_result_formula_of_result_extends_from_ty_guard` at line 1642: CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_env_of_result_extends_from_ty_guard_on` at line 1680: CoreLang, Denotation
+  - Public lemma `expr_result_formula_of_result_extends_on_from_ty_guard` at line 1719: CoreLang, Denotation
+  - Public lemma `denot_ty_lvar_guard_wfworld_closed_on_term` at line 1765: CoreLang, Denotation
+  - Public lemma `lam_intro_denotation` at line 1779: CoreLang, Denotation
 
 ### theories/TypeEquivArrow.v
 - Direct definition folders available to lemmas: Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from Denotation [Denotation]
-- Local definitions/notation/typeclasses: (none)
+- Direct import commands by folder: Denotation [From Denotation Require Import; From Denotation Require Import Notation TypeDenote ResultFirstOpen TypeDenoteRegular.]
+- Local definitions/notation/typeclasses: Local ltac `arrow_expr_result_shift0_side`@947
 - Lemmas/theorems and available definition folders:
-  - Lemma `arrow_open_arg_to_inserted_env` at line 16: Denotation
-  - Lemma `ty_denote_gas_tm_equiv_arrow_open_arg` at line 34: Denotation
-  - Lemma `arrow_result_open_vars_subset` at line 55: Denotation
-  - Lemma `ty_equiv_arrow_result_src_mid` at line 71: Denotation
-  - Lemma `ty_equiv_arrow_result_src_mid_inserted` at line 94: Denotation
-  - Lemma `ty_equiv_arrow_result_src_mid_current` at line 112: Denotation
-  - Lemma `ty_equiv_arrow_result_tgt_goal` at line 140: Denotation
-  - Lemma `ty_equiv_arrow_result_tgt_goal_inserted` at line 163: Denotation
-  - Lemma `ty_equiv_arrow_result_tgt_goal_inserted_lc` at line 181: Denotation
-  - Lemma `wfworld_closed_on_arrow_open_result_apps` at line 199: Denotation
-  - Lemma `arrow_result_source_world` at line 261: Denotation
-  - Lemma `basic_world_formula_arrow_open_result_big` at line 279: Denotation
-  - Lemma `basic_world_formula_arrow_open_result_subenv` at line 317: Denotation
-  - Lemma `basic_world_formula_arrow_open_result_target` at line 343: Denotation
-  - Lemma `basic_value_has_ltype_arrow_inserted_result_target_arg` at line 396: Denotation
-  - Lemma `basic_tm_has_ltype_arrow_inserted_result_target_fun` at line 413: Denotation
-  - Lemma `arrow_result_target_typing` at line 466: Denotation
-  - Lemma `ty_denote_gas_zero_arrow_open_result_target` at line 505: Denotation
-  - Lemma `typed_total_equiv_arrow_open_result_mid` at line 653: Denotation
-  - Lemma `ty_denote_gas_tm_equiv_arrow_open_result` at line 733: Denotation
-  - Lemma `ty_denote_gas_zero_type_fv_world` at line 828: Denotation
-  - Lemma `arrow_result_first_arg_drop_fun_slot` at line 839: Denotation
-  - Lemma `arrow_result_first_arg_add_fun_slot` at line 876: Denotation
-  - Lemma `arrow_result_first_result_env_agree` at line 928: Denotation
-  - Lemma `ty_denote_gas_tm_equiv_arrow_body` at line 968: Denotation
+  - Public lemma `arrow_open_arg_to_inserted_env` at line 16: Denotation
+  - Public lemma `ty_denote_gas_tm_equiv_arrow_open_arg` at line 34: Denotation
+  - Public lemma `arrow_result_open_vars_subset` at line 55: Denotation
+  - Public lemma `ty_equiv_arrow_result_src_mid` at line 64: Denotation
+  - Public lemma `ty_equiv_arrow_result_src_mid_inserted` at line 87: Denotation
+  - Public lemma `ty_equiv_arrow_result_src_mid_current` at line 105: Denotation
+  - Public lemma `ty_equiv_arrow_result_tgt_goal` at line 133: Denotation
+  - Public lemma `ty_equiv_arrow_result_tgt_goal_inserted` at line 156: Denotation
+  - Public lemma `ty_equiv_arrow_result_tgt_goal_inserted_lc` at line 174: Denotation
+  - Public lemma `wfworld_closed_on_arrow_open_result_apps` at line 192: Denotation
+  - Public lemma `arrow_result_source_world` at line 254: Denotation
+  - Public lemma `basic_world_formula_arrow_open_result_big` at line 272: Denotation
+  - Public lemma `basic_world_formula_arrow_open_result_subenv` at line 310: Denotation
+  - Public lemma `basic_world_formula_arrow_open_result_target` at line 336: Denotation
+  - Public lemma `basic_value_has_ltype_arrow_inserted_result_target_arg` at line 389: Denotation
+  - Public lemma `basic_tm_has_ltype_arrow_inserted_result_target_fun` at line 406: Denotation
+  - Public lemma `arrow_result_target_typing` at line 459: Denotation
+  - Public lemma `ty_denote_gas_zero_arrow_open_result_target` at line 498: Denotation
+  - Public lemma `typed_total_equiv_arrow_open_result_mid` at line 646: Denotation
+  - Public lemma `ty_denote_gas_tm_equiv_arrow_open_result` at line 726: Denotation
+  - Public lemma `ty_denote_gas_zero_type_fv_world` at line 821: Denotation
+  - Public lemma `arrow_result_first_arg_drop_fun_slot` at line 832: Denotation
+  - Public lemma `arrow_result_first_arg_add_fun_slot` at line 869: Denotation
+  - Local lemma `arrow_result_body_relevant_subset` at line 906: Denotation
+  - Public lemma `arrow_result_first_result_env_agree` at line 921: Denotation
+  - Public lemma `ty_denote_gas_tm_equiv_arrow_body` at line 954: Denotation
 
 ### theories/TypeEquivBody.v
 - Direct definition folders available to lemmas: Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from Denotation [Denotation]; Import from Denotation [Denotation]
-- Local definitions/notation/typeclasses: (none)
+- Direct import commands by folder: Denotation [From Denotation Require Import Notation TypeDenote ResultFirstOpen DenotationSetMapFacts TypeDenoteRegular.; From Denotation Require Import TypeEquivCore TypeEquivTermBase TypeEquivTermResult.; From Denotation Require Import TypeEquivFiberBaseCore TypeEquivFiberBaseProjected.; From Denotation Require TypeEquivFiberBaseCore.]
+- Local definitions/notation/typeclasses: Local ltac `expr_result_shift0_side`@12, Local ltac `sum_open_side`@18
 - Lemmas/theorems and available definition folders:
-  - Lemma `formula_fv_open_over_body_obs` at line 43: Denotation
-  - Lemma `formula_fv_open_under_body_obs` at line 58: Denotation
-  - Lemma `formula_fv_open_sum_body_obs` at line 73: Denotation
-  - Lemma `formula_fv_sum_body_obs_relevant` at line 112: Denotation
-  - Lemma `ty_denote_gas_tm_fiber_equiv_over_body` at line 225: Denotation
-  - Lemma `ty_denote_gas_tm_fiber_equiv_under_body` at line 335: Denotation
-  - Lemma `ty_denote_gas_tm_fiber_equiv_sum_body` at line 445: Denotation
-  - Lemma `ty_denote_gas_tm_equiv_over_body` at line 673: Denotation
-  - Lemma `ty_denote_gas_tm_equiv_under_body` at line 702: Denotation
-  - Lemma `ty_denote_gas_zero_project_context` at line 731: Denotation
-  - Lemma `ty_denote_gas_zero_inter_l` at line 742: Denotation
-  - Lemma `ty_denote_gas_zero_inter_r` at line 750: Denotation
-  - Lemma `typed_total_equiv_project_context` at line 758: Denotation
-  - Lemma `typed_total_equiv_shape_ok` at line 776: Denotation
-  - Lemma `typed_total_equiv_inter_l` at line 790: Denotation
-  - Lemma `typed_total_equiv_inter_r` at line 805: Denotation
-  - Lemma `ty_denote_gas_tm_equiv_inter_body` at line 824: Denotation
-  - Lemma `ty_denote_gas_zero_union_l` at line 844: Denotation
-  - Lemma `ty_denote_gas_zero_union_r` at line 852: Denotation
-  - Lemma `typed_total_equiv_union_l` at line 860: Denotation
-  - Lemma `typed_total_equiv_union_r` at line 875: Denotation
-  - Lemma `ty_denote_gas_scope_from_zero_any` at line 894: Denotation
-  - Lemma `ty_denote_gas_tm_equiv_union_body` at line 902: Denotation
-  - Lemma `ty_denote_gas_zero_res_subset` at line 938: Denotation
-  - Lemma `ty_denote_gas_zero_sum_l` at line 964: Denotation
-  - Lemma `ty_denote_gas_zero_sum_r` at line 972: Denotation
-  - Lemma `typed_total_equiv_sum_l_pullback` at line 980: Denotation
-  - Lemma `typed_total_equiv_sum_r_pullback` at line 1004: Denotation
-  - Lemma `ty_denote_gas_tm_equiv_sum_body` at line 1028: Denotation
+  - Local lemma `formula_open_shifted_ret_bound0_ty_denote_gas` at line 26: Denotation
+  - Public lemma `formula_fv_open_over_body_obs` at line 43: Denotation
+  - Public lemma `formula_fv_open_under_body_obs` at line 58: Denotation
+  - Public lemma `formula_fv_open_sum_body_obs` at line 73: Denotation
+  - Public lemma `formula_fv_sum_body_obs_relevant` at line 112: Denotation
+  - Local lemma `sum_branch_relevant_env_agree_inserted_core` at line 144: Denotation
+  - Local lemma `sum_open_body_env_transport` at line 161: Denotation
+  - Public lemma `ty_denote_gas_tm_fiber_equiv_over_body` at line 225: Denotation
+  - Public lemma `ty_denote_gas_tm_fiber_equiv_under_body` at line 335: Denotation
+  - Public lemma `ty_denote_gas_tm_fiber_equiv_sum_body` at line 445: Denotation
+  - Public lemma `ty_denote_gas_tm_equiv_over_body` at line 673: Denotation
+  - Public lemma `ty_denote_gas_tm_equiv_under_body` at line 702: Denotation
+  - Public lemma `ty_denote_gas_zero_project_context` at line 731: Denotation
+  - Public lemma `ty_denote_gas_zero_inter_l` at line 742: Denotation
+  - Public lemma `ty_denote_gas_zero_inter_r` at line 750: Denotation
+  - Public lemma `typed_total_equiv_project_context` at line 758: Denotation
+  - Public lemma `typed_total_equiv_shape_ok` at line 776: Denotation
+  - Public lemma `typed_total_equiv_inter_l` at line 790: Denotation
+  - Public lemma `typed_total_equiv_inter_r` at line 805: Denotation
+  - Public lemma `ty_denote_gas_tm_equiv_inter_body` at line 824: Denotation
+  - Public lemma `ty_denote_gas_zero_union_l` at line 844: Denotation
+  - Public lemma `ty_denote_gas_zero_union_r` at line 852: Denotation
+  - Public lemma `typed_total_equiv_union_l` at line 860: Denotation
+  - Public lemma `typed_total_equiv_union_r` at line 875: Denotation
+  - Public lemma `ty_denote_gas_scope_from_zero_any` at line 894: Denotation
+  - Public lemma `ty_denote_gas_tm_equiv_union_body` at line 902: Denotation
+  - Public lemma `ty_denote_gas_zero_res_subset` at line 938: Denotation
+  - Public lemma `ty_denote_gas_zero_sum_l` at line 964: Denotation
+  - Public lemma `ty_denote_gas_zero_sum_r` at line 972: Denotation
+  - Public lemma `typed_total_equiv_sum_l_pullback` at line 980: Denotation
+  - Public lemma `typed_total_equiv_sum_r_pullback` at line 1004: Denotation
+  - Public lemma `ty_denote_gas_tm_equiv_sum_body` at line 1028: Denotation
 
 ### theories/TypeEquivCore.v
 - Direct definition folders available to lemmas: CoreLang, Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from CoreLang [CoreLang]
+- Direct import commands by folder: CoreLang [From CoreLang Require Import StrongNormalization.] | Denotation [From Denotation Require Import Notation TypeDenote TypeDenoteRegular.]
 - Local definitions/notation/typeclasses: (none)
 - Lemmas/theorems and available definition folders:
-  - Lemma `res_models_lift_projection_eq` at line 10: CoreLang, Denotation
-  - Lemma `ty_denote_gas_saturate` at line 21: CoreLang, Denotation
-  - Lemma `ty_denote_gas_insert_fresh_lty_env_eq` at line 167: CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_of_guard_formula` at line 183: CoreLang, Denotation
-  - Lemma `ty_denote_gas_guard_formula` at line 196: CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_of_guard` at line 204: CoreLang, Denotation
-  - Lemma `ty_denote_gas_guard` at line 221: CoreLang, Denotation
-  - Lemma `ty_denote_gas_guard_of_zero` at line 238: CoreLang, Denotation
-  - Lemma `ty_denote_gas_total_guard_of_zero` at line 255: CoreLang, Denotation
-  - Lemma `ty_guard_formula_context_wf` at line 267: CoreLang, Denotation
-  - Lemma `ty_guard_formula_basic_world` at line 278: CoreLang, Denotation
-  - Lemma `ty_guard_formula_basic_typing` at line 289: CoreLang, Denotation
-  - Lemma `ty_guard_formula_total` at line 300: CoreLang, Denotation
-  - Lemma `ty_denote_gas_type_lvars_world` at line 311: CoreLang, Denotation
-  - Lemma `ty_denote_gas_fv_cty_world` at line 328: CoreLang, Denotation
-  - Lemma `basic_world_formula_free_notin_dom` at line 338: CoreLang, Denotation
-  - Lemma `ty_denote_gas_tm_lvars_relevant_env_dom` at line 351: CoreLang, Denotation
-  - Lemma `ty_denote_gas_ret_fvar_relevant_lookup` at line 369: CoreLang, Denotation
-  - Lemma `ty_denote_gas_ret_fvar_lookup` at line 387: CoreLang, Denotation
-  - Lemma `ty_denote_gas_ret_fvar_world_dom` at line 396: CoreLang, Denotation
-  - Lemma `ty_denote_gas_ret_fvar_basic_world_singleton` at line 417: CoreLang, Denotation
-  - Lemma `ty_denote_gas_insert_fresh_lty_env` at line 448: CoreLang, Denotation
-  - Lemma `ty_denote_gas_extend_typed_extension` at line 461: CoreLang, Denotation
-  - Lemma `store_typed_restrict_fv_of_guard` at line 481: CoreLang, Denotation
-  - Lemma `result_ext_typed_of_guard` at line 510: CoreLang, Denotation
-  - Lemma `ret_fvar_typing_of_lookup` at line 662: CoreLang, Denotation
-  - Lemma `expr_total_formula_ret_fvar_from_result` at line 676: CoreLang, Denotation
-  - Lemma `expr_total_formula_tret_of_basic` at line 720: CoreLang, Denotation
-  - Lemma `ty_denote_gas_result_alias_guard` at line 785: CoreLang, Denotation
+  - Public lemma `res_models_lift_projection_eq` at line 10: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_saturate` at line 21: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_insert_fresh_lty_env_eq` at line 167: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_of_guard_formula` at line 183: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_guard_formula` at line 196: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_of_guard` at line 204: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_guard` at line 221: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_guard_of_zero` at line 238: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_total_guard_of_zero` at line 255: CoreLang, Denotation
+  - Public lemma `ty_guard_formula_context_wf` at line 267: CoreLang, Denotation
+  - Public lemma `ty_guard_formula_basic_world` at line 278: CoreLang, Denotation
+  - Public lemma `ty_guard_formula_basic_typing` at line 289: CoreLang, Denotation
+  - Public lemma `ty_guard_formula_total` at line 300: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_type_lvars_world` at line 311: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_fv_cty_world` at line 328: CoreLang, Denotation
+  - Public lemma `basic_world_formula_free_notin_dom` at line 338: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_tm_lvars_relevant_env_dom` at line 351: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_ret_fvar_relevant_lookup` at line 369: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_ret_fvar_lookup` at line 387: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_ret_fvar_world_dom` at line 396: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_ret_fvar_basic_world_singleton` at line 417: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_insert_fresh_lty_env` at line 448: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_extend_typed_extension` at line 461: CoreLang, Denotation
+  - Public lemma `store_typed_restrict_fv_of_guard` at line 481: CoreLang, Denotation
+  - Public lemma `result_ext_typed_of_guard` at line 510: CoreLang, Denotation
+  - Public lemma `ret_fvar_typing_of_lookup` at line 662: CoreLang, Denotation
+  - Public lemma `expr_total_formula_ret_fvar_from_result` at line 676: CoreLang, Denotation
+  - Public lemma `expr_total_formula_tret_of_basic` at line 720: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_result_alias_guard` at line 785: CoreLang, Denotation
 
 ### theories/TypeEquivFiberBaseCore.v
 - Direct definition folders available to lemmas: ContextBasicDenotation, CoreLang, Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from Denotation [Denotation]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from CoreLang [CoreLang]
+- Direct import commands by folder: ContextBasicDenotation [From ContextBasicDenotation Require Import StoreTyping TermEval.] | CoreLang [From CoreLang Require Import StrongNormalization InstantiationProps.] | Denotation [From Denotation Require Import Notation TypeDenote TypeDenoteRegular.; From Denotation Require Import TypeEquivCore TypeEquivTermBase TypeEquivTermResult DenotationSetMapFacts.]
 - Local definitions/notation/typeclasses: (none)
 - Lemmas/theorems and available definition folders:
-  - Lemma `relevant_env_dom_project_context` at line 19: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `relevant_env_agree_on_tm_lvars` at line 36: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_project_context` at line 46: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_shape_ok` at line 93: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_inter_l` at line 106: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_inter_r` at line 120: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_union_l` at line 138: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_union_r` at line 152: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_scope_from_zero_any` at line 170: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_lc_relevant_env` at line 183: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_relevant_env_world` at line 197: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_context_lvars_dom` at line 211: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_tm_lvars_dom` at line 225: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_relevant_env_dom_eq` at line 242: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_relevant_lvars_world` at line 260: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_lc_relevant_lvars` at line 276: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_total_atom_world` at line 288: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_sum_l` at line 299: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_sum_r` at line 313: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `res_fiber_stores_agree_on_sub` at line 336: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `res_fiber_store_replace_by_projection_agree` at line 383: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_formula_transport_fiber` at line 405: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `res_models_transport_singleton_fv` at line 490: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `formula_fv_msubst_open_result_atom_only` at line 503: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `formula_fv_msubst_open_over_result_only` at line 527: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `formula_fv_msubst_open_under_result_only` at line 541: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `res_models_FFibVars_transport_result_only` at line 555: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_residual_singleton_on` at line 592: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_msubst_back_input_restrict_agree` at line 627: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_msubst_back_lift_store_eq_agree` at line 710: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_msubst_back_lift_store_eq_agree_all` at line 821: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_formula_at_fiber_witness` at line 917: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_formula_at_models_elim` at line 1081: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_formula_at_ret_value_closed_result` at line 1186: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_formula_at_models_elim_covered` at line 1254: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_formula_at_intro` at line 1345: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_formula_at_fiber_stable` at line 1632: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_formula_at_of_result_extends_on` at line 1681: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_formula_at_coarsen_domain` at line 1885: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_formula_at_of_result_extends_on_coarsen` at line 1930: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `relevant_env_dom_project_context` at line 19: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `relevant_env_agree_on_tm_lvars` at line 36: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_project_context` at line 46: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_shape_ok` at line 93: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_inter_l` at line 106: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_inter_r` at line 120: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_union_l` at line 138: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_union_r` at line 152: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_scope_from_zero_any` at line 170: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_lc_relevant_env` at line 183: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_relevant_env_world` at line 197: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_context_lvars_dom` at line 211: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_tm_lvars_dom` at line 225: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_relevant_env_dom_eq` at line 242: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_relevant_lvars_world` at line 260: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_lc_relevant_lvars` at line 276: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_total_atom_world` at line 288: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_sum_l` at line 299: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_sum_r` at line 313: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `res_fiber_stores_agree_on_sub` at line 336: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `res_fiber_store_replace_by_projection_agree` at line 383: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_formula_transport_fiber` at line 405: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `res_models_transport_singleton_fv` at line 490: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `formula_fv_msubst_open_result_atom_only` at line 503: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `formula_fv_msubst_open_over_result_only` at line 527: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `formula_fv_msubst_open_under_result_only` at line 541: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `res_models_FFibVars_transport_result_only` at line 555: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_residual_singleton_on` at line 592: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_msubst_back_input_restrict_agree` at line 627: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_msubst_back_lift_store_eq_agree` at line 710: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_msubst_back_lift_store_eq_agree_all` at line 821: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_fiber_witness` at line 917: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_models_elim` at line 1081: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_ret_value_closed_result` at line 1186: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_models_elim_covered` at line 1254: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_intro` at line 1345: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_fiber_stable` at line 1632: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_of_result_extends_on` at line 1681: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_coarsen_domain` at line 1885: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_of_result_extends_on_coarsen` at line 1930: ContextBasicDenotation, CoreLang, Denotation
 
 ### theories/TypeEquivFiberBaseProjected.v
 - Direct definition folders available to lemmas: CoreLang, Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from CoreLang [CoreLang]
+- Direct import commands by folder: CoreLang [From CoreLang Require Import StrongNormalization.] | Denotation [From Denotation Require Import Notation DenotationSetMapFacts TypeDenote TypeEquivCore TypeEquivTermBase TypeEquivTermResult TypeEquivFiberBaseCore TypeEquivFiberBaseCore TypeDenoteRegular.]
 - Local definitions/notation/typeclasses: (none)
 - Lemmas/theorems and available definition folders:
-  - Lemma `expr_result_formula_at_projection_eq_of_domains` at line 10: CoreLang, Denotation
-  - Lemma `expr_result_formula_at_refine_domain_projected` at line 158: CoreLang, Denotation
-  - Lemma `expr_result_formula_at_projection_eq_of_fiber_equiv` at line 233: CoreLang, Denotation
-  - Lemma `tm_fiber_equiv_refines_projected_on` at line 475: CoreLang, Denotation
-  - Lemma `tm_fiber_equiv_to_projected_on` at line 622: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_result_projected` at line 636: CoreLang, Denotation
-  - Lemma `tm_result_refines_projected_project` at line 648: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_project` at line 736: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_inter_l` at line 753: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_inter_r` at line 768: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_union_l` at line 783: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_union_r` at line 798: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_sum_l` at line 813: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_sum_r` at line 828: CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_projection_eq_of_domains` at line 10: CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_refine_domain_projected` at line 158: CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_projection_eq_of_fiber_equiv` at line 233: CoreLang, Denotation
+  - Public lemma `tm_fiber_equiv_refines_projected_on` at line 475: CoreLang, Denotation
+  - Public lemma `tm_fiber_equiv_to_projected_on` at line 622: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_result_projected` at line 636: CoreLang, Denotation
+  - Public lemma `tm_result_refines_projected_project` at line 648: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_project` at line 736: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_inter_l` at line 753: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_inter_r` at line 768: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_union_l` at line 783: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_union_r` at line 798: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_sum_l` at line 813: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_sum_r` at line 828: CoreLang, Denotation
 
 ### theories/TypeEquivFiberTransport.v
 - Direct definition folders available to lemmas: CoreLang, Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from CoreLang [CoreLang]
+- Direct import commands by folder: CoreLang [From CoreLang Require Import StrongNormalization Sugar.] | Denotation [From Denotation Require Import Notation TypeDenote TypeDenoteRegular TypeEquivCore TypeEquivTermBase TypeEquivTermResult]
 - Local definitions/notation/typeclasses: (none)
 - Lemmas/theorems and available definition folders:
-  - Lemma `tm_equiv_tapp_value_arg_eq_on` at line 49: CoreLang, Denotation
-  - Lemma `tm_total_equiv_tapp_value_arg_eq_on` at line 85: CoreLang, Denotation
-  - Lemma `tm_equiv_ret_value_result_alias_on` at line 130: CoreLang, Denotation
-  - Lemma `tm_equiv_ret_value_result_alias` at line 166: CoreLang, Denotation
-  - Lemma `tm_total_equiv_ret_value_result_alias_on` at line 179: CoreLang, Denotation
-  - Lemma `tm_total_equiv_ret_value_result_alias` at line 246: CoreLang, Denotation
-  - Lemma `typed_total_equiv_ret_value_result_alias` at line 259: CoreLang, Denotation
-  - Lemma `tm_equiv_tapp_value_arg_result_alias_on` at line 282: CoreLang, Denotation
-  - Lemma `tm_total_equiv_tapp_value_arg_result_alias_on` at line 303: CoreLang, Denotation
-  - Lemma `tm_equiv_tapp_value_arg_result_alias` at line 325: CoreLang, Denotation
-  - Lemma `tm_total_equiv_tapp_value_arg_result_alias` at line 339: CoreLang, Denotation
-  - Lemma `tm_equiv_tapp_value_fun_result_alias_on` at line 354: CoreLang, Denotation
-  - Lemma `tm_equiv_tapp_value_fun_result_alias` at line 416: CoreLang, Denotation
-  - Lemma `tm_total_equiv_tapp_value_fun_result_alias_on` at line 434: CoreLang, Denotation
-  - Lemma `tm_total_equiv_tapp_value_fun_result_alias` at line 517: CoreLang, Denotation
-  - Lemma `tm_equiv_tapp_value_fun_arg_result_alias` at line 535: CoreLang, Denotation
-  - Lemma `tm_total_equiv_tapp_value_fun_arg_result_alias` at line 576: CoreLang, Denotation
+  - Public lemma `tm_equiv_tapp_value_arg_eq_on` at line 13: CoreLang, Denotation
+  - Public lemma `tm_total_equiv_tapp_value_arg_eq_on` at line 49: CoreLang, Denotation
+  - Public lemma `tm_equiv_ret_value_result_alias_on` at line 94: CoreLang, Denotation
+  - Public lemma `tm_equiv_ret_value_result_alias` at line 130: CoreLang, Denotation
+  - Public lemma `tm_total_equiv_ret_value_result_alias_on` at line 143: CoreLang, Denotation
+  - Public lemma `tm_total_equiv_ret_value_result_alias` at line 210: CoreLang, Denotation
+  - Public lemma `typed_total_equiv_ret_value_result_alias` at line 223: CoreLang, Denotation
+  - Public lemma `tm_equiv_tapp_value_arg_result_alias_on` at line 246: CoreLang, Denotation
+  - Public lemma `tm_total_equiv_tapp_value_arg_result_alias_on` at line 267: CoreLang, Denotation
+  - Public lemma `tm_equiv_tapp_value_arg_result_alias` at line 289: CoreLang, Denotation
+  - Public lemma `tm_total_equiv_tapp_value_arg_result_alias` at line 303: CoreLang, Denotation
+  - Public lemma `tm_equiv_tapp_value_fun_result_alias_on` at line 318: CoreLang, Denotation
+  - Public lemma `tm_equiv_tapp_value_fun_result_alias` at line 380: CoreLang, Denotation
+  - Public lemma `tm_total_equiv_tapp_value_fun_result_alias_on` at line 398: CoreLang, Denotation
+  - Public lemma `tm_total_equiv_tapp_value_fun_result_alias` at line 481: CoreLang, Denotation
+  - Public lemma `tm_equiv_tapp_value_fun_arg_result_alias` at line 499: CoreLang, Denotation
+  - Public lemma `tm_total_equiv_tapp_value_fun_arg_result_alias` at line 540: CoreLang, Denotation
 
 ### theories/TypeEquivTLet.v
 - Direct definition folders available to lemmas: Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from Denotation [Denotation]
+- Direct import commands by folder: Denotation [From Denotation Require Import; From Denotation Require Import Notation TypeDenote TypeDenoteRegular.]
 - Local definitions/notation/typeclasses: (none)
 - Lemmas/theorems and available definition folders:
-  - Lemma `tlet_persist_body_transport` at line 1129: Denotation
-  - Lemma `tlet_intro_denotation` at line 1468: Denotation
-  - Lemma `result_graph_tlet_reverse_transport` at line 1502: Denotation
+  - Local lemma `tlet_guard_wfworld_closed_on_term` at line 27: Denotation
+  - Local lemma `ty_denote_gas_zero_fv_tm_world` at line 41: Denotation
+  - Local lemma `typed_fiber_equiv_tlet_body_extension` at line 61: Denotation
+  - Local lemma `tlet_arrow_open_arg_env` at line 101: Denotation
+  - Local lemma `tlet_wand_open_arg_env` at line 137: Denotation
+  - Local lemma `tlet_arrow_value_body_env` at line 173: Denotation
+  - Local lemma `tlet_arrow_result_first_body_transport` at line 381: Denotation
+  - Local lemma `tlet_wand_value_body_env` at line 617: Denotation
+  - Local lemma `tlet_wand_result_first_body_transport` at line 821: Denotation
+  - Local lemma `tlet_persist_value_body_env_eq` at line 1042: Denotation
+  - Public lemma `tlet_persist_body_transport` at line 1129: Denotation
+  - Local lemma `tlet_intro_denotation_forward` at line 1277: Denotation
+  - Local lemma `tlet_intro_denotation_reverse` at line 1372: Denotation
+  - Public lemma `tlet_intro_denotation` at line 1468: Denotation
+  - Local lemma `ty_denote_gas_models_projection` at line 1490: Denotation
+  - Public lemma `result_graph_tlet_reverse_transport` at line 1502: Denotation
 
 ### theories/TypeEquivTermBase.v
 - Direct definition folders available to lemmas: CoreLang, Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from CoreLang [CoreLang]
-- Local definitions/notation/typeclasses: Definition tm_equiv_on@11, Definition tm_total_equiv_on@18, Definition tm_fiber_result_on@27, Definition tm_fiber_equiv_on@38, Definition tm_result_refines_projected_on@46, Definition tm_result_equiv_projected_on@63, Definition typed_total_equiv_on@68, Definition typed_fiber_equiv_on@82
+- Direct import commands by folder: CoreLang [From CoreLang Require Import StrongNormalization.] | Denotation [From Denotation Require Import Notation TypeDenote TypeDenoteRegular TypeEquivCore]
+- Local definitions/notation/typeclasses: definition `tm_equiv_on`@11, definition `tm_total_equiv_on`@18, definition `tm_fiber_result_on`@27, definition `tm_fiber_equiv_on`@38, definition `tm_result_refines_projected_on`@46, definition `tm_result_equiv_projected_on`@63, definition `typed_total_equiv_on`@68, definition `typed_fiber_equiv_on`@82
 - Lemmas/theorems and available definition folders:
-  - Lemma `typed_fiber_equiv_intro` at line 88: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_sym` at line 101: CoreLang, Denotation
-  - Lemma `tm_fiber_equiv_on_refl` at line 112: CoreLang, Denotation
-  - Lemma `tm_fiber_equiv_on_sym` at line 118: CoreLang, Denotation
-  - Lemma `tm_fiber_equiv_on_trans` at line 125: CoreLang, Denotation
-  - Lemma `tm_fiber_equiv_on_mono` at line 134: CoreLang, Denotation
-  - Lemma `tm_equiv_on_to_fiber_equiv` at line 157: CoreLang, Denotation
-  - Lemma `tm_fiber_equiv_result_pullback` at line 169: CoreLang, Denotation
-  - Lemma `tm_fiber_equiv_eval_forward` at line 197: CoreLang, Denotation
-  - Lemma `tm_fiber_equiv_result_ext_on` at line 218: CoreLang, Denotation
-  - Lemma `expr_result_formula_msubst_store_to_atom` at line 442: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_total_equiv` at line 476: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_fiber` at line 500: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_zero_src` at line 506: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_zero_tgt` at line 512: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_term_lc` at line 518: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_term_scope_env` at line 541: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_term_lvars_env` at line 577: CoreLang, Denotation
-  - Lemma `tm_total_equiv_of_total_formulas` at line 601: CoreLang, Denotation
-  - Lemma `tm_equiv_lam_app_body` at line 620: CoreLang, Denotation
-  - Lemma `tm_total_equiv_lam_app_body` at line 669: CoreLang, Denotation
-  - Lemma `tm_equiv_fix_unfold` at line 739: CoreLang, Denotation
-  - Lemma `tm_total_equiv_fix_unfold` at line 796: CoreLang, Denotation
-  - Lemma `typed_total_equiv_source_zero` at line 877: CoreLang, Denotation
-  - Lemma `typed_total_equiv_target_zero` at line 883: CoreLang, Denotation
-  - Lemma `typed_total_equiv_tm_equiv` at line 889: CoreLang, Denotation
-  - Lemma `typed_total_equiv_total_equiv` at line 895: CoreLang, Denotation
-  - Lemma `typed_total_equiv_term_lc` at line 901: CoreLang, Denotation
-  - Lemma `typed_total_equiv_term_scope` at line 924: CoreLang, Denotation
-  - Lemma `typed_total_equiv_term_lc_lvars` at line 956: CoreLang, Denotation
-  - Lemma `typed_fiber_equiv_of_tm_equiv` at line 964: CoreLang, Denotation
-  - Lemma `tm_equiv_res_store_subset` at line 978: CoreLang, Denotation
-  - Lemma `tm_equiv_on_to_fiber_equiv_on` at line 988: CoreLang, Denotation
-  - Lemma `res_subset_trans_local` at line 996: CoreLang, Denotation
-  - Lemma `basic_tm_has_ltype_tapp_tm_lvar` at line 1011: CoreLang, Denotation
-  - Lemma `tm_equiv_res_product_right` at line 1046: CoreLang, Denotation
-  - Lemma `tm_total_equiv_res_product_right` at line 1086: CoreLang, Denotation
-  - Lemma `tm_equiv_full_world_extend_fresh` at line 1134: CoreLang, Denotation
-  - Lemma `tm_total_equiv_full_world_extend_fresh` at line 1174: CoreLang, Denotation
-  - Lemma `tm_equiv_total` at line 1222: CoreLang, Denotation
-  - Lemma `tm_equiv_tapp_fvar` at line 1245: CoreLang, Denotation
-  - Lemma `tm_fiber_equiv_restrict_eval_iff` at line 1313: CoreLang, Denotation
-  - Lemma `tm_fiber_equiv_tapp_fvar` at line 1362: CoreLang, Denotation
-  - Lemma `tm_fiber_equiv_open_app_fvar` at line 1417: CoreLang, Denotation
-  - Lemma `tm_total_equiv_tapp_fvar` at line 1433: CoreLang, Denotation
-  - Lemma `tm_total_equiv_tapp_tm_ret` at line 1571: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_intro` at line 88: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_sym` at line 101: CoreLang, Denotation
+  - Public lemma `tm_fiber_equiv_on_refl` at line 112: CoreLang, Denotation
+  - Public lemma `tm_fiber_equiv_on_sym` at line 118: CoreLang, Denotation
+  - Public lemma `tm_fiber_equiv_on_trans` at line 125: CoreLang, Denotation
+  - Public lemma `tm_fiber_equiv_on_mono` at line 134: CoreLang, Denotation
+  - Public lemma `tm_equiv_on_to_fiber_equiv` at line 157: CoreLang, Denotation
+  - Public lemma `tm_fiber_equiv_result_pullback` at line 169: CoreLang, Denotation
+  - Public lemma `tm_fiber_equiv_eval_forward` at line 197: CoreLang, Denotation
+  - Public lemma `tm_fiber_equiv_result_ext_on` at line 218: CoreLang, Denotation
+  - Public lemma `expr_result_formula_msubst_store_to_atom` at line 442: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_total_equiv` at line 476: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_fiber` at line 500: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_zero_src` at line 506: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_zero_tgt` at line 512: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_term_lc` at line 518: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_term_scope_env` at line 541: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_term_lvars_env` at line 577: CoreLang, Denotation
+  - Public lemma `tm_total_equiv_of_total_formulas` at line 601: CoreLang, Denotation
+  - Public lemma `tm_equiv_lam_app_body` at line 620: CoreLang, Denotation
+  - Public lemma `tm_total_equiv_lam_app_body` at line 669: CoreLang, Denotation
+  - Public lemma `tm_equiv_fix_unfold` at line 739: CoreLang, Denotation
+  - Public lemma `tm_total_equiv_fix_unfold` at line 796: CoreLang, Denotation
+  - Public lemma `typed_total_equiv_source_zero` at line 877: CoreLang, Denotation
+  - Public lemma `typed_total_equiv_target_zero` at line 883: CoreLang, Denotation
+  - Public lemma `typed_total_equiv_tm_equiv` at line 889: CoreLang, Denotation
+  - Public lemma `typed_total_equiv_total_equiv` at line 895: CoreLang, Denotation
+  - Public lemma `typed_total_equiv_term_lc` at line 901: CoreLang, Denotation
+  - Public lemma `typed_total_equiv_term_scope` at line 924: CoreLang, Denotation
+  - Public lemma `typed_total_equiv_term_lc_lvars` at line 956: CoreLang, Denotation
+  - Public lemma `typed_fiber_equiv_of_tm_equiv` at line 964: CoreLang, Denotation
+  - Public lemma `tm_equiv_res_store_subset` at line 978: CoreLang, Denotation
+  - Public lemma `tm_equiv_on_to_fiber_equiv_on` at line 988: CoreLang, Denotation
+  - Public lemma `res_subset_trans_local` at line 996: CoreLang, Denotation
+  - Public lemma `basic_tm_has_ltype_tapp_tm_lvar` at line 1011: CoreLang, Denotation
+  - Public lemma `tm_equiv_res_product_right` at line 1046: CoreLang, Denotation
+  - Public lemma `tm_total_equiv_res_product_right` at line 1086: CoreLang, Denotation
+  - Public lemma `tm_equiv_full_world_extend_fresh` at line 1134: CoreLang, Denotation
+  - Public lemma `tm_total_equiv_full_world_extend_fresh` at line 1174: CoreLang, Denotation
+  - Public lemma `tm_equiv_total` at line 1222: CoreLang, Denotation
+  - Public lemma `tm_equiv_tapp_fvar` at line 1245: CoreLang, Denotation
+  - Public lemma `tm_fiber_equiv_restrict_eval_iff` at line 1313: CoreLang, Denotation
+  - Public lemma `tm_fiber_equiv_tapp_fvar` at line 1362: CoreLang, Denotation
+  - Public lemma `tm_fiber_equiv_open_app_fvar` at line 1417: CoreLang, Denotation
+  - Public lemma `tm_total_equiv_tapp_fvar` at line 1433: CoreLang, Denotation
+  - Public lemma `tm_total_equiv_tapp_tm_ret` at line 1571: CoreLang, Denotation
 
 ### theories/TypeEquivTermResult.v
 - Direct definition folders available to lemmas: ContextBasicDenotation, CoreLang, Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from CoreLang [CoreLang]
+- Direct import commands by folder: ContextBasicDenotation [From ContextBasicDenotation Require Import TermSyntax.] | CoreLang [From CoreLang Require Import StrongNormalization.] | Denotation [From Denotation Require Import Notation TypeDenote TypeEquivCore DenotationSetMapFacts TypeEquivTermBase TypeDenoteRegular.]
 - Local definitions/notation/typeclasses: (none)
 - Lemmas/theorems and available definition folders:
-  - Lemma `expr_result_formula_ret_value_inst_eq_on` at line 11: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_formula_transport_fv_subset` at line 59: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_formula_alias_ret_fvar` at line 119: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_extension_fiber_models_result_slot` at line 381: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_formula_at_of_result_extends` at line 1011: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_formula_msubst_alias_ret_fvar` at line 1115: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `expr_result_extension_open_fiber_alias` at line 1257: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `tm_total_equiv_res_store_subset` at line 1442: ContextBasicDenotation, CoreLang, Denotation
-  - Lemma `tm_fiber_equiv_tlete_body_extension` at line 1452: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_formula_ret_value_inst_eq_on` at line 11: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_formula_transport_fv_subset` at line 59: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_formula_alias_ret_fvar` at line 119: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_extension_fiber_models_result_slot` at line 381: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_of_result_extends` at line 1011: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_formula_msubst_alias_ret_fvar` at line 1115: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `expr_result_extension_open_fiber_alias` at line 1257: ContextBasicDenotation, CoreLang, Denotation
+  - Local lemma `tlet_fresh_for_parts` at line 1429: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `tm_total_equiv_res_store_subset` at line 1442: ContextBasicDenotation, CoreLang, Denotation
+  - Public lemma `tm_fiber_equiv_tlete_body_extension` at line 1452: ContextBasicDenotation, CoreLang, Denotation
 
 ### theories/TypeEquivWand.v
-- Direct definition folders available to lemmas: Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from Denotation [Denotation]
-- Local definitions/notation/typeclasses: (none)
+- Direct definition folders available to lemmas: CoreLang, Denotation
+- Direct import commands by folder: CoreLang [From CoreLang Require Import Sugar.] | Denotation [From Denotation Require Import; From Denotation Require Import Notation TypeDenote ResultFirstOpen TypeDenoteRegular.]
+- Local definitions/notation/typeclasses: Local ltac `wand_union_member`@18, Local ltac `wand_fresh_from_disjoint`@24, Local ltac `wand_expr_result_shift0_side`@1154
 - Lemmas/theorems and available definition folders:
-  - Lemma `wand_open_arg_to_inserted_env` at line 117: Denotation
-  - Lemma `ty_denote_gas_tm_equiv_wand_open_arg_fbwand` at line 135: Denotation
-  - Lemma `ty_equiv_wand_result_src_mid` at line 156: Denotation
-  - Lemma `ty_equiv_wand_result_tgt_goal` at line 179: Denotation
-  - Lemma `wfworld_closed_on_wand_open_result_apps` at line 202: Denotation
-  - Lemma `wand_result_source_world` at line 351: Denotation
-  - Lemma `basic_world_formula_wand_open_result_big` at line 369: Denotation
-  - Lemma `basic_world_formula_wand_open_result_subenv` at line 407: Denotation
-  - Lemma `basic_world_formula_wand_open_result_target` at line 433: Denotation
-  - Lemma `wand_result_target_typing` at line 494: Denotation
-  - Lemma `ty_denote_gas_zero_wand_open_result_target` at line 533: Denotation
-  - Lemma `typed_total_equiv_wand_open_result_mid` at line 629: Denotation
-  - Lemma `wfworld_closed_on_wand_open_result_apps_product` at line 685: Denotation
-  - Lemma `basic_world_formula_wand_open_result_target_product` at line 807: Denotation
-  - Lemma `ty_denote_gas_zero_wand_open_result_target_product` at line 872: Denotation
-  - Lemma `typed_total_equiv_wand_open_result_mid_product` at line 1008: Denotation
-  - Lemma `wand_result_first_result_to_regular_open` at line 1053: Denotation
-  - Lemma `wand_result_first_regular_to_result_open` at line 1099: Denotation
-  - Lemma `wand_result_first_result_env_agree` at line 1160: Denotation
-  - Lemma `ty_denote_gas_tm_equiv_wand_body` at line 1207: Denotation
+  - Local lemma `wand_open_world_term_scope` at line 30: CoreLang, Denotation
+  - Local lemma `wand_open_product_tapp_tgt_scope` at line 43: CoreLang, Denotation
+  - Local lemma `wand_open_world_tapp_apps_scope` at line 64: CoreLang, Denotation
+  - Public lemma `wand_open_arg_to_inserted_env` at line 85: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_tm_equiv_wand_open_arg_fbwand` at line 103: CoreLang, Denotation
+  - Public lemma `ty_equiv_wand_result_src_mid` at line 124: CoreLang, Denotation
+  - Public lemma `ty_equiv_wand_result_tgt_goal` at line 147: CoreLang, Denotation
+  - Public lemma `wfworld_closed_on_wand_open_result_apps` at line 170: CoreLang, Denotation
+  - Local lemma `wand_open_result_apps_equiv_total_product_right` at line 261: CoreLang, Denotation
+  - Public lemma `wand_result_source_world` at line 319: CoreLang, Denotation
+  - Public lemma `basic_world_formula_wand_open_result_big` at line 337: CoreLang, Denotation
+  - Public lemma `basic_world_formula_wand_open_result_subenv` at line 375: CoreLang, Denotation
+  - Public lemma `basic_world_formula_wand_open_result_target` at line 401: CoreLang, Denotation
+  - Public lemma `wand_result_target_typing` at line 462: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_wand_open_result_target` at line 501: CoreLang, Denotation
+  - Public lemma `typed_total_equiv_wand_open_result_mid` at line 597: CoreLang, Denotation
+  - Public lemma `wfworld_closed_on_wand_open_result_apps_product` at line 653: CoreLang, Denotation
+  - Local lemma `wand_open_result_apps_equiv_total_product` at line 736: CoreLang, Denotation
+  - Public lemma `basic_world_formula_wand_open_result_target_product` at line 775: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_wand_open_result_target_product` at line 840: CoreLang, Denotation
+  - Public lemma `typed_total_equiv_wand_open_result_mid_product` at line 976: CoreLang, Denotation
+  - Public lemma `wand_result_first_result_to_regular_open` at line 1021: CoreLang, Denotation
+  - Public lemma `wand_result_first_regular_to_result_open` at line 1067: CoreLang, Denotation
+  - Local lemma `wand_result_body_relevant_subset` at line 1113: CoreLang, Denotation
+  - Public lemma `wand_result_first_result_env_agree` at line 1128: CoreLang, Denotation
+  - Public lemma `ty_denote_gas_tm_equiv_wand_body` at line 1161: CoreLang, Denotation
 
 ### theories/TypePersistArrow.v
 - Direct definition folders available to lemmas: ContextAlgebra, Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from ContextAlgebra [ContextAlgebra]
-- Local definitions/notation/typeclasses: (none)
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceAlgebra.] | Denotation [From Denotation Require Import Notation TypeDenote TypeDenoteRegular ResultFirstOpen]
+- Local definitions/notation/typeclasses: Local ltac `persist_over_context_wf`@258
 - Lemmas/theorems and available definition folders:
-  - Lemma `arrow_value_over_arg_to_persist_over_arg` at line 12: ContextAlgebra, Denotation
-  - Lemma `ty_guard_formula_transport` at line 239: ContextAlgebra, Denotation
-  - Lemma `ty_guard_arrow_over_arg_to_persist_over_arg` at line 274: ContextAlgebra, Denotation
-  - Lemma `ty_guard_arrow_persist_over_arg_to_over_arg` at line 288: ContextAlgebra, Denotation
-  - Lemma `ty_guard_wand_over_arg_to_persist_over_arg` at line 304: ContextAlgebra, Denotation
-  - Lemma `ty_guard_wand_persist_over_arg_to_over_arg` at line 318: ContextAlgebra, Denotation
-  - Lemma `cty_lc_at_shift_at` at line 334: ContextAlgebra, Denotation
-  - Lemma `arrow_value_over_arg_to_persist_over_arg_plain` at line 358: ContextAlgebra, Denotation
-  - Lemma `arrow_result_first_open_value_over_arg_to_persist_over_arg` at line 561: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_arrow_over_arg_to_persist_over_arg` at line 644: ContextAlgebra, Denotation
-  - Lemma `ty_denote_arrow_over_arg_to_persist_over_arg` at line 785: ContextAlgebra, Denotation
-  - Theorem `ty_denote_arrow_over_param_persist_over_result_forward` at line 807: ContextAlgebra, Denotation
-  - Theorem `ty_denote_arrow_over_param_persist_under_result_forward` at line 821: ContextAlgebra, Denotation
+  - Public lemma `arrow_value_over_arg_to_persist_over_arg` at line 12: ContextAlgebra, Denotation
+  - Public lemma `ty_guard_formula_transport` at line 239: ContextAlgebra, Denotation
+  - Public lemma `ty_guard_arrow_over_arg_to_persist_over_arg` at line 274: ContextAlgebra, Denotation
+  - Public lemma `ty_guard_arrow_persist_over_arg_to_over_arg` at line 288: ContextAlgebra, Denotation
+  - Public lemma `ty_guard_wand_over_arg_to_persist_over_arg` at line 304: ContextAlgebra, Denotation
+  - Public lemma `ty_guard_wand_persist_over_arg_to_over_arg` at line 318: ContextAlgebra, Denotation
+  - Public lemma `cty_lc_at_shift_at` at line 334: ContextAlgebra, Denotation
+  - Public lemma `arrow_value_over_arg_to_persist_over_arg_plain` at line 358: ContextAlgebra, Denotation
+  - Public lemma `arrow_result_first_open_value_over_arg_to_persist_over_arg` at line 561: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_gas_arrow_over_arg_to_persist_over_arg` at line 644: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_arrow_over_arg_to_persist_over_arg` at line 785: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_arrow_over_param_persist_over_result_forward` at line 807: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_arrow_over_param_persist_under_result_forward` at line 821: ContextAlgebra, Denotation
 
 ### theories/TypePersistBase.v
-- Direct definition folders available to lemmas: ContextAlgebra, Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from ContextAlgebra [ContextAlgebra]
-- Local definitions/notation/typeclasses: Definition over_open_body@11, Definition under_open_body@16, Definition over_ret_fvar_env@89
+- Direct definition folders available to lemmas: ContextAlgebra, ContextBase, Denotation
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceAlgebra.] | ContextBase [From ContextBase.Swap Require Import SetSwap.] | Denotation [From Denotation Require Import Notation TypeDenote TypeDenoteRegular ResultFirstOpen]
+- Local definitions/notation/typeclasses: definition `over_open_body`@12, definition `under_open_body`@17, definition `over_ret_fvar_env`@22
 - Lemmas/theorems and available definition folders:
-  - Lemma `relevant_env_persist_eq` at line 93: ContextAlgebra, Denotation
-  - Lemma `over_ret_fvar_env_restrict_eq` at line 119: ContextAlgebra, Denotation
-  - Lemma `over_ret_fvar_relevant_env_restrict_eq` at line 134: ContextAlgebra, Denotation
-  - Lemma `insert_relevant_env_ret_fvar_restrict_eq` at line 158: ContextAlgebra, Denotation
-  - Lemma `formula_open_over_self_body_normalize` at line 190: ContextAlgebra, Denotation
-  - Lemma `formula_open_under_self_body_normalize` at line 204: ContextAlgebra, Denotation
-  - Lemma `formula_open_over_typed_body_normalize` at line 218: ContextAlgebra, Denotation
-  - Lemma `formula_open_under_typed_body_normalize` at line 233: ContextAlgebra, Denotation
-  - Lemma `expr_basic_typing_formula_ret_fvar_singleton` at line 248: ContextAlgebra, Denotation
-  - Lemma `over_open_body_from_typed` at line 366: ContextAlgebra, Denotation
-  - Lemma `under_open_body_from_typed` at line 401: ContextAlgebra, Denotation
-  - Lemma `over_open_body_to_typed` at line 434: ContextAlgebra, Denotation
-  - Lemma `under_open_body_to_typed` at line 523: ContextAlgebra, Denotation
-  - Lemma `formula_atom_swap_over_open_body` at line 612: ContextAlgebra, Denotation
-  - Lemma `formula_atom_swap_under_open_body` at line 652: ContextAlgebra, Denotation
-  - Lemma `formula_fv_over_open_body_subset` at line 692: ContextAlgebra, Denotation
-  - Lemma `basic_over_empty_fv` at line 712: ContextAlgebra, Denotation
-  - Lemma `over_open_body_closed_arg_fv` at line 726: ContextAlgebra, Denotation
-  - Lemma `fiberwise_joinable_on_over_open_body` at line 748: ContextAlgebra, Denotation
-  - Lemma `fiberwise_stable_on_over_open_body` at line 770: ContextAlgebra, Denotation
-  - Lemma `fiberwise_joinable_on_over_open_typed_body` at line 778: ContextAlgebra, Denotation
-  - Lemma `formula_fv_under_open_body_subset` at line 825: ContextAlgebra, Denotation
-  - Lemma `under_open_body_closed_arg_fv` at line 845: ContextAlgebra, Denotation
-  - Lemma `fiberwise_joinable_on_under_open_body` at line 867: ContextAlgebra, Denotation
-  - Lemma `fiberwise_joinable_on_under_open_typed_body` at line 887: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_persist_open_result` at line 934: ContextAlgebra, Denotation
-  - Lemma `expr_result_formula_at_ret_fvar_lookup_eq` at line 965: ContextAlgebra, Denotation
-  - Lemma `expr_result_formula_at_ret_fvar_flip` at line 996: ContextAlgebra, Denotation
-  - Lemma `res_restrict_ret_fvar_result_swap_projection` at line 1075: ContextAlgebra, Denotation
-  - Lemma `over_open_body_transport_ret_fvar_result` at line 1254: ContextAlgebra, Denotation
-  - Lemma `under_open_body_transport_ret_fvar_result` at line 1297: ContextAlgebra, Denotation
-  - Lemma `over_open_body_push_ret_fvar_result` at line 1340: ContextAlgebra, Denotation
-  - Lemma `under_open_body_push_ret_fvar_result` at line 1384: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_over_ret_fvar_self_body` at line 1428: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_under_ret_fvar_self_body` at line 1550: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_over_ret_fvar_self_body_iff` at line 1673: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_under_ret_fvar_self_body_iff` at line 1786: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_persist_over_ret_fvar_self_body` at line 1899: ContextAlgebra, Denotation
-  - Lemma `ty_guard_persist_over_to_over` at line 2077: ContextAlgebra, Denotation
-  - Lemma `ty_guard_over_to_persist_over` at line 2102: ContextAlgebra, Denotation
-  - Lemma `ty_guard_to_persist` at line 2126: ContextAlgebra, Denotation
-  - Lemma `res_models_persist_intro_from_singleton_superset` at line 2150: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_over_ret_fvar_result_alias_open` at line 2184: ContextAlgebra, Denotation
-  - Lemma `over_ret_fvar_insert_env_to_normal_env` at line 2255: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_ret_fvar_persist_body_intro_singleton` at line 2272: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_over_ret_fvar_persist_body_intro_singleton` at line 2293: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_persist_over_ret_fvar_elim` at line 2307: ContextAlgebra, Denotation
-  - Lemma `ty_denote_persist_over_ret_fvar_elim` at line 2328: ContextAlgebra, Denotation
+  - Public lemma `relevant_env_persist_eq` at line 26: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `over_ret_fvar_env_restrict_eq` at line 35: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `over_ret_fvar_relevant_env_restrict_eq` at line 50: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `insert_relevant_env_ret_fvar_restrict_eq` at line 74: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `formula_open_over_self_body_normalize` at line 106: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `formula_open_under_self_body_normalize` at line 120: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `formula_open_over_typed_body_normalize` at line 134: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `formula_open_under_typed_body_normalize` at line 149: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `expr_basic_typing_formula_ret_fvar_singleton` at line 164: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `over_open_body_from_typed` at line 187: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `under_open_body_from_typed` at line 222: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `over_open_body_to_typed` at line 255: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `under_open_body_to_typed` at line 344: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `formula_atom_swap_over_open_body` at line 433: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `formula_atom_swap_under_open_body` at line 473: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `formula_fv_over_open_body_subset` at line 513: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `basic_over_empty_fv` at line 533: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `over_open_body_closed_arg_fv` at line 547: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `fiberwise_joinable_on_over_open_body` at line 569: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `fiberwise_stable_on_over_open_body` at line 591: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `fiberwise_joinable_on_over_open_typed_body` at line 599: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `formula_fv_under_open_body_subset` at line 646: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `under_open_body_closed_arg_fv` at line 666: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `fiberwise_joinable_on_under_open_body` at line 688: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `fiberwise_joinable_on_under_open_typed_body` at line 708: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `ty_denote_gas_persist_open_result` at line 755: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `expr_result_formula_at_ret_fvar_lookup_eq` at line 786: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `expr_result_formula_at_ret_fvar_flip` at line 817: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `res_restrict_ret_fvar_result_swap_projection` at line 896: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `over_open_body_transport_ret_fvar_result` at line 1075: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `under_open_body_transport_ret_fvar_result` at line 1118: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `over_open_body_push_ret_fvar_result` at line 1161: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `under_open_body_push_ret_fvar_result` at line 1205: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `ty_denote_gas_over_ret_fvar_self_body` at line 1249: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `ty_denote_gas_under_ret_fvar_self_body` at line 1371: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `ty_denote_gas_over_ret_fvar_self_body_iff` at line 1494: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `ty_denote_gas_under_ret_fvar_self_body_iff` at line 1607: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `ty_denote_gas_persist_over_ret_fvar_self_body` at line 1720: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `ty_guard_persist_over_to_over` at line 1898: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `ty_guard_over_to_persist_over` at line 1923: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `ty_guard_to_persist` at line 1947: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `res_models_persist_intro_from_singleton_superset` at line 1971: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `ty_denote_gas_over_ret_fvar_result_alias_open` at line 2005: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `over_ret_fvar_insert_env_to_normal_env` at line 2076: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `ty_denote_gas_ret_fvar_persist_body_intro_singleton` at line 2093: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `ty_denote_gas_over_ret_fvar_persist_body_intro_singleton` at line 2114: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `ty_denote_gas_persist_over_ret_fvar_elim` at line 2128: ContextAlgebra, ContextBase, Denotation
+  - Public lemma `ty_denote_persist_over_ret_fvar_elim` at line 2149: ContextAlgebra, ContextBase, Denotation
 
 ### theories/TypePersistSingleton.v
 - Direct definition folders available to lemmas: ContextAlgebra, Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from ContextAlgebra [ContextAlgebra]
-- Local definitions/notation/typeclasses: Definition const_fresh_value_extension@431
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceAlgebra ResourceInterfaceFacts.] | Denotation [From Denotation Require Import Notation TypeDenote TypeDenoteRegular ResultFirstOpen]
+- Local definitions/notation/typeclasses: (none)
 - Lemmas/theorems and available definition folders:
-  - Lemma `res_restrict_singleton_pullback_ret_fvar_result` at line 12: ContextAlgebra, Denotation
-  - Lemma `res_restrict_singleton_push_ret_fvar_result` at line 167: ContextAlgebra, Denotation
-  - Lemma `res_restrict_singleton_exact_dom_subset` at line 356: ContextAlgebra, Denotation
-  - Lemma `res_fiber_from_projection_restrict_singleton` at line 371: ContextAlgebra, Denotation
-  - Lemma `store_singleton_dom_value` at line 415: ContextAlgebra, Denotation
-  - Lemma `singleton_world_member_eq` at line 422: ContextAlgebra, Denotation
-  - Lemma `res_extend_by_const_fresh_value_exact` at line 445: ContextAlgebra, Denotation
-  - Lemma `res_extend_by_const_fresh_value` at line 487: ContextAlgebra, Denotation
-  - Lemma `res_yfiber_open_arg_base_subset` at line 510: ContextAlgebra, Denotation
-  - Lemma `res_yfiber_sub_const_fresh_extension_concrete` at line 535: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_persist_ret_fvar_intro_singleton` at line 628: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_persist_over_ret_fvar_intro_singleton` at line 865: ContextAlgebra, Denotation
-  - Lemma `ty_denote_persist_ret_fvar_intro_singleton` at line 888: ContextAlgebra, Denotation
+  - Public lemma `res_restrict_singleton_pullback_ret_fvar_result` at line 12: ContextAlgebra, Denotation
+  - Public lemma `res_restrict_singleton_push_ret_fvar_result` at line 167: ContextAlgebra, Denotation
+  - Public lemma `res_yfiber_open_arg_base_subset` at line 356: ContextAlgebra, Denotation
+  - Public lemma `res_yfiber_sub_const_fresh_extension_concrete` at line 381: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_gas_persist_ret_fvar_intro_singleton` at line 474: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_gas_persist_over_ret_fvar_intro_singleton` at line 711: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_persist_ret_fvar_intro_singleton` at line 734: ContextAlgebra, Denotation
 
 ### theories/TypePersistWandForward.v
 - Direct definition folders available to lemmas: ContextAlgebra, Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from ContextAlgebra [ContextAlgebra]
-- Local definitions/notation/typeclasses: (none)
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceAlgebra.] | Denotation [From Denotation Require Import Notation TypeDenote TypeDenoteRegular ResultFirstOpen]
+- Local definitions/notation/typeclasses: Local ltac `persist_eta_fresh_from`@12, Local ltac `persist_outer_fresh_from`@15, Local ltac `persist_lvar_fresh_from`@18
 - Lemmas/theorems and available definition folders:
-  - Lemma `ty_denote_gas_over_ret_fvar_fiber_stable` at line 60: ContextAlgebra, Denotation
-  - Lemma `wand_arg_fiber_models_persist_over_arg` at line 83: ContextAlgebra, Denotation
-  - Lemma `fiberwise_joinable_on_ty_denote_gas_over` at line 154: ContextAlgebra, Denotation
-  - Lemma `fiberwise_joinable_on_ty_denote_gas_under` at line 205: ContextAlgebra, Denotation
-  - Lemma `tm_lvars_tapp_ret_fvar_fvar_relevant_env_dom` at line 256: ContextAlgebra, Denotation
-  - Lemma `singleton_lvar_subset_tapp_ret_fvar_fvar_relevant_env_dom` at line 275: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_over_result_body_elim` at line 292: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_under_result_body_elim` at line 320: ContextAlgebra, Denotation
-  - Lemma `arrow_value_persist_over_arg_apply_singleton` at line 348: ContextAlgebra, Denotation
-  - Lemma `wand_value_over_arg_to_persist_over_arg_plain` at line 467: ContextAlgebra, Denotation
-  - Lemma `wand_result_first_open_value_over_arg_to_persist_over_arg` at line 657: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_wand_over_arg_to_persist_over_arg` at line 695: ContextAlgebra, Denotation
-  - Lemma `ty_denote_wand_over_arg_to_persist_over_arg` at line 927: ContextAlgebra, Denotation
+  - Local lemma `over_y_fiber_store_dom` at line 21: ContextAlgebra, Denotation
+  - Local lemma `over_y_fiber_restrict_singleton` at line 40: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_gas_over_ret_fvar_fiber_stable` at line 62: ContextAlgebra, Denotation
+  - Public lemma `wand_arg_fiber_models_persist_over_arg` at line 85: ContextAlgebra, Denotation
+  - Public lemma `fiberwise_joinable_on_ty_denote_gas_over` at line 156: ContextAlgebra, Denotation
+  - Public lemma `fiberwise_joinable_on_ty_denote_gas_under` at line 207: ContextAlgebra, Denotation
+  - Public lemma `tm_lvars_tapp_ret_fvar_fvar_relevant_env_dom` at line 258: ContextAlgebra, Denotation
+  - Public lemma `singleton_lvar_subset_tapp_ret_fvar_fvar_relevant_env_dom` at line 277: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_gas_over_result_body_elim` at line 294: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_gas_under_result_body_elim` at line 322: ContextAlgebra, Denotation
+  - Public lemma `arrow_value_persist_over_arg_apply_singleton` at line 350: ContextAlgebra, Denotation
+  - Public lemma `wand_value_over_arg_to_persist_over_arg_plain` at line 469: ContextAlgebra, Denotation
+  - Public lemma `wand_result_first_open_value_over_arg_to_persist_over_arg` at line 659: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_gas_wand_over_arg_to_persist_over_arg` at line 697: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_wand_over_arg_to_persist_over_arg` at line 929: ContextAlgebra, Denotation
 
 ### theories/TypePersistWandReverse.v
 - Direct definition folders available to lemmas: ContextAlgebra, Denotation
-- Direct import commands by folder: Import from Denotation [Denotation]; Import from ContextAlgebra [ContextAlgebra]
-- Local definitions/notation/typeclasses: (none)
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceAlgebra.] | Denotation [From Denotation Require Import Notation TypeDenote TypeDenoteRegular ResultFirstOpen]
+- Local definitions/notation/typeclasses: Local ltac `persist_eta_fresh_from`@12, Local ltac `persist_outer_fresh_from`@15, Local ltac `persist_lvar_fresh_from`@18
 - Lemmas/theorems and available definition folders:
-  - Lemma `wand_value_ret_fvar_persist_over_arg_to_over_arg_over_result` at line 21: ContextAlgebra, Denotation
-  - Lemma `wand_value_ret_fvar_persist_over_arg_to_over_arg_under_result` at line 280: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_wand_persist_over_arg_to_over_arg_over_result` at line 539: ContextAlgebra, Denotation
-  - Lemma `ty_denote_gas_wand_persist_over_arg_to_over_arg_under_result` at line 828: ContextAlgebra, Denotation
-  - Lemma `ty_denote_wand_persist_over_arg_to_over_arg_over_result` at line 1092: ContextAlgebra, Denotation
-  - Lemma `ty_denote_wand_persist_over_arg_to_over_arg_under_result` at line 1119: ContextAlgebra, Denotation
-  - Theorem `ty_denote_wand_over_param_persist_over_result_equiv` at line 1146: ContextAlgebra, Denotation
-  - Theorem `ty_denote_wand_over_param_persist_under_result_equiv` at line 1170: ContextAlgebra, Denotation
+  - Public lemma `wand_value_ret_fvar_persist_over_arg_to_over_arg_over_result` at line 21: ContextAlgebra, Denotation
+  - Public lemma `wand_value_ret_fvar_persist_over_arg_to_over_arg_under_result` at line 280: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_gas_wand_persist_over_arg_to_over_arg_over_result` at line 539: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_gas_wand_persist_over_arg_to_over_arg_under_result` at line 828: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_wand_persist_over_arg_to_over_arg_over_result` at line 1092: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_wand_persist_over_arg_to_over_arg_under_result` at line 1119: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_wand_over_param_persist_over_result_equiv` at line 1146: ContextAlgebra, Denotation
+  - Public lemma `ty_denote_wand_over_param_persist_under_result_equiv` at line 1170: ContextAlgebra, Denotation

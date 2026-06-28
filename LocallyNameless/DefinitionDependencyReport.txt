@@ -5,20 +5,22 @@ Use this to find lemmas whose file imports only lower-layer definitions and may 
 
 ## Folder Summary
 - Rocq files: 2
-- Definition/notation/typeclass declarations: 54
+- Definition/notation/typeclass declarations: 67
 - Lemma/theorem declarations: 0
-- Direct imported repo folders: ContextBase, CoreLang
+- Direct imported repo folders: ContextBase, CoreLang, LocallyNameless
 
 ## Files
 
 ### Classes.v
 - Direct definition folders available to lemmas: CoreLang, LocallyNameless
-- Direct import commands by folder: Export from CoreLang [CoreLang]
-- Local definitions/notation/typeclasses: Class OpenVar@13, Class OpenArgLc@15, Class CloseOpenVar@23, Class OpenFv@29, Class OpenFvPrime@34, Class CloseVarFv@39, Class CloseFreshRec@44, Class CloseRmFv@50, Class Fact1@55, Class OpenRecLc@62, Class OpenCloseVar@68, Class OpenSwap@74, Class OpenLcRespect@82, Class OpenIdemp@90, Class SubstFresh@98, Class SubstOpen@104, Class SubstOpenVar@111, Class SubstLc@119, Class SubstIntro@127, Class FvOfSubst@134, Class FvOfSubstClosed@139
-- Lemmas/theorems and available definition folders: (none)
+- Direct import commands by folder: CoreLang [From CoreLang Require Export Syntax.]
+- Local definitions/notation/typeclasses: class `OpenVar`@13, class `OpenArgLc`@15, instance `OpenVar_atom`@17, instance `OpenArgLc_atom`@18, instance `Stale_atom`@19, class `CloseOpenVar`@23, class `OpenFv`@29, class `OpenFvPrime`@34, class `CloseVarFv`@39, class `CloseFreshRec`@44, class `CloseRmFv`@50, class `Fact1`@55, class `OpenRecLc`@62, class `OpenCloseVar`@68, class `OpenSwap`@74, class `OpenLcRespect`@82, class `OpenIdemp`@90, class `SubstFresh`@98, class `SubstOpen`@104, class `SubstOpenVar`@111, class `SubstLc`@119, class `SubstIntro`@127, class `FvOfSubst`@134, class `FvOfSubstClosed`@139
+- Lemmas/theorems and available definition folders:
+  - (none)
 
 ### Tactics.v
 - Direct definition folders available to lemmas: ContextBase, CoreLang, LocallyNameless
-- Direct import commands by folder: Export from ContextBase [ContextBase]; Export from CoreLang [CoreLang]; Import from Stdlib [Stdlib]
-- Local definitions/notation/typeclasses: Ltac revert_all@21, Ltac get_hyps@28, Ltac fold_hyps@57, Ltac destruct_hyp_conj@73, Ltac destruct_hyp_disj@88, Ltac mydestr@93, Ltac invclear@95, Ltac crush_binders@106, Ltac inv_lc@118, Ltac ln_simpl@132, Ltac my_set_simpl@135, Ltac my_map_simpl@137, Ltac my_set_norm@143, Ltac solve_set@150, Ltac my_set_solver@158, Ltac smart_ln_simpl@166, Ltac pose_fresh_from@184, Ltac collect_one_stale@189, Ltac collect_stales@201, Ltac auto_exists_L@210, Ltac auto_pose_fv@216, Ltac specialize_with@225, Ltac pose_fresh_fv@239, Ltac rw_decide_true@249, Ltac rw_decide_true_in@254, Ltac auto_exfalso@259, Ltac var_dec_solver@267, Ltac var_dec_simpl@312, Ltac var_dec_set_solver@319, Ltac curry_tac@334, Ltac econstructor_L@389, Ltac auto_specialization@402, Ltac econstructor_L_specialized@412
-- Lemmas/theorems and available definition folders: (none)
+- Direct import commands by folder: ContextBase [From ContextBase Require Export Tactics.] | CoreLang [From CoreLang Require Export Syntax.]
+- Local definitions/notation/typeclasses: ltac `revert_all`@21, ltac `get_hyps`@28, tactic notation `"do_hyps"`@32, tactic notation `"select"`@44, ltac `fold_hyps`@57, ltac `destruct_hyp_conj`@73, ltac `destruct_hyp_disj`@88, ltac `mydestr`@93, ltac `invclear`@95, ltac `crush_binders`@106, ltac `inv_lc`@118, ltac `ln_simpl`@132, ltac `my_set_simpl`@135, ltac `my_map_simpl`@137, ltac `my_set_norm`@143, ltac `solve_set`@150, ltac `my_set_solver`@158, ltac `smart_ln_simpl`@166, ltac `pose_fresh_from`@184, ltac `collect_one_stale`@189, ltac `collect_stales`@201, ltac `auto_exists_L`@210, ltac `auto_pose_fv`@216, ltac `specialize_with`@225, ltac `pose_fresh_fv`@239, ltac `rw_decide_true`@249, ltac `rw_decide_true_in`@254, ltac `auto_exfalso`@259, ltac `var_dec_solver`@267, ltac `var_dec_simpl`@312, ltac `var_dec_set_solver`@319, ltac `curry_tac`@334, tactic notation `"apply_eq"`@341, tactic notation `"apply_eq"`@357, tactic notation `"eapply_eq"`@358, tactic notation `"auto_apply"`@360, tactic notation `"auto_apply"`@373, tactic notation `"auto_eapply"`@374, tactic notation `"auto_apply_eq"`@375, tactic notation `"auto_eapply_eq"`@376, ltac `econstructor_L`@389, ltac `auto_specialization`@402, ltac `econstructor_L_specialized`@412
+- Lemmas/theorems and available definition folders:
+  - (none)

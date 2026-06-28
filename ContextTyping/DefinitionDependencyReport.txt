@@ -5,292 +5,296 @@ Use this to find lemmas whose file imports only lower-layer definitions and may 
 
 ## Folder Summary
 - Rocq files: 13
-- Definition/notation/typeclass declarations: 28
-- Lemma/theorem declarations: 206
+- Definition/notation/typeclass declarations: 56
+- Lemma/theorem declarations: 208
 - Direct imported repo folders: ContextAlgebra, ContextBase, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
 
 ## Files
 
 ### theories/PrimOpConcreteContext.v
 - Direct definition folders available to lemmas: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-- Direct import commands by folder: Import from CoreLang [CoreLang]; Import from ContextBase [ContextBase]; Import from ContextLogic [ContextLogic]; Import from ContextTypeLanguage [ContextTypeLanguage]; Import from Denotation [Denotation]; Import from ContextTyping [ContextTyping]
-- Local definitions/notation/typeclasses: Definition topq@17, Definition primop_R@19, Definition primop_graph_qual@36, Definition concrete_primop_sig@39, Definition concrete_Φ@53
+- Direct import commands by folder: ContextBase [From ContextBase Require Import BaseTactics.] | ContextLogic [From ContextLogic Require Import FormulaSemantics.] | ContextTypeLanguage [From ContextTypeLanguage Require Import WF.] | ContextTyping [From ContextTyping Require Import PrimOpContext.] | CoreLang [From CoreLang Require Import BasicTyping BasicTypingProps SmallStep StrongNormalization.] | Denotation [From Denotation Require Import Context ConstDenote TypeDenote TypeDenoteRegular TypeEquivCore]
+- Local definitions/notation/typeclasses: definition `topq`@17, definition `primop_R`@19, definition `primop_graph_qual`@36, definition `concrete_primop_sig`@39, definition `concrete_Φ`@53, Local ltac `primop_rewrite_tm_support`@55, Local ltac `primop_unfold_formula_lvars_atoms`@63, Local ltac `primop_normalize_denot_formula_lvars`@72
 - Lemmas/theorems and available definition folders:
-  - Lemma `primop_result_ty_eq` at line 87: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `primop_arg_ty_eq` at line 101: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `qual_top_lvars_wf_at` at line 109: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `primop_graph_qual_lvars_wf_at` at line 119: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `over_top_basic` at line 136: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `precise_top_wf_at` at line 143: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `precise_graph_wf_at` at line 151: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `primop_erasure` at line 161: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `primop_arg_basic` at line 168: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `primop_result_wf` at line 175: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `prim_step_total_for_base` at line 182: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `primop_arg_env_lookup` at line 197: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `primop_arg_erase_env_lookup` at line 216: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `primop_result_ty_open_eq` at line 231: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `primop_arg_guard_formula` at line 255: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `primop_arg_const_from_ctx` at line 346: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `expr_total_formula_tprim_from_primop_arg` at line 385: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `expr_result_formula_self_atom_body` at line 432: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `expr_result_formula_self_over_body` at line 454: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `expr_result_formula_self_under_body` at line 475: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `expr_result_formula_at_self_atom_body` at line 496: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `expr_result_formula_at_self_over_body` at line 514: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `expr_result_formula_at_self_under_body` at line 539: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `qual_open_expr_result_qual_bound0` at line 564: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_gas_over_self_result_qual` at line 603: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_gas_under_self_result_qual` at line 690: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `primop_graph_qual_open_arg` at line 777: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_gas_precise_self_result_qual` at line 826: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_gas_over_top_from_zero` at line 933: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `over_top_denotation_gas` at line 987: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `primop_opened_result_guard_formula` at line 997: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `primop_graph_result_denotation` at line 1100: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `primop_result_denotation_arg_world` at line 1130: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `primop_graph_result_to_arg_ctx` at line 1164: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Theorem `concrete_` at line 1189: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `primop_result_ty_eq` at line 87: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `primop_arg_ty_eq` at line 101: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `qual_top_lvars_wf_at` at line 109: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `primop_graph_qual_lvars_wf_at` at line 119: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `over_top_basic` at line 136: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `precise_top_wf_at` at line 143: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `precise_graph_wf_at` at line 151: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `primop_erasure` at line 161: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `primop_arg_basic` at line 168: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `primop_result_wf` at line 175: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `prim_step_total_for_base` at line 182: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `primop_arg_env_lookup` at line 197: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `primop_arg_erase_env_lookup` at line 216: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `primop_result_ty_open_eq` at line 231: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `primop_arg_guard_formula` at line 255: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `primop_arg_const_from_ctx` at line 346: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `expr_total_formula_tprim_from_primop_arg` at line 385: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `expr_result_formula_self_atom_body` at line 432: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `expr_result_formula_self_over_body` at line 454: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `expr_result_formula_self_under_body` at line 475: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_self_atom_body` at line 496: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_self_over_body` at line 514: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_self_under_body` at line 539: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `qual_open_expr_result_qual_bound0` at line 564: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_over_self_result_qual` at line 603: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_under_self_result_qual` at line 690: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `primop_graph_qual_open_arg` at line 777: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_precise_self_result_qual` at line 826: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Local lemma `topq_over_open_body` at line 845: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Local lemma `topq_over_typed_body` at line 922: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_over_top_from_zero` at line 933: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `over_top_denotation_gas` at line 987: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `primop_opened_result_guard_formula` at line 997: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `primop_graph_result_denotation` at line 1100: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `primop_result_denotation_arg_world` at line 1130: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `primop_graph_result_to_arg_ctx` at line 1164: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `concrete_` at line 1189: ContextBase, ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
 
 ### theories/PrimOpContext.v
 - Direct definition folders available to lemmas: ContextLogic, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-- Direct import commands by folder: Import from CoreLang [CoreLang]; Import from ContextLogic [ContextLogic]; Import from ContextTypeLanguage [ContextTypeLanguage]; Import from Denotation [Denotation]
-- Local definitions/notation/typeclasses: Record primop_sig@17, Definition primop_result_ty@24, Definition primop_arg_ty@27, Definition primop_ctx@30, Definition primop_erasure_ok@32, Definition primop_semantic_ok@39, Record wf_primop_sig@49, Definition wf_primop_ctx@56
-- Lemmas/theorems and available definition folders: (none)
+- Direct import commands by folder: ContextLogic [From ContextLogic Require Import FormulaSemantics.] | ContextTypeLanguage [From ContextTypeLanguage Require Import WF.] | CoreLang [From CoreLang Require Import BasicTyping SmallStep.] | Denotation [From Denotation Require Import Context.]
+- Local definitions/notation/typeclasses: record `primop_sig`@17, definition `primop_result_ty`@24, definition `primop_arg_ty`@27, definition `primop_ctx`@30, definition `primop_erasure_ok`@32, definition `primop_semantic_ok`@39, record `wf_primop_sig`@49, definition `wf_primop_ctx`@56
+- Lemmas/theorems and available definition folders:
+  - (none)
 
 ### theories/Soundness.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-- Direct import commands by folder: Import from CoreLang [CoreLang]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from Denotation [Denotation]; Import from ContextTyping [ContextTyping]
-- Local definitions/notation/typeclasses: Definition closed_result_world_of@1018
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceInterface ResourceExtension.] | ContextBasicDenotation [From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier] | ContextStore [From ContextStore Require Import Store.] | ContextTyping [From ContextTyping Require Import PrimOpContext PrimOpConcreteContext Typing TypingRegular] | CoreLang [From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps] | Denotation [From Denotation Require Import Context]
+- Local definitions/notation/typeclasses: Local notation `StoreT`@31, Local notation `WorldT`@32, Local notation `WfWorldT`@33, Local notation `LStoreOnT`@34, Local notation `FiberExtensionT`@36, definition `closed_result_world_of`@1001
 - Lemmas/theorems and available definition folders:
-  - Lemma `ty_denote_under_total` at line 41: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `appop_context_typing_arg_lookup` at line 81: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `denot_var_direct_in_ctx` at line 106: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fundamental_var_case` at line 135: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `denot_const_direct_in_ctx` at line 143: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fundamental_const_case` at line 165: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fundamental_sub_case` at line 173: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fundamental_ctx_sub_case` at line 189: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ctx_bind_of_result_ext` at line 224: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ctx_comma_bind_of_result_ext` at line 279: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_tlet_ext` at line 303: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fundamental_let_case` at line 397: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ctx_bind_from_result_ext` at line 494: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_under_star_bind_to_lvar_insert` at line 546: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_gas_zero_tletd_ext` at line 581: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fundamental_letd_case` at line 608: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fundamental_lam_case` at line 768: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fundamental_lamd_case` at line 853: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fundamental_appop_case` at line 961: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Theorem `Fundamental` at line 992: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `tm_eval_in_store_empty_iff` at line 1022: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `closed_result_world_of_result_extension` at line 1037: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Theorem `denotational_soundness` at line 1109: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Theorem `concrete_Fundamental` at line 1182: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Theorem `concrete_denotational_soundness` at line 1189: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Local lemma `soundness_wf_observed_vars_world_dom` at line 38: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `appop_context_typing_arg_lookup` at line 64: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `denot_var_direct_in_ctx` at line 89: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fundamental_var_case` at line 118: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `denot_const_direct_in_ctx` at line 126: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fundamental_const_case` at line 148: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fundamental_sub_case` at line 156: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fundamental_ctx_sub_case` at line 172: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ctx_bind_of_result_ext` at line 207: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ctx_comma_bind_of_result_ext` at line 262: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_tlet_ext` at line 286: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fundamental_let_case` at line 380: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ctx_bind_from_result_ext` at line 477: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_under_star_bind_to_lvar_insert` at line 529: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_zero_tletd_ext` at line 564: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fundamental_letd_case` at line 591: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fundamental_lam_case` at line 751: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fundamental_lamd_case` at line 836: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fundamental_appop_case` at line 944: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `Fundamental` at line 975: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `closed_result_world_of_result_extension` at line 1005: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `denotational_soundness` at line 1077: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `concrete_Fundamental` at line 1150: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `concrete_denotational_soundness` at line 1157: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
 
 ### theories/SoundnessApp.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-- Direct import commands by folder: Import from Stdlib [Stdlib]; Import from CoreLang [CoreLang]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from Denotation [Denotation]; Import from ContextTyping [ContextTyping]
-- Local definitions/notation/typeclasses: (none)
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceInterface ResourceExtension ResourceCompat.] | ContextBasicDenotation [From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier] | ContextStore [From ContextStore Require Import Store.] | ContextTyping [From ContextTyping Require Import Typing TypingRegular SoundnessLam.] | CoreLang [From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps] | Denotation [From Denotation Require Import Context]
+- Local definitions/notation/typeclasses: Local notation `LStoreOnT`@29
 - Lemmas/theorems and available definition folders:
-  - Lemma `app_arrow_result_to_target` at line 31: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `app_arrow_basic_world_insert_env` at line 236: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `app_arrow_context_wf_insert_env` at line 281: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `app_arrow_fun_basic_insert_env` at line 361: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `app_arrow_mid_static_guard` at line 405: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `app_arrow_outer_value_open` at line 439: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `app_arrow_result_first_arg_antecedent` at line 685: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `app_arrow_open_result_from_fresh_drop` at line 790: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fundamental_app_case` at line 984: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `appd_wand_fun_basic_insert_env` at line 1004: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `appd_arg_singleton_env_to_wand_arg` at line 1052: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `appd_wand_result_first_arg_antecedent` at line 1101: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `appd_wand_outer_value_open` at line 1173: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `appd_arg_product_to_star_env` at line 1322: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `appd_open_result_env_agree` at line 1375: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `appd_wand_result_to_arrow_open_result` at line 1480: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `appd_wand_basic_world_insert_env` at line 1577: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `appd_wand_context_wf_insert_env` at line 1621: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `appd_wand_mid_static_guard` at line 1704: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fundamental_appd_case` at line 1738: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `app_arrow_result_to_target` at line 31: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `app_arrow_basic_world_insert_env` at line 236: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `app_arrow_context_wf_insert_env` at line 281: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `app_arrow_fun_basic_insert_env` at line 361: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `app_arrow_mid_static_guard` at line 405: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `app_arrow_outer_value_open` at line 439: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `app_arrow_result_first_arg_antecedent` at line 685: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `app_arrow_open_result_from_fresh_drop` at line 790: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fundamental_app_case` at line 984: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `appd_wand_fun_basic_insert_env` at line 1004: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `appd_arg_singleton_env_to_wand_arg` at line 1052: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `appd_wand_result_first_arg_antecedent` at line 1101: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `appd_wand_outer_value_open` at line 1173: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `appd_arg_product_to_star_env` at line 1322: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `appd_open_result_env_agree` at line 1375: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `appd_wand_result_to_arrow_open_result` at line 1480: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `appd_wand_basic_world_insert_env` at line 1577: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `appd_wand_context_wf_insert_env` at line 1621: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `appd_wand_mid_static_guard` at line 1704: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fundamental_appd_case` at line 1738: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
 
 ### theories/SoundnessFix.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-- Direct import commands by folder: Import from Stdlib [Stdlib]; Import from CoreLang [CoreLang]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from Denotation [Denotation]; Import from ContextTyping [ContextTyping]
-- Local definitions/notation/typeclasses: (none)
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceInterface ResourceExtension.] | ContextBasicDenotation [From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier] | ContextStore [From ContextStore Require Import Store.] | ContextTyping [From ContextTyping Require Import Typing TypingRegular SoundnessLam] | CoreLang [From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps] | Denotation [From Denotation Require Import Context]
+- Local definitions/notation/typeclasses: Local ltac `fix_union_left`@28, Local ltac `fix_union_right`@34, Local ltac `fix_build_union`@40, Local ltac `fix_union_side`@48
 - Lemmas/theorems and available definition folders:
-  - Lemma `fix_result_first_outer_result_plain` at line 63: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_opened_arrow_result` at line 166: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_result_first_arrow_value_denotation` at line 243: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fundamental_fix_case` at line 555: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_result_first_outer_result_plain` at line 63: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_opened_arrow_result` at line 166: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_result_first_arrow_value_denotation` at line 243: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fundamental_fix_case` at line 555: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
 
 ### theories/SoundnessFixApply.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-- Direct import commands by folder: Import from Stdlib [Stdlib]; Import from CoreLang [CoreLang]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from Denotation [Denotation]; Import from ContextTyping [ContextTyping]
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceInterface ResourceExtension.] | ContextBasicDenotation [From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier] | ContextStore [From ContextStore Require Import Store.] | ContextTyping [From ContextTyping Require Import Typing TypingRegular SoundnessLam SoundnessFixBase.] | CoreLang [From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps] | Denotation [From Denotation Require Import Context]
 - Local definitions/notation/typeclasses: (none)
 - Lemmas/theorems and available definition folders:
-  - Lemma `fix_body_arrow_outer_value_open` at line 88: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_body_arrow_apply_self` at line 278: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_body_arrow_outer_value_open` at line 26: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_body_arrow_apply_self` at line 211: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
 
 ### theories/SoundnessFixBase.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-- Direct import commands by folder: Import from Stdlib [Stdlib]; Import from CoreLang [CoreLang]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from Denotation [Denotation]; Import from ContextTyping [ContextTyping]
-- Local definitions/notation/typeclasses: (none)
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceInterface ResourceExtension.] | ContextBasicDenotation [From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier] | ContextStore [From ContextStore Require Import Store.] | ContextTyping [From ContextTyping Require Import Typing TypingRegular SoundnessLam.] | CoreLang [From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps] | Denotation [From Denotation Require Import Context]
+- Local definitions/notation/typeclasses: Local notation `LStoreOnT`@26, Local ltac `fix_base_build_union`@28, Local ltac `fix_base_singleton_side`@34
 - Lemmas/theorems and available definition folders:
-  - Lemma `ty_denote_lt_arg_fiber` at line 44: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_arrow_opened_app_static_guard_full` at line 497: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_arrow_open_arg_normalize` at line 561: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_arrow_open_arg_to_bind_denotation` at line 603: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_arrow_open_arg_to_bind_ctx` at line 629: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_arrow_open_arg_to_comma_ctx` at line 665: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_tapp_unfold_tm_equiv_on` at line 693: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_unfolded_result_to_opened_goal` at line 712: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_unfolded_app_static_guard_full` at line 871: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_lt_arg_fiber` at line 44: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_arrow_opened_app_static_guard_full` at line 460: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_arrow_open_arg_normalize` at line 524: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_arrow_open_arg_to_bind_denotation` at line 566: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_arrow_open_arg_to_bind_ctx` at line 592: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_arrow_open_arg_to_comma_ctx` at line 628: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_tapp_unfold_tm_equiv_on` at line 656: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_unfolded_result_to_opened_goal` at line 675: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_unfolded_app_static_guard_full` at line 834: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
 
 ### theories/SoundnessFixSelf.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-- Direct import commands by folder: Import from Stdlib [Stdlib]; Import from CoreLang [CoreLang]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from Denotation [Denotation]; Import from ContextTyping [ContextTyping]
-- Local definitions/notation/typeclasses: Definition world_arg_min_at@108, Definition fix_self_rec_call_reducible_at_measure@119
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceInterface ResourceExtension.] | ContextBasicDenotation [From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier] | ContextStore [From ContextStore Require Import Store.] | ContextTyping [From ContextTyping Require Import Typing TypingRegular SoundnessLam SoundnessFixBase SoundnessFixApply.] | CoreLang [From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps.] | Denotation [From Denotation Require Import Context]
+- Local definitions/notation/typeclasses: Local ltac `fix_self_in_union`@22, Local ltac `fix_self_break_union`@29, Local ltac `fix_self_notin_union`@35, definition `world_arg_min_at`@108, definition `fix_self_rec_call_reducible_at_measure`@119
 - Lemmas/theorems and available definition folders:
-  - Lemma `fix_self_rec_call_zero` at line 47: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `nat_pred_min_exists` at line 145: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `world_arg_min_exists_from_const` at line 160: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_self_rec_call_world_min_exists` at line 184: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_rec_open_arg_normalize` at line 200: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_rec_arg_decreases_min` at line 339: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_rec_child_ctx_from_arg` at line 391: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_rec_unfolded_result_to_open_goal` at line 451: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_self_rec_call_reducible_measure_step` at line 644: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_self_rec_call_denotation_by_world_min_induction` at line 1432: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fix_self_rec_call_denotation` at line 1458: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_self_rec_call_zero` at line 47: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `nat_pred_min_exists` at line 145: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `world_arg_min_exists_from_const` at line 160: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_self_rec_call_world_min_exists` at line 184: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_rec_open_arg_normalize` at line 200: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_rec_arg_decreases_min` at line 339: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_rec_child_ctx_from_arg` at line 391: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_rec_unfolded_result_to_open_goal` at line 451: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_self_rec_call_reducible_measure_step` at line 644: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_self_rec_call_denotation_by_world_min_induction` at line 1432: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fix_self_rec_call_denotation` at line 1458: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
 
 ### theories/SoundnessLam.v
-- Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-- Direct import commands by folder: Import from CoreLang [CoreLang]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from Denotation [Denotation]; Import from ContextTyping [ContextTyping]
-- Local definitions/notation/typeclasses: (none)
+- Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceInterface ResourceExtension.] | ContextBasicDenotation [From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier] | ContextStore [From ContextStore Require Import Store.] | ContextTypeLanguage [From ContextTypeLanguage Require Import WF.] | ContextTyping [From ContextTyping Require Import Typing TypingRegular.] | CoreLang [From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps] | Denotation [From Denotation Require Import Context]
+- Local definitions/notation/typeclasses: Local notation `LStoreOnT`@27
 - Lemmas/theorems and available definition folders:
-  - Lemma `soundness_lam_lc_lvars_shift_from` at line 28: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `soundness_lam_lvars_lc_at_zero_of_lc` at line 35: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `soundness_lam_lc_lvars_context_ty_lvars_at_of_lc` at line 42: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_lty_env_restrict_result_first_arg_eq` at line 56: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lamd_lty_env_restrict_result_first_arg_eq` at line 102: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_lty_env_restrict_result_first_result_eq` at line 148: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_lty_env_restrict_result_first_result_closed_eq` at line 222: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lamd_lty_env_restrict_result_first_result_eq` at line 254: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_denot_static_guard_full` at line 281: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_denot_static_guard_comma_bind_insert` at line 330: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ctx_erasure_under_agree_union_on_ty` at line 354: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_arrow_opened_app_static_guard_full` at line 375: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_wand_opened_app_static_guard_full` at line 448: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_arrow_open_arg_mid_to_bind_denotation` at line 523: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_arrow_open_arg_normalize` at line 552: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_arrow_open_arg_to_bind_denotation` at line 586: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_arrow_open_arg_to_bind_ctx` at line 605: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_arrow_open_arg_to_comma_ctx` at line 649: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_body_to_arrow_result_mid` at line 676: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_arrow_result_mid_app_guard` at line 700: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_arrow_result_mid_app_zero` at line 808: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_arrow_result_mid_app_denotation` at line 834: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_arrow_result_mid_to_opened_goal` at line 914: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_opened_arrow_result` at line 953: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_result_first_outer_result_plain` at line 1009: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lamd_result_first_outer_result_plain` at line 1106: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_result_first_arrow_value_denotation` at line 1203: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lamd_wand_open_arg_to_bind_denotation` at line 1471: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lamd_wand_open_arg_normalize` at line 1493: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lamd_open_arg_to_star_ctx` at line 1513: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lamd_body_to_wand_result_mid` at line 1559: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lamd_wand_result_mid_to_opened_goal` at line 1747: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lamd_opened_wand_result` at line 1787: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lam_result_first_wand_value_denotation` at line 1848: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `soundness_lam_lc_lvars_shift_from` at line 29: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `soundness_lam_lvars_lc_at_zero_of_lc` at line 36: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `soundness_lam_lc_lvars_context_ty_lvars_at_of_lc` at line 43: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_lty_env_restrict_result_first_arg_eq` at line 50: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lamd_lty_env_restrict_result_first_arg_eq` at line 96: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_lty_env_restrict_result_first_result_eq` at line 142: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_lty_env_restrict_result_first_result_closed_eq` at line 216: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lamd_lty_env_restrict_result_first_result_eq` at line 248: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_denot_static_guard_full` at line 275: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_denot_static_guard_comma_bind_insert` at line 324: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `ctx_erasure_under_agree_union_on_ty` at line 348: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_arrow_opened_app_static_guard_full` at line 369: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_wand_opened_app_static_guard_full` at line 442: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_arrow_open_arg_mid_to_bind_denotation` at line 517: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_arrow_open_arg_normalize` at line 546: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_arrow_open_arg_to_bind_denotation` at line 580: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_arrow_open_arg_to_bind_ctx` at line 599: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_arrow_open_arg_to_comma_ctx` at line 643: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_body_to_arrow_result_mid` at line 670: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_arrow_result_mid_app_guard` at line 694: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_arrow_result_mid_app_zero` at line 802: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_arrow_result_mid_app_denotation` at line 828: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_arrow_result_mid_to_opened_goal` at line 908: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_opened_arrow_result` at line 947: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_result_first_outer_result_plain` at line 1003: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lamd_result_first_outer_result_plain` at line 1100: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_result_first_arrow_value_denotation` at line 1197: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lamd_wand_open_arg_to_bind_denotation` at line 1444: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lamd_wand_open_arg_normalize` at line 1466: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lamd_open_arg_to_star_ctx` at line 1486: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lamd_body_to_wand_result_mid` at line 1532: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lamd_wand_result_mid_to_opened_goal` at line 1720: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lamd_opened_wand_result` at line 1760: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `lam_result_first_wand_value_denotation` at line 1821: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
 
 ### theories/SoundnessMatch.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-- Direct import commands by folder: Import from Stdlib [Stdlib]; Import from CoreLang [CoreLang]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from Denotation [Denotation]; Import from ContextTyping [ContextTyping]
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceInterface ResourceExtension.] | ContextBasicDenotation [From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier] | ContextStore [From ContextStore Require Import Store.] | ContextTyping [From ContextTyping Require Import Typing TypingRegular SoundnessLam.] | CoreLang [From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps] | Denotation [From Denotation Require Import Context]
 - Local definitions/notation/typeclasses: (none)
 - Lemmas/theorems and available definition folders:
-  - Lemma `context_typing_wf_match_inv` at line 21: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `tm_equiv_match_true_var` at line 33: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `tm_equiv_match_false_var` at line 88: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `tm_total_equiv_match_true_var` at line 143: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `tm_total_equiv_match_false_var` at line 203: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `match_target_zero_from_branch` at line 263: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_match_sum_l` at line 325: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_match_sum_r` at line 343: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `expr_total_formula_sum_intro` at line 367: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `sum_branch_source_env_agree` at line 395: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `relevant_env_sum_closed_of_lc` at line 431: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `relevant_env_sum_fresh_of_fv` at line 448: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `relevant_env_sum_branch_union_fresh` at line 467: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `sum_branch_source_env_agree_right` at line 495: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lvars_lc_at_zero_of_lc` at line 531: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `lc_lvars_shift_from` at line 538: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_gas_lc_context_ty` at line 545: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_gas_sum_open_left_branch_from_pulled` at line 559: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_gas_sum_open_right_branch_from_pulled` at line 667: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `expr_result_formula_at_pullback_exact_domain` at line 775: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_gas_sum_open_result_split_from_pulled_branches` at line 816: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_gas_sum_open_result_split_from_branches` at line 867: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_gas_sum_result_body_from_branch_refinement` at line 1138: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_gas_sum_intro_from_branch_refinement` at line 1258: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fundamental_match_both_case` at line 1292: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fundamental_match_true_case` at line 1397: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fundamental_match_false_case` at line 1420: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_match_inv` at line 21: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `tm_equiv_match_true_var` at line 33: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `tm_equiv_match_false_var` at line 88: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `tm_total_equiv_match_true_var` at line 143: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `tm_total_equiv_match_false_var` at line 203: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `match_target_zero_from_branch` at line 263: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_match_sum_l` at line 325: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_match_sum_r` at line 343: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `expr_total_formula_sum_intro` at line 367: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `sum_branch_source_env_agree` at line 395: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `relevant_env_sum_closed_of_lc` at line 431: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `relevant_env_sum_fresh_of_fv` at line 448: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `relevant_env_sum_branch_union_fresh` at line 467: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `sum_branch_source_env_agree_right` at line 495: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_lc_context_ty` at line 531: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_sum_open_left_branch_from_pulled` at line 545: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_sum_open_right_branch_from_pulled` at line 653: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_pullback_exact_domain` at line 761: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_sum_open_result_split_from_pulled_branches` at line 802: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_sum_open_result_split_from_branches` at line 853: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_sum_result_body_from_branch_refinement` at line 1124: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_sum_intro_from_branch_refinement` at line 1244: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fundamental_match_both_case` at line 1278: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fundamental_match_true_case` at line 1383: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fundamental_match_false_case` at line 1406: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
 
 ### theories/SoundnessPersist.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-- Direct import commands by folder: Import from CoreLang [CoreLang]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from Denotation [Denotation]; Import from ContextTyping [ContextTyping]
-- Local definitions/notation/typeclasses: (none)
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceInterface.] | ContextBasicDenotation [From ContextBasicDenotation Require Import RelevantEnv BasicTypingFormula TermExtension.] | ContextStore [From ContextStore Require Import Store.] | ContextTyping [From ContextTyping Require Import Typing TypingRegular.] | CoreLang [From CoreLang Require Import BasicTypingProps InstantiationProps.] | Denotation [From Denotation Require Import Context DenotationSetMapFacts TypeEquiv]
+- Local definitions/notation/typeclasses: Local notation `StoreT`@15, Local notation `WorldT`@16, Local notation `WfWorldT`@17, Local notation `LStoreT`@18
 - Lemmas/theorems and available definition folders:
-  - Lemma `ctx_denote_under_fv_contains_erase_dom` at line 20: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ctx_persistent_singleton_on_erase_subset` at line 32: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_ret_value_obs_subset` at line 71: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `msubst_value_agree_on_restrict` at line 87: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `expr_result_formula_at_ret_value_closed_result` at line 100: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ret_value_result_restrict_y_lookup_iff` at line 113: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `insert_relevant_env_ret_value_restrict_eq` at line 211: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `res_restrict_singleton_push_ret_value_result` at line 224: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_gas_persist_ret_value_intro_singleton` at line 384: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_value_persist_intro_singleton` at line 664: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `ty_denote_under_value_persist_intro` at line 680: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
-  - Lemma `fundamental_persist_intro_case` at line 705: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ctx_denote_under_fv_contains_erase_dom` at line 20: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ctx_persistent_singleton_on_erase_subset` at line 32: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_ret_value_obs_subset` at line 71: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `msubst_value_agree_on_restrict` at line 87: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `expr_result_formula_at_ret_value_closed_result` at line 100: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ret_value_result_restrict_y_lookup_iff` at line 113: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `insert_relevant_env_ret_value_restrict_eq` at line 211: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `res_restrict_singleton_push_ret_value_result` at line 224: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_gas_persist_ret_value_intro_singleton` at line 384: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_value_persist_intro_singleton` at line 664: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `ty_denote_under_value_persist_intro` at line 680: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
+  - Public lemma `fundamental_persist_intro_case` at line 705: ContextAlgebra, ContextBasicDenotation, ContextStore, ContextTyping, CoreLang, Denotation
 
 ### theories/Typing.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-- Direct import commands by folder: Import from CoreLang [CoreLang]; Import from ContextLogic [ContextLogic]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from ContextTypeLanguage [ContextTypeLanguage]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from Denotation [Denotation]; Import from ContextTyping [ContextTyping]
-- Local definitions/notation/typeclasses: Definition wf_ctx_under@31, Definition wf_ctx@34, Definition wf_context_ty@37, Definition sub_type_under@42, Definition ctx_sub_under@52, Definition context_typing_wf@64, Definition branch_unreachable@70, Inductive has_context_type@76
-- Lemmas/theorems and available definition folders: (none)
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceInterface.] | ContextBasicDenotation [From ContextBasicDenotation Require Import BasicTypingFormula.] | ContextLogic [From ContextLogic Require Import FormulaSemantics.] | ContextStore [From ContextStore Require Import Store.] | ContextTypeLanguage [From ContextTypeLanguage Require Import WF.] | ContextTyping [From ContextTyping Require Import PrimOpContext.] | CoreLang [From CoreLang Require Import BasicTyping BasicTypingProps Sugar.] | Denotation [From Denotation Require Import Context.]
+- Local definitions/notation/typeclasses: Local notation `WorldT`@15, Local notation `WfWorldT`@16, definition `wf_ctx_under`@31, definition `wf_ctx`@34, definition `wf_context_ty`@37, definition `sub_type_under`@42, definition `ctx_sub_under`@52, definition `context_typing_wf`@64, definition `branch_unreachable`@70, inductive `has_context_type`@76
+- Lemmas/theorems and available definition folders:
+  - (none)
 
 ### theories/TypingRegular.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-- Direct import commands by folder: Import from CoreLang [CoreLang]; Import from ContextLogic [ContextLogic]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from ContextTypeLanguage [ContextTypeLanguage]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from Denotation [Denotation]; Import from ContextTyping [ContextTyping]
-- Local definitions/notation/typeclasses: Ltac soundness_regular_observed_world@248, Ltac soundness_regular_lc@262, Ltac soundness_regular_obs_subset@306, Ltac soundness_regular@319
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceInterface.] | ContextBasicDenotation [From ContextBasicDenotation Require Import BasicTypingFormula.] | ContextLogic [From ContextLogic Require Import FormulaSemantics.] | ContextStore [From ContextStore Require Import Store.] | ContextTypeLanguage [From ContextTypeLanguage Require Import WF.] | ContextTyping [From ContextTyping Require Import PrimOpContext Typing.] | CoreLang [From CoreLang Require Import BasicTyping BasicTypingProps Sugar.] | Denotation [From Denotation Require Import Context.]
+- Local definitions/notation/typeclasses: Local notation `WorldT`@15, Local notation `WfWorldT`@16, ltac `soundness_regular_observed_world`@285, ltac `soundness_regular_lc`@299, ltac `soundness_regular_obs_subset`@343, ltac `soundness_regular`@356
 - Lemmas/theorems and available definition folders:
-  - Lemma `wf_ctx_basic` at line 20: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `wf_ctx_under_basic` at line 25: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `wf_context_ty_basic` at line 30: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `wf_ctx_fv_subset` at line 35: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `wf_context_ty_lc` at line 44: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `wf_context_ty_fv_subset` at line 53: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_basic_typing` at line 64: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_lc_tm` at line 69: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_ret_lc_value` at line 78: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_app_fun_lc_value` at line 88: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_lam_body` at line 98: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_ctx` at line 107: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_context_ty` at line 112: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_arrow_arg_lc` at line 117: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_arrow_result_lc1` at line 128: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_wand_arg_lc` at line 139: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_wand_result_lc1` at line 150: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_bind_context_ty` at line 161: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_fv_tm_subset` at line 172: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_erase_dom` at line 181: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_fv_cty_subset_erase_dom` at line 191: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `context_typing_wf_wand_arg_global` at line 200: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `soundness_wf_ret_persist_obs_subset` at line 211: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `soundness_wf_ret_persist_observed_world` at line 228: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `typing_wf` at line 324: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `typing_wf_under` at line 329: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
-  - Lemma `typing_erase` at line 335: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `wf_ctx_basic` at line 20: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `wf_ctx_under_basic` at line 25: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `wf_context_ty_basic` at line 30: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `wf_ctx_fv_subset` at line 35: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `wf_context_ty_lc` at line 44: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `wf_context_ty_fv_subset` at line 53: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_basic_typing` at line 64: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_lc_tm` at line 69: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_ret_lc_value` at line 78: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_app_fun_lc_value` at line 88: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_lam_body` at line 98: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_ctx` at line 107: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_context_ty` at line 112: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_arrow_arg_lc` at line 117: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_arrow_result_lc1` at line 128: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_wand_arg_lc` at line 139: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_wand_result_lc1` at line 150: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_union_fresh_erase_ctx_from_erasure_under` at line 161: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_union_fresh_ctx_erasure_under` at line 177: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_union_fresh_env_erase_ctx` at line 187: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_bind_context_ty` at line 198: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_fv_tm_subset` at line 209: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_erase_dom` at line 218: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_fv_cty_subset_erase_dom` at line 228: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `context_typing_wf_wand_arg_global` at line 237: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `soundness_wf_ret_persist_obs_subset` at line 248: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `soundness_wf_ret_persist_observed_world` at line 265: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `typing_wf` at line 361: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `typing_wf_under` at line 366: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation
+  - Public lemma `typing_erase` at line 372: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextStore, ContextTypeLanguage, ContextTyping, CoreLang, Denotation

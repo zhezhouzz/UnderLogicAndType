@@ -5,463 +5,472 @@ Use this to find lemmas whose file imports only lower-layer definitions and may 
 
 ## Folder Summary
 - Rocq files: 14
-- Definition/notation/typeclass declarations: 77
-- Lemma/theorem declarations: 371
+- Definition/notation/typeclass declarations: 83
+- Lemma/theorem declarations: 377
 - Direct imported repo folders: ContextAlgebra, ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, ContextTypeLanguage, CoreLang
 
 ## Files
 
 ### theories/BasicFormulaFiberwise.v
 - Direct definition folders available to lemmas: ContextBasicDenotation, ContextLogic
-- Direct import commands by folder: Import from ContextBasicDenotation [ContextBasicDenotation]; Import from ContextLogic [ContextLogic]
-- Local definitions/notation/typeclasses: Notation StoreTyping@8
+- Direct import commands by folder: ContextBasicDenotation [From ContextBasicDenotation Require Import] | ContextLogic [From ContextLogic Require Import FormulaFiberwise.]
+- Local definitions/notation/typeclasses: notation `StoreTyping`@8
 - Lemmas/theorems and available definition folders:
-  - Lemma `fiberwise_joinable_on_qualifier_atom` at line 13: ContextBasicDenotation, ContextLogic
-  - Lemma `fiberwise_joinable_on_basic_world_formula` at line 17: ContextBasicDenotation, ContextLogic
-  - Lemma `fiberwise_joinable_on_context_ty_wf_formula` at line 24: ContextBasicDenotation, ContextLogic
-  - Lemma `fiberwise_joinable_on_expr_basic_typing_formula` at line 31: ContextBasicDenotation, ContextLogic
-  - Lemma `fiberwise_joinable_on_expr_total_formula` at line 38: ContextBasicDenotation, ContextLogic
-  - Lemma `fiberwise_joinable_on_expr_result_atom_formula` at line 45: ContextBasicDenotation, ContextLogic
-  - Lemma `fiberwise_joinable_on_expr_result_formula_at` at line 52: ContextBasicDenotation, ContextLogic
-  - Lemma `fiberwise_joinable_on_expr_result_formula` at line 68: ContextBasicDenotation, ContextLogic
-  - Lemma `fiberwise_joinable_basic_world_formula` at line 78: ContextBasicDenotation, ContextLogic
-  - Lemma `fiberwise_joinable_context_ty_wf_formula` at line 82: ContextBasicDenotation, ContextLogic
-  - Lemma `fiberwise_joinable_expr_basic_typing_formula` at line 86: ContextBasicDenotation, ContextLogic
-  - Lemma `fiberwise_joinable_expr_total_formula` at line 90: ContextBasicDenotation, ContextLogic
-  - Lemma `fiberwise_joinable_expr_result_atom_formula` at line 94: ContextBasicDenotation, ContextLogic
+  - Public lemma `fiberwise_joinable_on_qualifier_atom` at line 13: ContextBasicDenotation, ContextLogic
+  - Public lemma `fiberwise_joinable_on_basic_world_formula` at line 17: ContextBasicDenotation, ContextLogic
+  - Public lemma `fiberwise_joinable_on_context_ty_wf_formula` at line 24: ContextBasicDenotation, ContextLogic
+  - Public lemma `fiberwise_joinable_on_expr_basic_typing_formula` at line 31: ContextBasicDenotation, ContextLogic
+  - Public lemma `fiberwise_joinable_on_expr_total_formula` at line 38: ContextBasicDenotation, ContextLogic
+  - Public lemma `fiberwise_joinable_on_expr_result_atom_formula` at line 45: ContextBasicDenotation, ContextLogic
+  - Public lemma `fiberwise_joinable_on_expr_result_formula_at` at line 52: ContextBasicDenotation, ContextLogic
+  - Public lemma `fiberwise_joinable_on_expr_result_formula` at line 68: ContextBasicDenotation, ContextLogic
+  - Public lemma `fiberwise_joinable_basic_world_formula` at line 78: ContextBasicDenotation, ContextLogic
+  - Public lemma `fiberwise_joinable_context_ty_wf_formula` at line 82: ContextBasicDenotation, ContextLogic
+  - Public lemma `fiberwise_joinable_expr_basic_typing_formula` at line 86: ContextBasicDenotation, ContextLogic
+  - Public lemma `fiberwise_joinable_expr_total_formula` at line 90: ContextBasicDenotation, ContextLogic
+  - Public lemma `fiberwise_joinable_expr_result_atom_formula` at line 94: ContextBasicDenotation, ContextLogic
 
 ### theories/BasicTypingFormula.v
 - Direct definition folders available to lemmas: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-- Direct import commands by folder: Import from CoreLang [CoreLang]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from ContextBase [ContextBase]; Import from ContextLogic [ContextLogic]; Import from ContextQualifier [ContextQualifier]
-- Local definitions/notation/typeclasses: Definition basic_tm_has_ltype_by_open_env@29, Inductive basic_value_has_ltype@38, Scheme basic_value_has_ltype_ind'@86, Combined Scheme basic_has_ltype_mutind@88, Definition context_ty_wf_qual@936, Definition context_ty_wf_formula@940, Definition expr_basic_typing_qual@949, Definition expr_basic_typing_formula@953, Notation "'FWfTy'@1073, Notation "'FHasType'@1077
+- Direct import commands by folder: ContextBase [From ContextBase Require Import BaseTactics.] | ContextBasicDenotation [From ContextBasicDenotation Require Import Notation StoreTyping TermSyntax TermOpen.] | ContextLogic [From ContextLogic Require Import FormulaConnectives.] | ContextQualifier [From ContextQualifier Require Import Qualifier.] | CoreLang [From CoreLang Require Import LocallyNamelessExtra.]
+- Local definitions/notation/typeclasses: definition `basic_tm_has_ltype_by_open_env`@29, inductive `basic_value_has_ltype`@38, definition `context_ty_wf_qual`@936, definition `context_ty_wf_formula`@940, definition `expr_basic_typing_qual`@949, definition `expr_basic_typing_formula`@953, notation `"'FWfTy'`@1132, notation `"'FHasType'`@1136
 - Lemmas/theorems and available definition folders:
-  - Lemma `basic_world_formula_empty` at line 15: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_has_ltype_lvars_mutual` at line 93: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_value_has_ltype_lvars` at line 192: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_tm_has_ltype_lvars` at line 199: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `lty_env_open_one_mono` at line 206: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `lty_env_shift_mono` at line 221: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `typed_lty_env_bind_mono` at line 236: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `lty_env_open_one_typed_bind_mono` at line 246: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_has_ltype_weaken_mutual` at line 256: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_value_has_ltype_weaken` at line 283: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_tm_has_ltype_weaken` at line 292: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_has_ltype_lc_mutual` at line 301: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_value_has_ltype_lc` at line 369: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_tm_has_ltype_lc` at line 377: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_tm_has_ltype_ret_fvar_lookup` at line 385: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `lty_env_open_one_typed_bind_lookup_free_ne` at line 395: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `lty_env_open_one_typed_bind_lookup_current` at line 417: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `lty_env_restrict_open_bind_body_subset` at line 439: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_has_ltype_restrict_lvars_lc_mutual` at line 472: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_value_has_ltype_restrict_lvars_lc` at line 606: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_tm_has_ltype_restrict_lvars_lc` at line 617: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_value_has_ltype_env_agree_lc` at line 628: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_tm_has_ltype_env_agree_lc` at line 646: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_has_ltype_of_atom_typing_mutual` at line 664: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_value_has_ltype_of_atom_env_typing` at line 700: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_tm_has_ltype_of_atom_env_typing` at line 705: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_has_ltype_to_atom_typing_mutual` at line 710: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_tm_has_ltype_to_atom_env_typing` at line 756: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `atom_store_has_ltype_env_has_type` at line 765: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_value_has_ltype_of_empty_atom_typing` at line 780: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `empty_basic_value_base_inv` at line 790: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_has_ltype_unique_mutual` at line 799: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_value_has_ltype_unique` at line 894: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `atom_store_has_ltype_lookup_from_basic_ltype` at line 903: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `basic_value_has_ltype_msubst_store_back_fvar` at line 919: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `formula_fv_context_ty_wf_formula` at line 943: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `formula_fv_expr_basic_typing_formula` at line 956: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `context_ty_wf_formula_models_iff` at line 963: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `context_ty_wf_formula_basic_lvars` at line 997: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `context_ty_wf_formula_fv_cty_subset` at line 1006: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `expr_basic_typing_formula_models_iff` at line 1017: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `expr_basic_typing_formula_basic_ltype` at line 1051: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
-  - Lemma `expr_basic_typing_world_closed_on_term` at line 1060: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_world_formula_empty` at line 15: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_has_ltype_lvars_mutual` at line 93: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_value_has_ltype_lvars` at line 192: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_tm_has_ltype_lvars` at line 199: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `lty_env_open_one_mono` at line 206: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `lty_env_shift_mono` at line 221: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `typed_lty_env_bind_mono` at line 236: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `lty_env_open_one_typed_bind_mono` at line 246: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_has_ltype_weaken_mutual` at line 256: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_value_has_ltype_weaken` at line 283: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_tm_has_ltype_weaken` at line 292: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_has_ltype_lc_mutual` at line 301: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_value_has_ltype_lc` at line 369: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_tm_has_ltype_lc` at line 377: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_tm_has_ltype_ret_fvar_lookup` at line 385: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `lty_env_open_one_typed_bind_lookup_free_ne` at line 395: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `lty_env_open_one_typed_bind_lookup_current` at line 417: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `lty_env_restrict_open_bind_body_subset` at line 439: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_has_ltype_restrict_lvars_lc_mutual` at line 472: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_value_has_ltype_restrict_lvars_lc` at line 606: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_tm_has_ltype_restrict_lvars_lc` at line 617: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_value_has_ltype_env_agree_lc` at line 628: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_tm_has_ltype_env_agree_lc` at line 646: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_has_ltype_of_atom_typing_mutual` at line 664: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_value_has_ltype_of_atom_env_typing` at line 700: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_tm_has_ltype_of_atom_env_typing` at line 705: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_has_ltype_to_atom_typing_mutual` at line 710: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_tm_has_ltype_to_atom_env_typing` at line 756: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `atom_store_has_ltype_env_has_type` at line 765: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_value_has_ltype_of_empty_atom_typing` at line 780: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `empty_basic_value_base_inv` at line 790: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_has_ltype_unique_mutual` at line 799: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_value_has_ltype_unique` at line 894: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `atom_store_has_ltype_lookup_from_basic_ltype` at line 903: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `basic_value_has_ltype_msubst_store_back_fvar` at line 919: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `formula_fv_context_ty_wf_formula` at line 943: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `formula_fv_expr_basic_typing_formula` at line 956: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `context_ty_wf_formula_models_iff` at line 963: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `context_ty_wf_formula_basic_lvars` at line 997: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `context_ty_wf_formula_fv_cty_subset` at line 1006: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `expr_basic_typing_formula_models_iff` at line 1017: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `expr_basic_typing_formula_basic_ltype` at line 1051: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `expr_basic_typing_world_closed_on_term` at line 1060: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
+  - Public lemma `formula_msubst_store_expr_basic_typing_ret_fvar_fresh` at line 1071: ContextBase, ContextBasicDenotation, ContextLogic, ContextQualifier, CoreLang
 
 ### theories/BasicTypingOpen.v
 - Direct definition folders available to lemmas: ContextBase, ContextBasicDenotation, ContextQualifier
-- Direct import commands by folder: Import from ContextBasicDenotation [ContextBasicDenotation]; Import from ContextBase [ContextBase]; Import from ContextQualifier [ContextQualifier]
-- Local definitions/notation/typeclasses: (none)
+- Direct import commands by folder: ContextBase [From ContextBase Require Import BaseTactics.] | ContextBasicDenotation [From ContextBasicDenotation Require Import Notation StoreTyping TermSyntax TermEval] | ContextQualifier [From ContextQualifier Require Import Qualifier.]
+- Local definitions/notation/typeclasses: Local ltac `child_fresh_from_extended_cofinite`@15, Local ltac `child_neq_from_extended_cofinite`@21, Local ltac `child_typed_bind_fresh_other`@256, Local ltac `child_typed_bind_under_commute`@264
 - Lemmas/theorems and available definition folders:
-  - Lemma `formula_open_context_ty_wf_formula` at line 28: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `formula_open_env_context_ty_wf_formula` at line 43: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `open_value_commute_fresh_mutual` at line 71: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `open_value_commute_fresh` at line 92: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `open_tm_commute_fresh` at line 99: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `open_fv_fresh_inv_mutual` at line 106: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `open_value_fv_fresh_inv` at line 121: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `open_tm_fv_fresh_inv` at line 127: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `close_open_commute_fresh_mutual` at line 133: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `close_value_open_commute_fresh` at line 155: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `close_tm_open_commute_fresh` at line 162: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `lty_env_open_one_commute_fresh` at line 169: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `lty_env_open_one_typed_bind_under_commute` at line 187: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `lty_env_open_one_lookup_open` at line 214: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `lty_env_open_one_lookup_open_inv` at line 228: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `lty_env_open_one_typed_bind_fresh_other` at line 242: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `basic_has_ltype_open_one_fresh_mutual` at line 270: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `basic_tm_has_ltype_open_one_fresh` at line 410: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `atom_env_lty_env_roundtrip_closed` at line 421: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `basic_tm_has_ltype_of_atom_typing` at line 433: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `basic_tm_eval_value_type` at line 445: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `basic_tm_has_ltype_close_one_fresh` at line 486: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `basic_tm_has_ltype_open_one_fresh_iff` at line 620: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `formula_open_expr_basic_typing_formula` at line 631: ContextBase, ContextBasicDenotation, ContextQualifier
-  - Lemma `formula_open_env_expr_basic_typing_formula` at line 647: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `formula_open_context_ty_wf_formula` at line 28: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `formula_open_env_context_ty_wf_formula` at line 43: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `open_value_commute_fresh_mutual` at line 71: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `open_value_commute_fresh` at line 92: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `open_tm_commute_fresh` at line 99: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `open_fv_fresh_inv_mutual` at line 106: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `open_value_fv_fresh_inv` at line 121: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `open_tm_fv_fresh_inv` at line 127: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `close_open_commute_fresh_mutual` at line 133: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `close_value_open_commute_fresh` at line 155: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `close_tm_open_commute_fresh` at line 162: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `lty_env_open_one_commute_fresh` at line 169: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `lty_env_open_one_typed_bind_under_commute` at line 187: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `lty_env_open_one_lookup_open` at line 214: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `lty_env_open_one_lookup_open_inv` at line 228: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `lty_env_open_one_typed_bind_fresh_other` at line 242: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `basic_has_ltype_open_one_fresh_mutual` at line 270: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `basic_tm_has_ltype_open_one_fresh` at line 410: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `atom_env_lty_env_roundtrip_closed` at line 421: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `basic_tm_has_ltype_of_atom_typing` at line 433: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `basic_tm_eval_value_type` at line 445: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `basic_tm_has_ltype_close_one_fresh` at line 486: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `basic_tm_has_ltype_open_one_fresh_iff` at line 620: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `formula_open_expr_basic_typing_formula` at line 631: ContextBase, ContextBasicDenotation, ContextQualifier
+  - Public lemma `formula_open_env_expr_basic_typing_formula` at line 647: ContextBase, ContextBasicDenotation, ContextQualifier
 
 ### theories/Notation.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextTypeLanguage, CoreLang
-- Direct import commands by folder: Export from Stdlib [Stdlib]; Export from CoreLang [CoreLang]; Export from ContextAlgebra [ContextAlgebra]; Export from ContextLogic [ContextLogic]; Export from ContextTypeLanguage [ContextTypeLanguage]
-- Local definitions/notation/typeclasses: Notation StoreT@16, Notation LStoreT@17, Notation WorldT@18, Notation LWorldT@19, Notation WfWorldT@20, Notation FiberExtensionT@21, Notation lstore_bound_part@22
-- Lemmas/theorems and available definition folders: (none)
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Export ResourceInterface ResourceCompat ResourceCore ResourceExtension.] | ContextLogic [From ContextLogic Require Export FormulaNotation FormulaSemantics.] | ContextTypeLanguage [From ContextTypeLanguage Require Export WF.] | CoreLang [From CoreLang Require Export SyntaxNotation BasicTyping BasicTypingProps Instantiation]
+- Local definitions/notation/typeclasses: notation `StoreT`@16, notation `LStoreT`@17, notation `WorldT`@18, notation `LWorldT`@19, notation `WfWorldT`@20, notation `FiberExtensionT`@21, notation `lstore_bound_part`@22
+- Lemmas/theorems and available definition folders:
+  - (none)
 
 ### theories/Qualifier.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation
-- Direct import commands by folder: Import from ContextBasicDenotation [ContextBasicDenotation]; Import from ContextAlgebra [ContextAlgebra]
-- Local definitions/notation/typeclasses: Definition lstore_in_lworld_on@12, Definition type_qualifier_holds_lworld@16
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceAlgebra.] | ContextBasicDenotation [From ContextBasicDenotation Require Import Notation TermOpen.]
+- Local definitions/notation/typeclasses: Local notation `LStoreOnT`@8, definition `lstore_in_lworld_on`@12, definition `type_qualifier_holds_lworld`@16
 - Lemmas/theorems and available definition folders:
-  - Lemma `lstore_in_lworld_on_open_back` at line 21: ContextAlgebra, ContextBasicDenotation
-  - Lemma `lstore_in_lworld_on_open_front` at line 49: ContextAlgebra, ContextBasicDenotation
-  - Lemma `res_models_atom_exact_iff` at line 74: ContextAlgebra, ContextBasicDenotation
-  - Lemma `lt_qual_open_vars` at line 91: ContextAlgebra, ContextBasicDenotation
-  - Lemma `lt_qual_open_fibvars_set` at line 106: ContextAlgebra, ContextBasicDenotation
-  - Lemma `lt_qual_open_vars_without_opened` at line 128: ContextAlgebra, ContextBasicDenotation
-  - Lemma `lt_qual_open_prop_iff` at line 139: ContextAlgebra, ContextBasicDenotation
-  - Lemma `lt_type_qualifier_open_lookup` at line 161: ContextAlgebra, ContextBasicDenotation
-  - Lemma `lstore_in_lworld_on_mlsubst_back_self` at line 257: ContextAlgebra, ContextBasicDenotation
-  - Lemma `lt_type_qualifier_open_msubst_lookup` at line 285: ContextAlgebra, ContextBasicDenotation
+  - Public lemma `lstore_in_lworld_on_open_back` at line 21: ContextAlgebra, ContextBasicDenotation
+  - Public lemma `lstore_in_lworld_on_open_front` at line 49: ContextAlgebra, ContextBasicDenotation
+  - Public lemma `res_models_atom_exact_iff` at line 74: ContextAlgebra, ContextBasicDenotation
+  - Public lemma `lt_qual_open_vars` at line 91: ContextAlgebra, ContextBasicDenotation
+  - Public lemma `lt_qual_open_fibvars_set` at line 106: ContextAlgebra, ContextBasicDenotation
+  - Public lemma `lt_qual_open_vars_without_opened` at line 128: ContextAlgebra, ContextBasicDenotation
+  - Public lemma `lt_qual_open_prop_iff` at line 139: ContextAlgebra, ContextBasicDenotation
+  - Public lemma `lt_type_qualifier_open_lookup` at line 161: ContextAlgebra, ContextBasicDenotation
+  - Public lemma `lstore_in_lworld_on_mlsubst_back_self` at line 257: ContextAlgebra, ContextBasicDenotation
+  - Public lemma `lt_type_qualifier_open_msubst_lookup` at line 285: ContextAlgebra, ContextBasicDenotation
 
 ### theories/RelevantEnv.v
 - Direct definition folders available to lemmas: ContextBasicDenotation
-- Direct import commands by folder: Export from ContextBasicDenotation [ContextBasicDenotation]
+- Direct import commands by folder: ContextBasicDenotation [From ContextBasicDenotation Require Export RelevantEnvCore RelevantEnvRegular.]
 - Local definitions/notation/typeclasses: (none)
-- Lemmas/theorems and available definition folders: (none)
+- Lemmas/theorems and available definition folders:
+  - (none)
 
 ### theories/RelevantEnvCore.v
 - Direct definition folders available to lemmas: ContextBase, ContextBasicDenotation
-- Direct import commands by folder: Import from ContextBasicDenotation [ContextBasicDenotation]; Import from ContextBase [ContextBase]
-- Local definitions/notation/typeclasses: Definition lty_env_restrict_lvars@18, Notation "'context_tm_support'@21, Definition relevant_lvars@25, Definition relevant_env@28, Notation "'rlv['@35, Notation "'rlv['@40, Notation "'rel['@45, Notation "'rel['@50
-- Lemmas/theorems and available definition folders: (none)
+- Direct import commands by folder: ContextBase [From ContextBase Require Import BaseTactics.] | ContextBasicDenotation [From ContextBasicDenotation Require Import Notation StoreTyping TermSyntax TermOpen]
+- Local definitions/notation/typeclasses: Local notation `"m`@15, definition `lty_env_restrict_lvars`@18, notation `"'context_tm_support'`@21, definition `relevant_lvars`@25, definition `relevant_env`@28, notation `"'rlv['`@35, notation `"'rlv['`@40, notation `"'rel['`@45, notation `"'rel['`@50
+- Lemmas/theorems and available definition folders:
+  - (none)
 
 ### theories/RelevantEnvRegular.v
 - Direct definition folders available to lemmas: ContextBase, ContextBasicDenotation
-- Direct import commands by folder: Import from ContextBasicDenotation [ContextBasicDenotation]; Import from ContextBase [ContextBase]
-- Local definitions/notation/typeclasses: Ltac support_lvars_norm@2054, Ltac support_lvars_norm_in@2074, Ltac relevant_lvars_norm@2104, Ltac relevant_lvars_norm_in@2107, Ltac lty_env_open_bind_norm@2110, Ltac lty_env_open_bind_norm_in@2121, Ltac relevant_env_norm@2133, Ltac relevant_env_norm_in@2140, Ltac relevant_env_set@2147, Ltac closed_side_solve@2150
+- Direct import commands by folder: ContextBase [From ContextBase Require Import BaseTactics.] | ContextBasicDenotation [From ContextBasicDenotation Require Import Notation StoreTyping TermSyntax TermOpen]
+- Local definitions/notation/typeclasses: Local notation `"m`@12, ltac `support_lvars_norm`@2078, ltac `support_lvars_norm_in`@2098, ltac `relevant_lvars_norm`@2128, ltac `relevant_lvars_norm_in`@2131, ltac `lty_env_open_bind_norm`@2134, ltac `lty_env_open_bind_norm_in`@2145, ltac `relevant_env_norm`@2157, ltac `relevant_env_norm_in`@2164, ltac `relevant_env_set`@2171, ltac `closed_side_solve`@2174
 - Lemmas/theorems and available definition folders:
-  - Lemma `lvars_fv_context_tm_support` at line 15: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_lvars_fv` at line 23: ContextBase, ContextBasicDenotation
-  - Lemma `lc_lvars_context_tm_support` at line 29: ContextBase, ContextBasicDenotation
-  - Lemma `lc_lvars_relevant_lvars` at line 48: ContextBase, ContextBasicDenotation
-  - Lemma `context_ty_lvars_lc_eq_atoms` at line 56: ContextBase, ContextBasicDenotation
-  - Lemma `lc_context_tm_support_eq_atoms` at line 82: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_env_empty` at line 106: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_env_fresh_free` at line 117: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_env_arrow_fresh_free` at line 131: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_env_wand_fresh_free` at line 146: ContextBase, ContextBasicDenotation
-  - Lemma `soundness_relevant_env_arrow_value_fresh` at line 159: ContextBase, ContextBasicDenotation
-  - Lemma `soundness_relevant_env_wand_value_fresh` at line 168: ContextBase, ContextBasicDenotation
-  - Lemma `soundness_typed_bind_arrow_value_fresh` at line 177: ContextBase, ContextBasicDenotation
-  - Lemma `soundness_typed_bind_wand_value_fresh` at line 190: ContextBase, ContextBasicDenotation
-  - Lemma `lvars_of_atoms_empty` at line 203: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_lvars_basic_ret_fvar_subset` at line 210: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_lvars_wf_empty_ret_fvar_subset` at line 222: ContextBase, ContextBasicDenotation
-  - Lemma `lty_env_restrict_relevant_ret_fvar_closed_eq` at line 232: ContextBase, ContextBasicDenotation
-  - Lemma `lty_env_restrict_relevant_arrow_arg_insert_eq` at line 249: ContextBase, ContextBasicDenotation
-  - Lemma `insert_relevant_env_ret_value_restrict_eq` at line 303: ContextBase, ContextBasicDenotation
-  - Lemma `lty_env_restrict_open_one_bind_current_eq` at line 336: ContextBase, ContextBasicDenotation
-  - Lemma `lty_env_restrict_open_one_bind_as_insert` at line 359: ContextBase, ContextBasicDenotation
-  - Lemma `lty_env_restrict_open_one_bind_agree_on` at line 383: ContextBase, ContextBasicDenotation
-  - Lemma `lty_env_restrict_open_one_bind_insert_fresh` at line 410: ContextBase, ContextBasicDenotation
-  - Lemma `lty_env_restrict_open_one_bind_relevant_tapp_eq` at line 431: ContextBase, ContextBasicDenotation
-  - Lemma `lty_env_restrict_insert_relevant_tapp_eq` at line 468: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_lvars_ret_fvar_subset_singleton` at line 508: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_lvars_basic_open_tprim_fvar_subset` at line 520: ContextBase, ContextBasicDenotation
-  - Lemma `atom_env_restrict_singleton_lookup` at line 549: ContextBase, ContextBasicDenotation
-  - Lemma `atom_env_insert_restrict_singleton` at line 571: ContextBase, ContextBasicDenotation
-  - Lemma `atom_env_to_lty_env_dom_free_notin` at line 582: ContextBase, ContextBasicDenotation
-  - Lemma `atom_env_to_lty_env_erase_ctx_comma_bind_open_one` at line 595: ContextBase, ContextBasicDenotation
-  - Lemma `atom_env_to_lty_env_erase_ctx_star_bind_open_one` at line 611: ContextBase, ContextBasicDenotation
-  - Lemma `basic_world_formula_atom_env_dom_subset` at line 627: ContextBase, ContextBasicDenotation
-  - Lemma `basic_world_formula_singleton_free_closed_on` at line 638: ContextBase, ContextBasicDenotation
-  - Lemma `atom_env_to_lty_env_erase_ctx_union_subenv` at line 650: ContextBase, ContextBasicDenotation
-  - Lemma `erase_ctx_union_lookup_local_of_basic_ctx` at line 672: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_env_erase_ctx_union_subenv` at line 689: ContextBase, ContextBasicDenotation
-  - Lemma `lty_singleton_subenv_relevant_ret` at line 701: ContextBase, ContextBasicDenotation
-  - Lemma `lty_env_restrict_lvars_twice_subset` at line 726: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_env_idemp` at line 736: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_env_restrict_subset` at line 745: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_env_dom_subset_direct` at line 754: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_env_lookup_mono_context` at line 765: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_env_dom_mono_context` at line 778: ContextBase, ContextBasicDenotation
-  - Lemma `basic_world_relevant_mono_context` at line 790: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_lvars_open` at line 818: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_env_open_one` at line 831: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_env_open_env` at line 847: ContextBase, ContextBasicDenotation
-  - Lemma `lty_env_restrict_lvars_closed` at line 902: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_env_closed` at line 916: ContextBase, ContextBasicDenotation
-  - Lemma `lty_env_to_atom_env_restrict_lvars_lookup` at line 923: ContextBase, ContextBasicDenotation
-  - Lemma `basic_typing_restrict_lvars_to_atom_env` at line 936: ContextBase, ContextBasicDenotation
-  - Lemma `basic_typing_lty_env_to_atom_env_relevant` at line 950: ContextBase, ContextBasicDenotation
-  - Lemma `basic_context_ty_lvars_relevant_env` at line 960: ContextBase, ContextBasicDenotation
-  - Lemma `context_ty_wf_formula_relevant_env` at line 971: ContextBase, ContextBasicDenotation
-  - Lemma `context_ty_wf_formula_relevant_env_change_term` at line 988: ContextBase, ContextBasicDenotation
-  - Lemma `basic_context_ty_atom_env_relevant_env` at line 1008: ContextBase, ContextBasicDenotation
-  - Lemma `lty_env_restrict_lvars_fv_subset` at line 1020: ContextBase, ContextBasicDenotation
-  - Lemma `lty_env_restrict_lvars_insert_fresh` at line 1028: ContextBase, ContextBasicDenotation
-  - Lemma `lty_env_restrict_lvars_insert_restrict_current` at line 1038: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_env_insert_fresh` at line 1064: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_env_fv_subset` at line 1075: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_world_closed_on_term_lvars_eq` at line 1086: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_world_typing_closed_on_term` at line 1125: ContextBase, ContextBasicDenotation
-  - Lemma `relevant_lvars_insert_fresh` at line 1136: ContextBase, ContextBasicDenotation
-  - Lemma `lty_restrict_insert_relevant_eq` at line 1147: ContextBase, ContextBasicDenotation
-  - Lemma `arrow_body_relevant_lvars_subset` at line 1180: ContextBase, ContextBasicDenotation
-  - Lemma `arrow_body_relevant_env_agree` at line 1194: ContextBase, ContextBasicDenotation
-  - Lemma `wand_body_relevant_env_agree_insert_core` at line 1211: ContextBase, ContextBasicDenotation
-  - Lemma `wand_arg_relevant_env_agree_insert_core` at line 1229: ContextBase, ContextBasicDenotation
-  - Lemma `arrow_arg_relevant_env_agree_insert_core` at line 1245: ContextBase, ContextBasicDenotation
-  - Lemma `arrow_body_env_agree` at line 1259: ContextBase, ContextBasicDenotation
-  - Lemma `arrow_body_world_from_source_arg` at line 1284: ContextBase, ContextBasicDenotation
-  - Lemma `wand_body_world_from_source_arg` at line 1342: ContextBase, ContextBasicDenotation
-  - Lemma `wand_body_relevant_env_agree_open_one_core` at line 1362: ContextBase, ContextBasicDenotation
-  - Lemma `arrow_body_relevant_env_agree_open_one_core` at line 1550: ContextBase, ContextBasicDenotation
-  - Lemma `lvars_at_depth_relevant_env_subset_relevant` at line 1569: ContextBase, ContextBasicDenotation
-  - Lemma `lvars_at_depth_arrow_arg_lift_support_subset` at line 1585: ContextBase, ContextBasicDenotation
-  - Lemma `arrow_body_lvars_lift_support_subset` at line 1604: ContextBase, ContextBasicDenotation
-  - Lemma `lvars_at_depth_wand_arg_lift_support_subset` at line 1622: ContextBase, ContextBasicDenotation
-  - Lemma `lvars_at_depth_wand_body_lift_support_subset` at line 1641: ContextBase, ContextBasicDenotation
-  - Lemma `lvars_at_depth_dom_singleton_bound0_succ` at line 1659: ContextBase, ContextBasicDenotation
-  - Lemma `wand_arg_relevant_env_agree_open_one_core` at line 1667: ContextBase, ContextBasicDenotation
-  - Lemma `sum_branch_relevant_env_agree_open_one_core` at line 1819: ContextBase, ContextBasicDenotation
-  - Lemma `arrow_arg_relevant_env_agree_open_one_core` at line 1964: ContextBase, ContextBasicDenotation
-  - Lemma `arrow_arg_relevant_env_agree_inserted_body_irrel` at line 1984: ContextBase, ContextBasicDenotation
-  - Lemma `wand_arg_relevant_env_agree_inserted_body_irrel` at line 2033: ContextBase, ContextBasicDenotation
+  - Public lemma `lvars_fv_context_tm_support` at line 15: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_lvars_fv` at line 23: ContextBase, ContextBasicDenotation
+  - Public lemma `lc_lvars_context_tm_support` at line 29: ContextBase, ContextBasicDenotation
+  - Public lemma `lc_lvars_relevant_lvars` at line 48: ContextBase, ContextBasicDenotation
+  - Public lemma `context_ty_lvars_lc_eq_atoms` at line 56: ContextBase, ContextBasicDenotation
+  - Public lemma `lc_context_tm_support_eq_atoms` at line 82: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_env_empty` at line 106: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_env_fresh_free` at line 117: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_env_arrow_fresh_free` at line 131: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_env_wand_fresh_free` at line 146: ContextBase, ContextBasicDenotation
+  - Public lemma `soundness_relevant_env_arrow_value_fresh` at line 159: ContextBase, ContextBasicDenotation
+  - Public lemma `soundness_relevant_env_wand_value_fresh` at line 168: ContextBase, ContextBasicDenotation
+  - Public lemma `soundness_typed_bind_arrow_value_fresh` at line 177: ContextBase, ContextBasicDenotation
+  - Public lemma `soundness_typed_bind_wand_value_fresh` at line 190: ContextBase, ContextBasicDenotation
+  - Public lemma `value_open_result_alias_fresh` at line 203: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_lvars_tapp_values_fresh` at line 213: ContextBase, ContextBasicDenotation
+  - Public lemma `lvars_of_atoms_empty` at line 227: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_lvars_basic_ret_fvar_subset` at line 234: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_lvars_wf_empty_ret_fvar_subset` at line 246: ContextBase, ContextBasicDenotation
+  - Public lemma `lty_env_restrict_relevant_ret_fvar_closed_eq` at line 256: ContextBase, ContextBasicDenotation
+  - Public lemma `lty_env_restrict_relevant_arrow_arg_insert_eq` at line 273: ContextBase, ContextBasicDenotation
+  - Public lemma `insert_relevant_env_ret_value_restrict_eq` at line 327: ContextBase, ContextBasicDenotation
+  - Public lemma `lty_env_restrict_open_one_bind_current_eq` at line 360: ContextBase, ContextBasicDenotation
+  - Public lemma `lty_env_restrict_open_one_bind_as_insert` at line 383: ContextBase, ContextBasicDenotation
+  - Public lemma `lty_env_restrict_open_one_bind_agree_on` at line 407: ContextBase, ContextBasicDenotation
+  - Public lemma `lty_env_restrict_open_one_bind_insert_fresh` at line 434: ContextBase, ContextBasicDenotation
+  - Public lemma `lty_env_restrict_open_one_bind_relevant_tapp_eq` at line 455: ContextBase, ContextBasicDenotation
+  - Public lemma `lty_env_restrict_insert_relevant_tapp_eq` at line 492: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_lvars_ret_fvar_subset_singleton` at line 532: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_lvars_basic_open_tprim_fvar_subset` at line 544: ContextBase, ContextBasicDenotation
+  - Public lemma `atom_env_restrict_singleton_lookup` at line 573: ContextBase, ContextBasicDenotation
+  - Public lemma `atom_env_insert_restrict_singleton` at line 595: ContextBase, ContextBasicDenotation
+  - Public lemma `atom_env_to_lty_env_dom_free_notin` at line 606: ContextBase, ContextBasicDenotation
+  - Public lemma `atom_env_to_lty_env_erase_ctx_comma_bind_open_one` at line 619: ContextBase, ContextBasicDenotation
+  - Public lemma `atom_env_to_lty_env_erase_ctx_star_bind_open_one` at line 635: ContextBase, ContextBasicDenotation
+  - Public lemma `basic_world_formula_atom_env_dom_subset` at line 651: ContextBase, ContextBasicDenotation
+  - Public lemma `basic_world_formula_singleton_free_closed_on` at line 662: ContextBase, ContextBasicDenotation
+  - Public lemma `atom_env_to_lty_env_erase_ctx_union_subenv` at line 674: ContextBase, ContextBasicDenotation
+  - Public lemma `erase_ctx_union_lookup_local_of_basic_ctx` at line 696: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_env_erase_ctx_union_subenv` at line 713: ContextBase, ContextBasicDenotation
+  - Public lemma `lty_singleton_subenv_relevant_ret` at line 725: ContextBase, ContextBasicDenotation
+  - Public lemma `lty_env_restrict_lvars_twice_subset` at line 750: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_env_idemp` at line 760: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_env_restrict_subset` at line 769: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_env_dom_subset_direct` at line 778: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_env_lookup_mono_context` at line 789: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_env_dom_mono_context` at line 802: ContextBase, ContextBasicDenotation
+  - Public lemma `basic_world_relevant_mono_context` at line 814: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_lvars_open` at line 842: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_env_open_one` at line 855: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_env_open_env` at line 871: ContextBase, ContextBasicDenotation
+  - Public lemma `lty_env_restrict_lvars_closed` at line 926: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_env_closed` at line 940: ContextBase, ContextBasicDenotation
+  - Public lemma `lty_env_to_atom_env_restrict_lvars_lookup` at line 947: ContextBase, ContextBasicDenotation
+  - Public lemma `basic_typing_restrict_lvars_to_atom_env` at line 960: ContextBase, ContextBasicDenotation
+  - Public lemma `basic_typing_lty_env_to_atom_env_relevant` at line 974: ContextBase, ContextBasicDenotation
+  - Public lemma `basic_context_ty_lvars_relevant_env` at line 984: ContextBase, ContextBasicDenotation
+  - Public lemma `context_ty_wf_formula_relevant_env` at line 995: ContextBase, ContextBasicDenotation
+  - Public lemma `context_ty_wf_formula_relevant_env_change_term` at line 1012: ContextBase, ContextBasicDenotation
+  - Public lemma `basic_context_ty_atom_env_relevant_env` at line 1032: ContextBase, ContextBasicDenotation
+  - Public lemma `lty_env_restrict_lvars_fv_subset` at line 1044: ContextBase, ContextBasicDenotation
+  - Public lemma `lty_env_restrict_lvars_insert_fresh` at line 1052: ContextBase, ContextBasicDenotation
+  - Public lemma `lty_env_restrict_lvars_insert_restrict_current` at line 1062: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_env_insert_fresh` at line 1088: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_env_fv_subset` at line 1099: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_world_closed_on_term_lvars_eq` at line 1110: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_world_typing_closed_on_term` at line 1149: ContextBase, ContextBasicDenotation
+  - Public lemma `relevant_lvars_insert_fresh` at line 1160: ContextBase, ContextBasicDenotation
+  - Public lemma `lty_restrict_insert_relevant_eq` at line 1171: ContextBase, ContextBasicDenotation
+  - Public lemma `arrow_body_relevant_lvars_subset` at line 1204: ContextBase, ContextBasicDenotation
+  - Public lemma `arrow_body_relevant_env_agree` at line 1218: ContextBase, ContextBasicDenotation
+  - Public lemma `wand_body_relevant_env_agree_insert_core` at line 1235: ContextBase, ContextBasicDenotation
+  - Public lemma `wand_arg_relevant_env_agree_insert_core` at line 1253: ContextBase, ContextBasicDenotation
+  - Public lemma `arrow_arg_relevant_env_agree_insert_core` at line 1269: ContextBase, ContextBasicDenotation
+  - Public lemma `arrow_body_env_agree` at line 1283: ContextBase, ContextBasicDenotation
+  - Public lemma `arrow_body_world_from_source_arg` at line 1308: ContextBase, ContextBasicDenotation
+  - Public lemma `wand_body_world_from_source_arg` at line 1366: ContextBase, ContextBasicDenotation
+  - Public lemma `wand_body_relevant_env_agree_open_one_core` at line 1386: ContextBase, ContextBasicDenotation
+  - Public lemma `arrow_body_relevant_env_agree_open_one_core` at line 1574: ContextBase, ContextBasicDenotation
+  - Public lemma `lvars_at_depth_relevant_env_subset_relevant` at line 1593: ContextBase, ContextBasicDenotation
+  - Public lemma `lvars_at_depth_arrow_arg_lift_support_subset` at line 1609: ContextBase, ContextBasicDenotation
+  - Public lemma `arrow_body_lvars_lift_support_subset` at line 1628: ContextBase, ContextBasicDenotation
+  - Public lemma `lvars_at_depth_wand_arg_lift_support_subset` at line 1646: ContextBase, ContextBasicDenotation
+  - Public lemma `lvars_at_depth_wand_body_lift_support_subset` at line 1665: ContextBase, ContextBasicDenotation
+  - Public lemma `lvars_at_depth_dom_singleton_bound0_succ` at line 1683: ContextBase, ContextBasicDenotation
+  - Public lemma `wand_arg_relevant_env_agree_open_one_core` at line 1691: ContextBase, ContextBasicDenotation
+  - Public lemma `sum_branch_relevant_env_agree_open_one_core` at line 1843: ContextBase, ContextBasicDenotation
+  - Public lemma `arrow_arg_relevant_env_agree_open_one_core` at line 1988: ContextBase, ContextBasicDenotation
+  - Public lemma `arrow_arg_relevant_env_agree_inserted_body_irrel` at line 2008: ContextBase, ContextBasicDenotation
+  - Public lemma `wand_arg_relevant_env_agree_inserted_body_irrel` at line 2057: ContextBase, ContextBasicDenotation
 
 ### theories/StoreTyping.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-- Direct import commands by folder: Import from ContextBasicDenotation [ContextBasicDenotation]; Import from ContextLogic [ContextLogic]; Import from ContextAlgebra [ContextAlgebra]; Import from ContextQualifier [ContextQualifier]
-- Local definitions/notation/typeclasses: Definition storeA_has_type@12, Definition atom_store_has_ltype@20, Definition worldA_has_type@27, Definition world_has_type@33, Definition lworld_has_type@36, Definition wfworld_closed_on@39, Definition wfworld_closed@42, Definition basic_world_qual@45, Definition basic_world_formula@48, Definition extension_has_type@272, Definition extension_has_ltype@281, Notation "'FWorld'@578
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceAlgebra.] | ContextBasicDenotation [From ContextBasicDenotation Require Import Notation.] | ContextLogic [From ContextLogic Require Import FormulaConnectives.] | ContextQualifier [From ContextQualifier Require Import Qualifier.]
+- Local definitions/notation/typeclasses: definition `storeA_has_type`@12, definition `atom_store_has_ltype`@20, definition `worldA_has_type`@27, definition `world_has_type`@33, definition `lworld_has_type`@36, definition `wfworld_closed_on`@39, definition `wfworld_closed`@42, definition `basic_world_qual`@45, definition `basic_world_formula`@48, definition `extension_has_type`@306, definition `extension_has_ltype`@315, notation `"'FWorld'`@612
 - Lemmas/theorems and available definition folders:
-  - Lemma `atom_store_has_ltype_closed` at line 51: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `formula_fv_basic_world_formula` at line 67: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `wfworld_closed_on_mono` at line 71: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `wfworld_closed_on_le` at line 82: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `wfworld_closed_on_restrict` at line 113: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `store_closed_restrict_union_from_parts` at line 126: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `wfworld_closed_on_union` at line 152: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `storeA_has_type_swap` at line 162: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `lworld_has_type_swap` at line 178: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `formula_open_basic_world_formula` at line 211: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `formula_open_basic_world_bind0` at line 238: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `formula_open_env_basic_world_formula` at line 250: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `storeA_has_type_restrict_store` at line 291: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `storeA_has_type_lift_free_restrict_fv` at line 307: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `basic_world_qual_holds_store_iff` at line 340: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `basic_world_formula_models_iff` at line 360: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `basic_world_formula_subenv` at line 422: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `basic_world_formula_union` at line 453: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `basic_world_formula_res_subset` at line 492: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `basic_world_formula_wfworld_closed_on_dom` at line 517: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
-  - Lemma `basic_world_formula_wfworld_closed_on_atoms` at line 560: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `atom_store_has_ltype_closed` at line 51: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `formula_fv_basic_world_formula` at line 67: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `wfworld_closed_on_mono` at line 71: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `wfworld_closed_on_le` at line 82: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `wfworld_closed_on_restrict` at line 113: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `wfworld_closed_on_open_world_from_base` at line 126: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `wfworld_closed_on_store_restrict_closed` at line 150: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `store_closed_restrict_union_from_parts` at line 160: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `wfworld_closed_on_union` at line 186: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `storeA_has_type_swap` at line 196: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `lworld_has_type_swap` at line 212: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `formula_open_basic_world_formula` at line 245: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `formula_open_basic_world_bind0` at line 272: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `formula_open_env_basic_world_formula` at line 284: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `storeA_has_type_restrict_store` at line 325: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `storeA_has_type_lift_free_restrict_fv` at line 341: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `basic_world_qual_holds_store_iff` at line 374: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `basic_world_formula_models_iff` at line 394: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `basic_world_formula_subenv` at line 456: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `basic_world_formula_union` at line 487: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `basic_world_formula_res_subset` at line 526: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `basic_world_formula_wfworld_closed_on_dom` at line 551: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
+  - Public lemma `basic_world_formula_wfworld_closed_on_atoms` at line 594: ContextAlgebra, ContextBasicDenotation, ContextLogic, ContextQualifier
 
 ### theories/TermEval.v
 - Direct definition folders available to lemmas: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-- Direct import commands by folder: Import from ContextBasicDenotation [ContextBasicDenotation]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from ContextAlgebra [ContextAlgebra]; Import from ContextQualifier [ContextQualifier]; Import from CoreLang [CoreLang]
-- Local definitions/notation/typeclasses: Definition expr_eval_in_store@13, Definition tm_eval_in_store@16, Definition expr_total_on@911, Definition expr_total_on_atom_world@918, Definition expr_result_at_store@921, Definition expr_result_at_world@933, Definition expr_result_output_world@1083, Definition expr_result_extension@1100, Definition expr_total_qual@1121, Definition expr_total_formula@1125, Notation "'FTotal'@1137
+- Direct import commands by folder: ContextAlgebra [From ContextAlgebra Require Import ResourceAlgebra.] | ContextBasicDenotation [From ContextBasicDenotation Require Import Notation StoreTyping.; From ContextBasicDenotation Require Import TermSyntax.] | ContextQualifier [From ContextQualifier Require Import Qualifier.] | CoreLang [From CoreLang Require Import StrongNormalization.]
+- Local definitions/notation/typeclasses: definition `expr_eval_in_store`@13, definition `tm_eval_in_store`@16, definition `expr_total_on`@926, definition `expr_total_on_atom_world`@933, definition `expr_result_at_store`@936, definition `expr_result_at_world`@948, definition `expr_result_output_world`@1098, definition `expr_result_extension`@1115, definition `expr_total_qual`@1136, definition `expr_total_formula`@1140, notation `"'FTotal'`@1152
 - Lemmas/theorems and available definition folders:
-  - Lemma `steps_tapp_tm_fun_equiv` at line 19: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `steps_tapp_tm_ret_equiv` at line 47: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `msubst_tapp_tm_lc_arg` at line 78: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `lstore_instantiate_tm_no_bvars` at line 96: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `expr_eval_in_store_no_bvars_iff` at line 107: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_eval_in_store_ret_fvar_lookup` at line 119: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_eval_in_store_ret_value` at line 137: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_eval_in_store_ret_value_inv` at line 154: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_eval_in_store_ret_fvar_inv` at line 172: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_eval_in_store_tapp_tm_fun_equiv` at line 188: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_eval_in_store_tapp_tm_ret_equiv` at line 225: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_eval_in_store_tapp_tm_arg_eq` at line 248: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_must_terminating_tapp_tm_arg_eq` at line 268: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_eval_in_store_tapp_tm_lam_body` at line 287: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_must_terminating_tapp_tm_lam_body` at line 380: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_eval_in_store_match_true_fvar` at line 466: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_eval_in_store_match_false_fvar` at line 493: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_must_terminating_match_true_fvar` at line 520: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_must_terminating_match_false_fvar` at line 549: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_eval_in_store_tapp_tm_fix_unfold` at line 578: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_must_terminating_tapp_tm_fix_unfold` at line 657: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_eval_in_store_restrict_fv_subset` at line 747: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_eval_in_world_tapp_tm_ret_equiv` at line 761: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_eval_in_store_restrict_fv_closed_on` at line 802: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_eval_in_store_restrict_fv_exact` at line 811: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_eval_in_store_agree_on_fv` at line 818: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `store_insert_restrict_agree_on_open_fv` at line 829: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `expr_eval_in_store_restrict_lvars` at line 940: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `expr_strong_total_restrict_lvars` at line 951: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `expr_result_at_store_restrict_lvars` at line 961: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `lstore_lift_free_restrict_fv_lvars_eq` at line 974: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_must_terminating_agree_on_fv` at line 1011: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `expr_result_at_world_lworld_on_lift` at line 1046: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `formula_fv_expr_total_formula` at line 1128: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `steps_tapp_tm_fun_equiv` at line 19: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `steps_tapp_tm_ret_equiv` at line 47: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `msubst_tapp_tm_lc_arg` at line 78: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `lstore_instantiate_tm_no_bvars` at line 96: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `expr_eval_in_store_no_bvars_iff` at line 107: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_store_empty_iff` at line 119: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_store_ret_fvar_lookup` at line 134: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_store_ret_value` at line 152: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_store_ret_value_inv` at line 169: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_store_ret_fvar_inv` at line 187: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_store_tapp_tm_fun_equiv` at line 203: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_store_tapp_tm_ret_equiv` at line 240: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_store_tapp_tm_arg_eq` at line 263: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_must_terminating_tapp_tm_arg_eq` at line 283: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_store_tapp_tm_lam_body` at line 302: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_must_terminating_tapp_tm_lam_body` at line 395: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_store_match_true_fvar` at line 481: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_store_match_false_fvar` at line 508: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_must_terminating_match_true_fvar` at line 535: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_must_terminating_match_false_fvar` at line 564: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_store_tapp_tm_fix_unfold` at line 593: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_must_terminating_tapp_tm_fix_unfold` at line 672: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_store_restrict_fv_subset` at line 762: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_world_tapp_tm_ret_equiv` at line 776: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_store_restrict_fv_closed_on` at line 817: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_store_restrict_fv_exact` at line 826: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_eval_in_store_agree_on_fv` at line 833: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `store_insert_restrict_agree_on_open_fv` at line 844: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `expr_eval_in_store_restrict_lvars` at line 955: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `expr_strong_total_restrict_lvars` at line 966: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `expr_result_at_store_restrict_lvars` at line 976: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `lstore_lift_free_restrict_fv_lvars_eq` at line 989: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_must_terminating_agree_on_fv` at line 1026: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `expr_result_at_world_lworld_on_lift` at line 1061: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_fv_expr_total_formula` at line 1143: ContextAlgebra, ContextBasicDenotation, ContextQualifier, CoreLang
 
 ### theories/TermExtension.v
 - Direct definition folders available to lemmas: ContextBasicDenotation
-- Direct import commands by folder: Import from ContextBasicDenotation [ContextBasicDenotation]; Import from ContextBasicDenotation [ContextBasicDenotation]
-- Local definitions/notation/typeclasses: Definition expr_result_extension_on@18, Record expr_result_extension_witness_on@48, Record expr_result_extension_witness@77
+- Direct import commands by folder: ContextBasicDenotation [From ContextBasicDenotation Require Import Notation StoreTyping.; From ContextBasicDenotation Require Import TermEval TermOpen.]
+- Local definitions/notation/typeclasses: definition `expr_result_extension_on`@18, record `expr_result_extension_witness_on`@48, record `expr_result_extension_witness`@77
 - Lemmas/theorems and available definition folders:
-  - Lemma `expr_result_extension_shape` at line 10: ContextBasicDenotation
-  - Lemma `expr_result_extension_on_shape` at line 40: ContextBasicDenotation
-  - Lemma `expr_result_extension_witness_on_exists` at line 60: ContextBasicDenotation
-  - Lemma `expr_result_extension_witness_to_on` at line 88: ContextBasicDenotation
-  - Lemma `expr_result_extension_witness_exists` at line 100: ContextBasicDenotation
-  - Lemma `expr_result_extension_apply_total_store` at line 115: ContextBasicDenotation
-  - Lemma `expr_result_extension_apply_total_store_on` at line 138: ContextBasicDenotation
-  - Lemma `expr_result_extension_apply_total_iff` at line 161: ContextBasicDenotation
-  - Lemma `expr_result_extension_apply_total_iff_on` at line 194: ContextBasicDenotation
+  - Public lemma `expr_result_extension_shape` at line 10: ContextBasicDenotation
+  - Public lemma `expr_result_extension_on_shape` at line 40: ContextBasicDenotation
+  - Public lemma `expr_result_extension_witness_on_exists` at line 60: ContextBasicDenotation
+  - Public lemma `expr_result_extension_witness_to_on` at line 88: ContextBasicDenotation
+  - Public lemma `expr_result_extension_witness_exists` at line 100: ContextBasicDenotation
+  - Public lemma `expr_result_extension_apply_total_store` at line 115: ContextBasicDenotation
+  - Public lemma `expr_result_extension_apply_total_store_on` at line 138: ContextBasicDenotation
+  - Public lemma `expr_result_extension_apply_total_iff` at line 161: ContextBasicDenotation
+  - Public lemma `expr_result_extension_apply_total_iff_on` at line 194: ContextBasicDenotation
 
 ### theories/TermOpen.v
 - Direct definition folders available to lemmas: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-- Direct import commands by folder: Import from ContextBasicDenotation [ContextBasicDenotation]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from ContextBase [ContextBase]; Import from ContextQualifier [ContextQualifier]; Import from CoreLang [CoreLang]
-- Local definitions/notation/typeclasses: Definition expr_result_qual@13, Definition expr_result_formula_at@17, Definition expr_result_formula@21, Definition expr_result_atom_formula@24, Definition expr_result_formula_on@37, Notation "'FResult'@1082
+- Direct import commands by folder: ContextBase [From ContextBase Require Import BaseTactics.] | ContextBasicDenotation [From ContextBasicDenotation Require Import Notation StoreTyping.; From ContextBasicDenotation Require Import TermSyntax TermEval.] | ContextQualifier [From ContextQualifier Require Import Qualifier.] | CoreLang [From CoreLang Require Import StrongNormalization.]
+- Local definitions/notation/typeclasses: definition `expr_result_qual`@13, definition `expr_result_formula_at`@17, definition `expr_result_formula`@21, definition `expr_result_atom_formula`@24, definition `expr_result_formula_on`@37, notation `"'FResult'`@1082
 - Lemmas/theorems and available definition folders:
-  - Lemma `formula_fv_expr_result_formula_at` at line 27: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `formula_fv_expr_result_formula` at line 41: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `formula_fv_expr_result_atom_formula` at line 52: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `formula_fv_expr_result_formula_on` at line 62: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `lstore_swap_lookup_inv_value` at line 73: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `lstore_instantiate_open_back_mutual` at line 83: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `lstore_instantiate_tm_insert_open` at line 235: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `lstore_instantiate_tm_open_back` at line 260: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `expr_eval_in_store_open_back_iff` at line 272: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `expr_strong_total_open_back_iff` at line 284: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `expr_total_on_open_back_iff` at line 297: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `formula_open_expr_total_formula` at line 338: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `expr_result_at_store_open_back_iff` at line 371: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `expr_result_at_world_open_back_iff` at line 405: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `tm_lvars_open_result_domain` at line 460: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `formula_open_expr_result_formula` at line 474: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `formula_open_expr_result_atom_formula` at line 511: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `formula_open_expr_result_formula_at` at line 545: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `formula_open_env_expr_total_formula` at line 580: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `formula_open_expr_result_formula_shift0` at line 614: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `formula_open_expr_result_formula_at_shift0` at line 630: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `formula_open_expr_result_atom_formula_shift0` at line 650: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `formula_msubst_store_open_expr_result_formula_shift0` at line 667: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `formula_msubst_store_expr_result_formula_shift0` at line 681: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `formula_msubst_store_expr_result_atom_formula_shift0` at line 694: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `formula_msubst_store_expr_result_formula_restrict` at line 707: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `open_expr_result_shift0_lvars_lc` at line 916: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `open_expr_result_shift0_under_core` at line 932: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `open_expr_result_atom_shift0_under_core` at line 946: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `open_env_lift_expr_result_shift0_core` at line 961: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `open_env_lift_expr_result_at_shift0_core` at line 995: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
-  - Lemma `open_env_lift_expr_result_atom_shift0_core` at line 1046: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_fv_expr_result_formula_at` at line 27: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_fv_expr_result_formula` at line 41: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_fv_expr_result_atom_formula` at line 52: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_fv_expr_result_formula_on` at line 62: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `lstore_swap_lookup_inv_value` at line 73: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `lstore_instantiate_open_back_mutual` at line 83: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `lstore_instantiate_tm_insert_open` at line 235: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `lstore_instantiate_tm_open_back` at line 260: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `expr_eval_in_store_open_back_iff` at line 272: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `expr_strong_total_open_back_iff` at line 284: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `expr_total_on_open_back_iff` at line 297: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_open_expr_total_formula` at line 338: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `expr_result_at_store_open_back_iff` at line 371: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `expr_result_at_world_open_back_iff` at line 405: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `tm_lvars_open_result_domain` at line 460: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_open_expr_result_formula` at line 474: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_open_expr_result_atom_formula` at line 511: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_open_expr_result_formula_at` at line 545: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_open_env_expr_total_formula` at line 580: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_open_expr_result_formula_shift0` at line 614: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_open_expr_result_formula_at_shift0` at line 630: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_open_expr_result_atom_formula_shift0` at line 650: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_msubst_store_open_expr_result_formula_shift0` at line 667: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_msubst_store_expr_result_formula_shift0` at line 681: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_msubst_store_expr_result_atom_formula_shift0` at line 694: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `formula_msubst_store_expr_result_formula_restrict` at line 707: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `open_expr_result_shift0_lvars_lc` at line 916: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `open_expr_result_shift0_under_core` at line 932: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `open_expr_result_atom_shift0_under_core` at line 946: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `open_env_lift_expr_result_shift0_core` at line 961: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `open_env_lift_expr_result_at_shift0_core` at line 995: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
+  - Public lemma `open_env_lift_expr_result_atom_shift0_core` at line 1046: ContextBase, ContextBasicDenotation, ContextQualifier, CoreLang
 
 ### theories/TermSyntax.v
 - Direct definition folders available to lemmas: ContextBase, ContextBasicDenotation, CoreLang
-- Direct import commands by folder: Import from CoreLang [CoreLang]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from ContextBase [ContextBase]; Import from Stdlib [Stdlib]
-- Local definitions/notation/typeclasses: Fixpoint tapp_tm_fvar_spine@550, Definition lstore_free_part@785, Fixpoint lstore_instantiate_value_split_at@788, Definition lstore_instantiate_value_at@826, Definition lstore_instantiate_tm_at@830, Definition lstore_instantiate_tm@834, Ltac fold_lstore_instantiate_at@837
+- Direct import commands by folder: ContextBase [From ContextBase Require Import BaseTactics.] | ContextBasicDenotation [From ContextBasicDenotation Require Import Notation StoreTyping.] | CoreLang [From CoreLang Require Import LocallyNamelessExtra.]
+- Local definitions/notation/typeclasses: notation `open_tm_env`@11, fixpoint `tapp_tm_fvar_spine`@550, definition `lstore_free_part`@785, fixpoint `lstore_instantiate_value_split_at`@788, definition `lstore_instantiate_value_at`@826, definition `lstore_instantiate_tm_at`@830, definition `lstore_instantiate_tm`@834, ltac `fold_lstore_instantiate_at`@837
 - Lemmas/theorems and available definition folders:
-  - Lemma `bvar_lvars_at_fv` at line 17: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `lvars_bv_singleton_free_atom` at line 24: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `value_tm_lvars_at_fv_mutual` at line 32: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `value_lvars_at_fv` at line 49: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_at_fv` at line 53: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_fv` at line 57: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `bvar_lvars_at_depth` at line 61: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `value_tm_lvars_at_depth_mutual` at line 94: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `value_lvars_at_depth` at line 114: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_at_depth` at line 118: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_depth` at line 122: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `bvar_lvars_at_open` at line 129: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `value_tm_lvars_at_open_mutual` at line 153: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `value_lvars_at_open` at line 188: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_at_open` at line 194: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_open` at line 200: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `value_tm_lvars_no_bv_of_lc_mutual` at line 211: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `value_lvars_no_bv_of_lc` at line 287: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_no_bv_of_lc` at line 292: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `value_lvars_lc` at line 297: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_lc` at line 304: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_lc_subset_atoms_fv` at line 311: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_lc_eq_atoms` at line 322: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `value_lvars_lc_eq_atoms` at line 336: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_open_body_subset_lc` at line 357: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `value_lvars_open_body_subset_lc` at line 376: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_tlete_open_body_subset` at line 395: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `elem_of_fv_tm_open_fvar` at line 421: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `fv_tm_open_fvar_subset` at line 431: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `fv_tm_open_fvar_tlete_body_subset` at line 438: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `fv_tm_tlete_left_subset` at line 449: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `notin_fv_tm_tlete` at line 455: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `open_tm_shift0_lc` at line 465: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `open_tapp_tm_shift_bvar0_lc` at line 474: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `value_tm_open_shift_no_bv_mutual` at line 489: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `open_tm_shift_no_bv` at line 526: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `open_tm_shift0_lvars_lc` at line 531: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_tapp_tm_fvar` at line 540: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_tapp_tm_fvar_without_arg` at line 556: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `open_tm_env_singleton` at line 566: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `open_tm_env_insert_fresh_plain` at line 576: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_open_tm_env` at line 591: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_free_notin_of_fv` at line 617: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `open_tm_env_lift_tapp_shift_bvar0` at line 627: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `open_tm_env_lift_tret_bound0` at line 644: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `open_tm_env_lift2_tapp_ret_bound1_bound0` at line 657: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_at_tapp_ret_bound1_bound0_under` at line 677: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `bvar_lvars_at_shift_under` at line 687: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `value_tm_lvars_at_shift_under_mutual` at line 711: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `value_lvars_at_shift_under` at line 735: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_at_shift_under` at line 740: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `value_lvars_at_bound0_under` at line 745: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_at_tret_bound0_under` at line 752: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_at_tapp_shift_bound0` at line 756: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `tm_lvars_at_tapp_shift0_bound0` at line 780: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `lstore_free_part_lift_free` at line 861: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `lc_lstore_lift_free` at line 872: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `lstore_bound_part_empty_of_lc` at line 882: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `lstore_instantiate_restrict_lvars_at_mutual` at line 897: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `lstore_instantiate_tm_at_restrict_lvars` at line 933: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `lstore_instantiate_tm_restrict_lvars` at line 941: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `lstore_instantiate_value_at_fvar` at line 949: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `lstore_lift_free_insert` at line 957: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `lstore_instantiate_split_restrict_mutual` at line 968: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `lstore_instantiate_tm_split_restrict_fv` at line 1010: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `lstore_instantiate_split_empty_bound_mutual` at line 1018: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `lstore_instantiate_tm_split_empty_bound` at line 1065: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `lstore_instantiate_split_insert_open_mutual` at line 1070: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `lstore_instantiate_tm_split_insert_open` at line 1134: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `lstore_instantiate_tm_at_lc_lstore` at line 1148: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `match_left_observation_facts` at line 1159: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `match_right_observation_facts` at line 1170: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `soundness_match_left_observation_facts` at line 1181: ContextBase, ContextBasicDenotation, CoreLang
-  - Lemma `soundness_match_right_observation_facts` at line 1188: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `bvar_lvars_at_fv` at line 17: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `lvars_bv_singleton_free_atom` at line 24: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `value_tm_lvars_at_fv_mutual` at line 32: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `value_lvars_at_fv` at line 49: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_at_fv` at line 53: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_fv` at line 57: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `bvar_lvars_at_depth` at line 61: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `value_tm_lvars_at_depth_mutual` at line 94: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `value_lvars_at_depth` at line 114: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_at_depth` at line 118: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_depth` at line 122: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `bvar_lvars_at_open` at line 129: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `value_tm_lvars_at_open_mutual` at line 153: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `value_lvars_at_open` at line 188: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_at_open` at line 194: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_open` at line 200: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `value_tm_lvars_no_bv_of_lc_mutual` at line 211: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `value_lvars_no_bv_of_lc` at line 287: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_no_bv_of_lc` at line 292: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `value_lvars_lc` at line 297: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_lc` at line 304: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_lc_subset_atoms_fv` at line 311: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_lc_eq_atoms` at line 322: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `value_lvars_lc_eq_atoms` at line 336: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_open_body_subset_lc` at line 357: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `value_lvars_open_body_subset_lc` at line 376: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_tlete_open_body_subset` at line 395: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `elem_of_fv_tm_open_fvar` at line 421: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `fv_tm_open_fvar_subset` at line 431: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `fv_tm_open_fvar_tlete_body_subset` at line 438: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `fv_tm_tlete_left_subset` at line 449: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `notin_fv_tm_tlete` at line 455: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `open_tm_shift0_lc` at line 465: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `open_tapp_tm_shift_bvar0_lc` at line 474: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `value_tm_open_shift_no_bv_mutual` at line 489: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `open_tm_shift_no_bv` at line 526: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `open_tm_shift0_lvars_lc` at line 531: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_tapp_tm_fvar` at line 540: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_tapp_tm_fvar_without_arg` at line 556: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `open_tm_env_singleton` at line 566: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `open_tm_env_insert_fresh_plain` at line 576: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_open_tm_env` at line 591: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_free_notin_of_fv` at line 617: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `open_tm_env_lift_tapp_shift_bvar0` at line 627: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `open_tm_env_lift_tret_bound0` at line 644: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `open_tm_env_lift2_tapp_ret_bound1_bound0` at line 657: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_at_tapp_ret_bound1_bound0_under` at line 677: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `bvar_lvars_at_shift_under` at line 687: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `value_tm_lvars_at_shift_under_mutual` at line 711: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `value_lvars_at_shift_under` at line 735: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_at_shift_under` at line 740: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `value_lvars_at_bound0_under` at line 745: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_at_tret_bound0_under` at line 752: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_at_tapp_shift_bound0` at line 756: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `tm_lvars_at_tapp_shift0_bound0` at line 780: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `lstore_free_part_lift_free` at line 861: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `lc_lstore_lift_free` at line 872: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `lstore_bound_part_empty_of_lc` at line 882: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `lstore_instantiate_restrict_lvars_at_mutual` at line 897: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `lstore_instantiate_tm_at_restrict_lvars` at line 933: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `lstore_instantiate_tm_restrict_lvars` at line 941: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `lstore_instantiate_value_at_fvar` at line 949: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `lstore_lift_free_insert` at line 957: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `lstore_instantiate_split_restrict_mutual` at line 968: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `lstore_instantiate_tm_split_restrict_fv` at line 1010: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `lstore_instantiate_split_empty_bound_mutual` at line 1018: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `lstore_instantiate_tm_split_empty_bound` at line 1065: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `lstore_instantiate_split_insert_open_mutual` at line 1070: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `lstore_instantiate_tm_split_insert_open` at line 1134: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `lstore_instantiate_tm_at_lc_lstore` at line 1148: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `match_left_observation_facts` at line 1159: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `match_right_observation_facts` at line 1170: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `soundness_match_left_observation_facts` at line 1181: ContextBase, ContextBasicDenotation, CoreLang
+  - Public lemma `soundness_match_right_observation_facts` at line 1188: ContextBase, ContextBasicDenotation, CoreLang
 
 ### theories/TermTLet.v
 - Direct definition folders available to lemmas: ContextBasicDenotation, ContextLogic, CoreLang
-- Direct import commands by folder: Import from ContextBasicDenotation [ContextBasicDenotation]; Import from ContextBasicDenotation [ContextBasicDenotation]; Import from ContextLogic [ContextLogic]; Import from CoreLang [CoreLang]
+- Direct import commands by folder: ContextBasicDenotation [From ContextBasicDenotation Require Import Notation StoreTyping.; From ContextBasicDenotation Require Import TermSyntax TermEval TermOpen TermExtension.] | ContextLogic [From ContextLogic Require Import FormulaConnectives.] | CoreLang [From CoreLang Require Import StrongNormalization.]
 - Local definitions/notation/typeclasses: (none)
 - Lemmas/theorems and available definition folders:
-  - Lemma `expr_result_residual_singleton` at line 12: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `expr_result_msubst_back_lift_store_eq` at line 46: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `expr_result_msubst_back_input_restrict` at line 120: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `tm_eval_in_store_tlete_elim_core` at line 185: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `tm_eval_in_store_tlete_intro_core` at line 217: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `tm_eval_in_store_tlete_intro_closed_on` at line 251: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `tm_eval_in_store_tlete_elim_closed_on` at line 286: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `result_extension_store_lookup_output` at line 330: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `lstore_open_alias_restrict` at line 434: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `tm_eval_in_store_open_alias` at line 484: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `expr_total_formula_models_iff` at line 582: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `expr_total_formula_to_atom_world` at line 630: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `expr_total_atom_world_to_formula` at line 653: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `expr_total_formula_res_subset` at line 683: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `tlete_total_of_result_ext` at line 702: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `expr_result_formula_models_elim` at line 906: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `expr_result_formula_to_atom_world` at line 1021: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `expr_result_formula_fiber_witness` at line 1045: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `expr_result_atom_world_to_formula` at line 1208: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `expr_result_extension_world_models_closed` at line 1565: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `expr_result_extension_world_models` at line 1683: ContextBasicDenotation, ContextLogic, CoreLang
-  - Lemma `expr_result_formula_of_result_extends` at line 1697: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `expr_result_residual_singleton` at line 12: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `expr_result_msubst_back_lift_store_eq` at line 46: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `expr_result_msubst_back_input_restrict` at line 120: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `tm_eval_in_store_tlete_elim_core` at line 185: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `tm_eval_in_store_tlete_intro_core` at line 217: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `tm_eval_in_store_tlete_intro_closed_on` at line 251: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `tm_eval_in_store_tlete_elim_closed_on` at line 286: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `result_extension_store_lookup_output` at line 330: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `lstore_open_alias_restrict` at line 434: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `tm_eval_in_store_open_alias` at line 484: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `expr_total_formula_models_iff` at line 582: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `expr_total_formula_to_atom_world` at line 630: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `expr_total_atom_world_to_formula` at line 653: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `expr_total_formula_res_subset` at line 683: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `tlete_total_of_result_ext` at line 702: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `expr_result_formula_models_elim` at line 906: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `expr_result_formula_to_atom_world` at line 1021: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `expr_result_formula_fiber_witness` at line 1045: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `expr_result_atom_world_to_formula` at line 1208: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `expr_result_extension_world_models_closed` at line 1565: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `expr_result_extension_world_models` at line 1683: ContextBasicDenotation, ContextLogic, CoreLang
+  - Public lemma `expr_result_formula_of_result_extends` at line 1697: ContextBasicDenotation, ContextLogic, CoreLang

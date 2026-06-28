@@ -5,390 +5,400 @@ Use this to find lemmas whose file imports only lower-layer definitions and may 
 
 ## Folder Summary
 - Rocq files: 16
-- Definition/notation/typeclass declarations: 134
-- Lemma/theorem declarations: 286
-- Direct imported repo folders: ContextBase, ContextStore, CoreLang, LocallyNameless, stdpp
+- Definition/notation/typeclass declarations: 222
+- Lemma/theorem declarations: 292
+- Direct imported repo folders: ContextBase, ContextStore, CoreLang, LocallyNameless
 
 ## Files
 
 ### theories/BasicTyping.v
 - Direct definition folders available to lemmas: CoreLang
-- Direct import commands by folder: Export from CoreLang [CoreLang]; Import from CoreLang [CoreLang]
-- Local definitions/notation/typeclasses: Definition prim_op_type@17, Inductive value_has_type@34, Scheme value_has_type_mut@75, Combined Scheme has_type_mutind@77
+- Direct import commands by folder: CoreLang [From CoreLang Require Export Syntax.; From CoreLang Require Import LocallyNamelessExtra.]
+- Local definitions/notation/typeclasses: definition `prim_op_type`@17, inductive `value_has_type`@34, instance `typing_value_inst`@82, instance `typing_tm_inst`@84
 - Lemmas/theorems and available definition folders:
-  - Lemma `weakening_value` at line 91: CoreLang
-  - Lemma `weakening_tm` at line 109: CoreLang
-  - Lemma `typing_value_lc` at line 127: CoreLang
-  - Lemma `typing_tm_lc` at line 135: CoreLang
-  - Lemma `subst_typing_insert_value` at line 143: CoreLang
-  - Lemma `subst_typing_insert_tm` at line 208: CoreLang
-  - Lemma `insert_delete_lookup_ty` at line 273: CoreLang
-  - Lemma `subst_typing_value` at line 285: CoreLang
-  - Lemma `subst_typing_tm` at line 296: CoreLang
+  - Public lemma `weakening_value` at line 91: CoreLang
+  - Public lemma `weakening_tm` at line 109: CoreLang
+  - Public lemma `typing_value_lc` at line 127: CoreLang
+  - Public lemma `typing_tm_lc` at line 135: CoreLang
+  - Public lemma `subst_typing_insert_value` at line 143: CoreLang
+  - Public lemma `subst_typing_insert_tm` at line 208: CoreLang
+  - Public lemma `insert_delete_lookup_ty` at line 273: CoreLang
+  - Public lemma `subst_typing_value` at line 285: CoreLang
+  - Public lemma `subst_typing_tm` at line 296: CoreLang
 
 ### theories/BasicTypingProps.v
 - Direct definition folders available to lemmas: ContextBase, ContextStore, CoreLang
-- Direct import commands by folder: Import from CoreLang [CoreLang]; Import from ContextBase [ContextBase]; Import from ContextStore [ContextStore]
-- Local definitions/notation/typeclasses: Class FvSubsetGamma@49, Class TypingLc@78, Class BasicTypingWeaken@152, Class BasicTypingSubst@522, Class BasicTypingOpen@564
+- Direct import commands by folder: ContextBase [From ContextBase Require Import BaseTactics.] | ContextStore [From ContextStore Require Import StoreCore.] | CoreLang [From CoreLang Require Import BasicTyping LocallyNamelessProps LocallyNamelessExtra.]
+- Local definitions/notation/typeclasses: class `FvSubsetGamma`@49, instance `FvSubsetGamma_value`@52, instance `FvSubsetGamma_tm`@55, class `TypingLc`@78, instance `TypingLc_value`@81, instance `TypingLc_tm`@84, class `BasicTypingWeaken`@152, instance `BasicTypingWeaken_value`@156, instance `BasicTypingWeaken_tm`@159, class `BasicTypingSubst`@522, instance `BasicTypingSubst_value`@530, instance `BasicTypingSubst_tm`@533, class `BasicTypingOpen`@564, instance `BasicTypingOpen_value`@573, instance `BasicTypingOpen_tm`@576
 - Lemmas/theorems and available definition folders:
-  - Lemma `basic_typing_contains_fv_mut` at line 10: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_contains_fv_value` at line 41: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_contains_fv_tm` at line 45: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_closed_value` at line 58: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_closed_tm` at line 64: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_regular_value` at line 70: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_regular_tm` at line 74: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_base_canonical_form` at line 87: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_bool_canonical_form` at line 98: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_nat_canonical_form` at line 109: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_unit_canonical_form` at line 120: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_arrow_canonical_form` at line 131: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_weaken_value` at line 144: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_weaken_tm` at line 148: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_weaken_insert_value` at line 162: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_weaken_insert_tm` at line 171: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_env_agree_value` at line 183: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_swap_value` at line 262: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_env_agree_tm` at line 407: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_drop_insert_fresh_value` at line 486: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_drop_insert_fresh_tm` at line 497: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_subst_value` at line 508: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_subst_tm` at line 515: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_open_value` at line 540: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_open_tm` at line 552: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_unique_value` at line 579: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_unique_tm` at line 614: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_strengthen_value` at line 649: ContextBase, ContextStore, CoreLang
-  - Lemma `basic_typing_strengthen_tm` at line 711: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_contains_fv_mut` at line 10: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_contains_fv_value` at line 41: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_contains_fv_tm` at line 45: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_closed_value` at line 58: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_closed_tm` at line 64: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_regular_value` at line 70: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_regular_tm` at line 74: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_base_canonical_form` at line 87: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_bool_canonical_form` at line 98: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_nat_canonical_form` at line 109: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_unit_canonical_form` at line 120: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_arrow_canonical_form` at line 131: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_weaken_value` at line 144: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_weaken_tm` at line 148: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_weaken_insert_value` at line 162: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_weaken_insert_tm` at line 171: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_env_agree_value` at line 183: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_swap_value` at line 262: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_env_agree_tm` at line 407: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_drop_insert_fresh_value` at line 486: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_drop_insert_fresh_tm` at line 497: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_subst_value` at line 508: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_subst_tm` at line 515: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_open_value` at line 540: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_open_tm` at line 552: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_unique_value` at line 579: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_unique_tm` at line 614: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_strengthen_value` at line 649: ContextBase, ContextStore, CoreLang
+  - Public lemma `basic_typing_strengthen_tm` at line 711: ContextBase, ContextStore, CoreLang
 
 ### theories/Instantiation.v
 - Direct definition folders available to lemmas: CoreLang
-- Direct import commands by folder: Export from CoreLang [CoreLang]
-- Local definitions/notation/typeclasses: Definition env@12, Definition closed_env@16, Definition msubst@20, Notation "'m{'@23, Notation "'m{'@25, Definition env_delete_step@28, Definition env_delete@33
+- Direct import commands by folder: CoreLang [From CoreLang Require Export Syntax.]
+- Local definitions/notation/typeclasses: definition `env`@12, definition `closed_env`@16, definition `msubst`@20, notation `"'m`@23, notation `"'m`@25, definition `env_delete_step`@28, definition `env_delete`@33
 - Lemmas/theorems and available definition folders:
-  - Lemma `msubst_empty` at line 36: CoreLang
-  - Lemma `env_delete_empty` at line 42: CoreLang
+  - Public lemma `msubst_empty` at line 36: CoreLang
+  - Public lemma `env_delete_empty` at line 42: CoreLang
 
 ### theories/InstantiationProps.v
 - Direct definition folders available to lemmas: ContextBase, ContextStore, CoreLang, LocallyNameless
-- Direct import commands by folder: Import from ContextBase [ContextBase]; Import from ContextStore [ContextStore]; Import from CoreLang [CoreLang]; Import from LocallyNameless [LocallyNameless]
-- Local definitions/notation/typeclasses: Definition lc_env@65, Definition store_closed@117, Ltac gen_closed_env@138, Ltac gen_lc_env@151, Class SubstCommuteClosed@166, Class MsubstInsert@186, Ltac fold_msubst@216, Ltac rewrite_msubst_insert@219, Definition env_has_type@293, Class MsubstFresh@362, Class MsubstFv@700, Class MsubstRestrict@774, Class MsubstOpen@994, Class MsubstOpenVar@1031, Class MsubstIntro@1059, Class MsubstLc@1187, Ltac msubst_simp@1234
+- Direct import commands by folder: ContextBase [From ContextBase Require Import BaseTactics.] | ContextStore [From ContextStore Require Import StoreCore.] | CoreLang [From CoreLang Require Import Instantiation BasicTyping BasicTypingProps] | LocallyNameless [From LocallyNameless Require Import Classes Tactics.]
+- Local definitions/notation/typeclasses: instance `stale_env`@14, definition `lc_env`@65, definition `store_closed`@117, ltac `gen_closed_env`@138, ltac `gen_lc_env`@151, class `SubstCommuteClosed`@166, instance `SubstCommuteClosed_value`@174, instance `SubstCommuteClosed_tm`@180, class `MsubstInsert`@186, instance `MsubstInsert_value`@210, instance `MsubstInsert_tm`@213, ltac `fold_msubst`@216, ltac `rewrite_msubst_insert`@219, definition `env_has_type`@293, class `MsubstFresh`@362, instance `MsubstFresh_value`@386, instance `MsubstFresh_tm`@389, class `MsubstFv`@700, instance `MsubstFv_value`@726, instance `MsubstFv_tm`@729, class `MsubstRestrict`@774, instance `MsubstRestrict_value`@951, instance `MsubstRestrict_tm`@954, class `MsubstOpen`@994, instance `MsubstOpen_value`@1025, instance `MsubstOpen_tm`@1028, class `MsubstOpenVar`@1031, instance `MsubstOpenVar_value`@1053, instance `MsubstOpenVar_tm`@1056, class `MsubstIntro`@1059, instance `MsubstIntro_value`@1094, instance `MsubstIntro_tm`@1097, class `MsubstLc`@1187, instance `MsubstLc_value`@1215, instance `MsubstLc_tm`@1218, ltac `msubst_simp`@1234
 - Lemmas/theorems and available definition folders:
-  - Lemma `closed_env_insert` at line 16: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `closed_env_lookup` at line 26: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `closed_env_restrict` at line 35: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `closed_env_delete` at line 45: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `closed_env_storeA_swap` at line 55: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `lc_env_insert` at line 68: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `lc_env_lookup` at line 78: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `lc_env_restrict` at line 87: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `lc_env_storeA_swap` at line 97: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `lc_env_delete` at line 107: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `store_closed_restrict` at line 120: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `store_closed_storeA_swap` at line 129: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `MsubstInsert_all` at line 193: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `env_delete_insert` at line 222: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `env_delete_lookup_some` at line 237: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `env_delete_lookup_none` at line 257: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `env_delete_empty_of_dom_subset` at line 278: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `env_has_type_insert_inv` at line 299: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `delete_lookup_none` at line 316: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_basic_typing_tm` at line 326: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `MsubstFresh_all` at line 367: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_ret` at line 392: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_lete` at line 407: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_tprim` at line 425: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_tapp` at line 440: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_tmatch` at line 458: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_vlam` at line 478: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_vfix` at line 493: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `subst_map_tm_eq_msubst` at line 508: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `subst_map_vlam` at line 512: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `subst_map_vfix` at line 519: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `subst_map_ret` at line 526: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `subst_map_lete` at line 533: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `subst_map_tprim` at line 540: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `subst_map_tapp` at line 547: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `subst_map_tmatch` at line 554: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_fvar_lookup_closed` at line 562: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_fvar_lookup_none_closed` at line 590: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `subst_map_value_fresh` at line 612: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `subst_map_fvar_lookup_closed` at line 621: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_ret_fvar_lookup_closed` at line 631: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_ret_fvar_lookup_closed_value` at line 661: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_prim_fvar_lookup_closed` at line 689: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `MsubstFv_all` at line 705: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_fv_delete` at line 732: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_fv_delete_value` at line 758: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_fv_delete_tm` at line 766: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_restrict_closed_on` at line 784: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_agree_on_restrict_closed_on` at line 867: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `MsubstRestrict_all` at line 887: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_agree` at line 957: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_storeA_swap_fresh` at line 973: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `MsubstOpen_all` at line 1001: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `MsubstOpenVar_all` at line 1038: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `MsubstIntro_all` at line 1070: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_intro_open_tm` at line 1100: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_open_lookup_tm` at line 1113: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `msubst_open_lookup_swap_tm` at line 1133: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `MsubstLc_all` at line 1193: ContextBase, ContextStore, CoreLang, LocallyNameless
-  - Lemma `body_tm_msubst` at line 1221: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `closed_env_insert` at line 16: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `closed_env_lookup` at line 26: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `closed_env_restrict` at line 35: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `closed_env_delete` at line 45: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `closed_env_storeA_swap` at line 55: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `lc_env_insert` at line 68: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `lc_env_lookup` at line 78: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `lc_env_restrict` at line 87: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `lc_env_storeA_swap` at line 97: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `lc_env_delete` at line 107: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `store_closed_restrict` at line 120: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `store_closed_storeA_swap` at line 129: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `MsubstInsert_all` at line 193: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `env_delete_insert` at line 222: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `env_delete_lookup_some` at line 237: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `env_delete_lookup_none` at line 257: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `env_delete_empty_of_dom_subset` at line 278: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `env_has_type_insert_inv` at line 299: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `delete_lookup_none` at line 316: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_basic_typing_tm` at line 326: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `MsubstFresh_all` at line 367: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_ret` at line 392: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_lete` at line 407: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_tprim` at line 425: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_tapp` at line 440: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_tmatch` at line 458: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_vlam` at line 478: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_vfix` at line 493: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `subst_map_tm_eq_msubst` at line 508: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `subst_map_vlam` at line 512: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `subst_map_vfix` at line 519: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `subst_map_ret` at line 526: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `subst_map_lete` at line 533: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `subst_map_tprim` at line 540: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `subst_map_tapp` at line 547: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `subst_map_tmatch` at line 554: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_fvar_lookup_closed` at line 562: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_fvar_lookup_none_closed` at line 590: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `subst_map_value_fresh` at line 612: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `subst_map_fvar_lookup_closed` at line 621: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_ret_fvar_lookup_closed` at line 631: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_ret_fvar_lookup_closed_value` at line 661: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_prim_fvar_lookup_closed` at line 689: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `MsubstFv_all` at line 705: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_fv_delete` at line 732: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_fv_delete_value` at line 758: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_fv_delete_tm` at line 766: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_restrict_closed_on` at line 784: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_agree_on_restrict_closed_on` at line 867: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `MsubstRestrict_all` at line 887: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_agree` at line 957: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_storeA_swap_fresh` at line 973: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `MsubstOpen_all` at line 1001: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `MsubstOpenVar_all` at line 1038: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `MsubstIntro_all` at line 1070: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_intro_open_tm` at line 1100: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_open_lookup_tm` at line 1113: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `msubst_open_lookup_swap_tm` at line 1133: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `MsubstLc_all` at line 1193: ContextBase, ContextStore, CoreLang, LocallyNameless
+  - Public lemma `body_tm_msubst` at line 1221: ContextBase, ContextStore, CoreLang, LocallyNameless
 
 ### theories/LocallyNamelessExtra.v
 - Direct definition folders available to lemmas: CoreLang, LocallyNameless
-- Direct import commands by folder: Import from LocallyNameless [LocallyNameless]; Import from CoreLang [CoreLang]
-- Local definitions/notation/typeclasses: Definition open_swap_mutual@504
+- Direct import commands by folder: CoreLang [From CoreLang Require Import Syntax LocallyNamelessProps.] | LocallyNameless [From LocallyNameless Require Import Tactics Classes.]
+- Local definitions/notation/typeclasses: Local ltac `solve_open_swap_bvar`@495, definition `open_swap_mutual`@504, instance `OpenVar_value`@648, instance `OpenArgLc_value`@649, instance `CloseOpenVar_value`@651, instance `CloseOpenVar_tm`@654, instance `OpenFv_value`@657, instance `OpenFv_tm`@660, instance `OpenFvPrime_value`@663, instance `OpenFvPrime_tm`@666, instance `CloseFreshRec_value`@669, instance `CloseFreshRec_tm`@672, instance `CloseRmFv_value`@675, instance `CloseRmFv_tm`@678, instance `Fact1_value`@681, instance `Fact1_tm`@684, instance `OpenRecLc_value`@687, instance `OpenRecLc_tm`@690, instance `OpenCloseVar_value`@693, instance `OpenCloseVar_tm`@696, instance `OpenSwap_value`@699, instance `OpenSwap_tm`@702, instance `OpenLcRespect_value`@705, instance `OpenLcRespect_tm`@711, instance `SubstFresh_value`@717, instance `SubstFresh_tm`@720, instance `SubstOpen_value`@723, instance `SubstOpen_tm`@726, instance `SubstOpenVar_value`@729, instance `SubstOpenVar_tm`@732, instance `SubstLc_value`@735, instance `SubstLc_tm`@738, instance `SubstIntro_value`@741, instance `SubstIntro_tm`@744, instance `FvOfSubst_value`@747, instance `FvOfSubst_tm`@750, instance `FvOfSubstClosed_value`@753, instance `FvOfSubstClosed_tm`@756
 - Lemmas/theorems and available definition folders:
-  - Lemma `subst_open_var_value` at line 10: CoreLang, LocallyNameless
-  - Lemma `subst_open_var_tm` at line 21: CoreLang, LocallyNameless
-  - Lemma `open_subst_same_value` at line 32: CoreLang, LocallyNameless
-  - Lemma `open_subst_same_tm` at line 40: CoreLang, LocallyNameless
-  - Lemma `subst_body_value` at line 48: CoreLang, LocallyNameless
-  - Lemma `subst_body_tm` at line 57: CoreLang, LocallyNameless
-  - Lemma `lc_implies_body_value` at line 66: CoreLang, LocallyNameless
-  - Lemma `lc_implies_body_tm` at line 72: CoreLang, LocallyNameless
-  - Lemma `fv_of_subst_value` at line 78: CoreLang, LocallyNameless
-  - Lemma `fv_of_subst_tm` at line 88: CoreLang, LocallyNameless
-  - Lemma `close_rm_fv_value` at line 98: CoreLang, LocallyNameless
-  - Lemma `close_rm_fv_tm` at line 107: CoreLang, LocallyNameless
-  - Lemma `open_with_fresh_include_fv_value` at line 116: CoreLang, LocallyNameless
-  - Lemma `open_with_fresh_include_fv_tm` at line 124: CoreLang, LocallyNameless
-  - Lemma `subst_commute_value` at line 132: CoreLang, LocallyNameless
-  - Lemma `subst_commute_tm` at line 161: CoreLang, LocallyNameless
-  - Lemma `subst_subst_value` at line 190: CoreLang, LocallyNameless
-  - Lemma `subst_subst_tm` at line 217: CoreLang, LocallyNameless
-  - Lemma `close_fresh_rec_value` at line 244: CoreLang, LocallyNameless
-  - Lemma `close_fresh_rec_tm` at line 254: CoreLang, LocallyNameless
-  - Lemma `close_var_rename_value` at line 264: CoreLang, LocallyNameless
-  - Lemma `close_var_rename_tm` at line 280: CoreLang, LocallyNameless
-  - Lemma `open_close_var_value_aux` at line 296: CoreLang, LocallyNameless
-  - Lemma `open_close_var_tm_aux` at line 320: CoreLang, LocallyNameless
-  - Lemma `open_close_var_value` at line 344: CoreLang, LocallyNameless
-  - Lemma `open_close_var_tm` at line 352: CoreLang, LocallyNameless
-  - Lemma `fv_of_subst_value_closed` at line 360: CoreLang, LocallyNameless
-  - Lemma `fv_of_subst_tm_closed` at line 381: CoreLang, LocallyNameless
-  - Lemma `subst_shadow_value` at line 402: CoreLang, LocallyNameless
-  - Lemma `subst_shadow_tm` at line 426: CoreLang, LocallyNameless
-  - Lemma `subst_close_value` at line 450: CoreLang, LocallyNameless
-  - Lemma `subst_close_tm` at line 471: CoreLang, LocallyNameless
-  - Lemma `open_swap_value` at line 521: CoreLang, LocallyNameless
-  - Lemma `open_swap_tm` at line 528: CoreLang, LocallyNameless
-  - Lemma `open_lc_respect_mutual` at line 535: CoreLang, LocallyNameless
-  - Lemma `open_lc_respect_value` at line 594: CoreLang, LocallyNameless
-  - Lemma `open_lc_respect_tm` at line 604: CoreLang, LocallyNameless
-  - Lemma `open_idemp_value` at line 614: CoreLang, LocallyNameless
-  - Lemma `open_idemp_tm` at line 628: CoreLang, LocallyNameless
+  - Public lemma `subst_open_var_value` at line 10: CoreLang, LocallyNameless
+  - Public lemma `subst_open_var_tm` at line 21: CoreLang, LocallyNameless
+  - Public lemma `open_subst_same_value` at line 32: CoreLang, LocallyNameless
+  - Public lemma `open_subst_same_tm` at line 40: CoreLang, LocallyNameless
+  - Public lemma `subst_body_value` at line 48: CoreLang, LocallyNameless
+  - Public lemma `subst_body_tm` at line 57: CoreLang, LocallyNameless
+  - Public lemma `lc_implies_body_value` at line 66: CoreLang, LocallyNameless
+  - Public lemma `lc_implies_body_tm` at line 72: CoreLang, LocallyNameless
+  - Public lemma `fv_of_subst_value` at line 78: CoreLang, LocallyNameless
+  - Public lemma `fv_of_subst_tm` at line 88: CoreLang, LocallyNameless
+  - Public lemma `close_rm_fv_value` at line 98: CoreLang, LocallyNameless
+  - Public lemma `close_rm_fv_tm` at line 107: CoreLang, LocallyNameless
+  - Public lemma `open_with_fresh_include_fv_value` at line 116: CoreLang, LocallyNameless
+  - Public lemma `open_with_fresh_include_fv_tm` at line 124: CoreLang, LocallyNameless
+  - Public lemma `subst_commute_value` at line 132: CoreLang, LocallyNameless
+  - Public lemma `subst_commute_tm` at line 161: CoreLang, LocallyNameless
+  - Public lemma `subst_subst_value` at line 190: CoreLang, LocallyNameless
+  - Public lemma `subst_subst_tm` at line 217: CoreLang, LocallyNameless
+  - Public lemma `close_fresh_rec_value` at line 244: CoreLang, LocallyNameless
+  - Public lemma `close_fresh_rec_tm` at line 254: CoreLang, LocallyNameless
+  - Public lemma `close_var_rename_value` at line 264: CoreLang, LocallyNameless
+  - Public lemma `close_var_rename_tm` at line 280: CoreLang, LocallyNameless
+  - Public lemma `open_close_var_value_aux` at line 296: CoreLang, LocallyNameless
+  - Public lemma `open_close_var_tm_aux` at line 320: CoreLang, LocallyNameless
+  - Public lemma `open_close_var_value` at line 344: CoreLang, LocallyNameless
+  - Public lemma `open_close_var_tm` at line 352: CoreLang, LocallyNameless
+  - Public lemma `fv_of_subst_value_closed` at line 360: CoreLang, LocallyNameless
+  - Public lemma `fv_of_subst_tm_closed` at line 381: CoreLang, LocallyNameless
+  - Public lemma `subst_shadow_value` at line 402: CoreLang, LocallyNameless
+  - Public lemma `subst_shadow_tm` at line 426: CoreLang, LocallyNameless
+  - Public lemma `subst_close_value` at line 450: CoreLang, LocallyNameless
+  - Public lemma `subst_close_tm` at line 471: CoreLang, LocallyNameless
+  - Public lemma `open_swap_value` at line 521: CoreLang, LocallyNameless
+  - Public lemma `open_swap_tm` at line 528: CoreLang, LocallyNameless
+  - Public lemma `open_lc_respect_mutual` at line 535: CoreLang, LocallyNameless
+  - Public lemma `open_lc_respect_value` at line 594: CoreLang, LocallyNameless
+  - Public lemma `open_lc_respect_tm` at line 604: CoreLang, LocallyNameless
+  - Public lemma `open_idemp_value` at line 614: CoreLang, LocallyNameless
+  - Public lemma `open_idemp_tm` at line 628: CoreLang, LocallyNameless
 
 ### theories/LocallyNamelessProps.v
 - Direct definition folders available to lemmas: CoreLang, LocallyNameless
-- Direct import commands by folder: Import from LocallyNameless [LocallyNameless]; Import from Stdlib [Stdlib]
-- Local definitions/notation/typeclasses: Ltac crush_nat_decides@157
+- Direct import commands by folder: LocallyNameless [From LocallyNameless Require Import Tactics.]
+- Local definitions/notation/typeclasses: ltac `crush_nat_decides`@157
 - Lemmas/theorems and available definition folders:
-  - Lemma `lc_bvar_absurd` at line 10: CoreLang, LocallyNameless
-  - Lemma `lc_lam_iff_body` at line 13: CoreLang, LocallyNameless
-  - Lemma `lc_fix_iff_body` at line 21: CoreLang, LocallyNameless
-  - Lemma `lc_ret_iff_value` at line 29: CoreLang, LocallyNameless
-  - Lemma `body_ret_iff_value` at line 35: CoreLang, LocallyNameless
-  - Lemma `lc_lete_iff_body` at line 43: CoreLang, LocallyNameless
-  - Lemma `lc_prim_iff_value` at line 51: CoreLang, LocallyNameless
-  - Lemma `lc_app_iff_values` at line 57: CoreLang, LocallyNameless
-  - Lemma `lc_match_iff_parts` at line 63: CoreLang, LocallyNameless
-  - Lemma `close_open_var_value` at line 71: CoreLang, LocallyNameless
-  - Lemma `close_open_var_tm` at line 86: CoreLang, LocallyNameless
-  - Lemma `open_fv_value` at line 101: CoreLang, LocallyNameless
-  - Lemma `open_fv_tm` at line 111: CoreLang, LocallyNameless
-  - Lemma `open_fv_value'` at line 121: CoreLang, LocallyNameless
-  - Lemma `open_fv_tm'` at line 130: CoreLang, LocallyNameless
-  - Lemma `subst_fresh_value_proven` at line 139: CoreLang, LocallyNameless
-  - Lemma `subst_fresh_tm_proven` at line 148: CoreLang, LocallyNameless
-  - Lemma `open_rec_open_eq_value` at line 169: CoreLang, LocallyNameless
-  - Lemma `open_rec_open_eq_tm` at line 191: CoreLang, LocallyNameless
-  - Lemma `open_rec_lc_mutual` at line 213: CoreLang, LocallyNameless
-  - Lemma `open_rec_lc_value` at line 234: CoreLang, LocallyNameless
-  - Lemma `open_rec_lc_tm` at line 238: CoreLang, LocallyNameless
-  - Lemma `subst_open_value` at line 242: CoreLang, LocallyNameless
-  - Lemma `subst_open_tm` at line 261: CoreLang, LocallyNameless
-  - Lemma `subst_lc_mutual` at line 280: CoreLang, LocallyNameless
-  - Lemma `subst_lc_value` at line 306: CoreLang, LocallyNameless
-  - Lemma `subst_lc_tm` at line 310: CoreLang, LocallyNameless
-  - Lemma `subst_intro_value` at line 314: CoreLang, LocallyNameless
-  - Lemma `subst_intro_tm` at line 325: CoreLang, LocallyNameless
-  - Lemma `body_open_value` at line 336: CoreLang, LocallyNameless
-  - Lemma `body_open_tm` at line 349: CoreLang, LocallyNameless
+  - Public lemma `lc_bvar_absurd` at line 10: CoreLang, LocallyNameless
+  - Public lemma `lc_lam_iff_body` at line 13: CoreLang, LocallyNameless
+  - Public lemma `lc_fix_iff_body` at line 21: CoreLang, LocallyNameless
+  - Public lemma `lc_ret_iff_value` at line 29: CoreLang, LocallyNameless
+  - Public lemma `body_ret_iff_value` at line 35: CoreLang, LocallyNameless
+  - Public lemma `lc_lete_iff_body` at line 43: CoreLang, LocallyNameless
+  - Public lemma `lc_prim_iff_value` at line 51: CoreLang, LocallyNameless
+  - Public lemma `lc_app_iff_values` at line 57: CoreLang, LocallyNameless
+  - Public lemma `lc_match_iff_parts` at line 63: CoreLang, LocallyNameless
+  - Public lemma `close_open_var_value` at line 71: CoreLang, LocallyNameless
+  - Public lemma `close_open_var_tm` at line 86: CoreLang, LocallyNameless
+  - Public lemma `open_fv_value` at line 101: CoreLang, LocallyNameless
+  - Public lemma `open_fv_tm` at line 111: CoreLang, LocallyNameless
+  - Public lemma `open_fv_value'` at line 121: CoreLang, LocallyNameless
+  - Public lemma `open_fv_tm'` at line 130: CoreLang, LocallyNameless
+  - Public lemma `subst_fresh_value_proven` at line 139: CoreLang, LocallyNameless
+  - Public lemma `subst_fresh_tm_proven` at line 148: CoreLang, LocallyNameless
+  - Public lemma `open_rec_open_eq_value` at line 169: CoreLang, LocallyNameless
+  - Public lemma `open_rec_open_eq_tm` at line 191: CoreLang, LocallyNameless
+  - Public lemma `open_rec_lc_mutual` at line 213: CoreLang, LocallyNameless
+  - Public lemma `open_rec_lc_value` at line 234: CoreLang, LocallyNameless
+  - Public lemma `open_rec_lc_tm` at line 238: CoreLang, LocallyNameless
+  - Public lemma `subst_open_value` at line 242: CoreLang, LocallyNameless
+  - Public lemma `subst_open_tm` at line 261: CoreLang, LocallyNameless
+  - Public lemma `subst_lc_mutual` at line 280: CoreLang, LocallyNameless
+  - Public lemma `subst_lc_value` at line 306: CoreLang, LocallyNameless
+  - Public lemma `subst_lc_tm` at line 310: CoreLang, LocallyNameless
+  - Public lemma `subst_intro_value` at line 314: CoreLang, LocallyNameless
+  - Public lemma `subst_intro_tm` at line 325: CoreLang, LocallyNameless
+  - Public lemma `body_open_value` at line 336: CoreLang, LocallyNameless
+  - Public lemma `body_open_tm` at line 349: CoreLang, LocallyNameless
+  - Public lemma `open_value_fvar_fresh_notin` at line 362: CoreLang, LocallyNameless
 
 ### theories/OperationalProps.v
 - Direct definition folders available to lemmas: CoreLang, LocallyNameless
-- Direct import commands by folder: Import from CoreLang [CoreLang]; Import from LocallyNameless [LocallyNameless]
-- Local definitions/notation/typeclasses: Definition closed_tm@104, Definition closed_value@107, Definition reaches_result@289, Definition result_set@292, Definition all_results@295, Definition let_result_set@298
+- Direct import commands by folder: CoreLang [From CoreLang Require Import SmallStep BasicTypingProps LocallyNamelessProps] | LocallyNameless [From LocallyNameless Require Import Tactics.]
+- Local definitions/notation/typeclasses: definition `closed_tm`@104, definition `closed_value`@107, definition `reaches_result`@289, definition `result_set`@292, definition `all_results`@295, definition `let_result_set`@298
 - Lemmas/theorems and available definition folders:
-  - Lemma `head_step_regular` at line 10: CoreLang, LocallyNameless
-  - Lemma `step_regular` at line 46: CoreLang, LocallyNameless
-  - Lemma `step_regular1` at line 60: CoreLang, LocallyNameless
-  - Lemma `step_regular2` at line 64: CoreLang, LocallyNameless
-  - Lemma `steps_trans` at line 68: CoreLang, LocallyNameless
-  - Lemma `steps_R` at line 74: CoreLang, LocallyNameless
-  - Lemma `steps_inv` at line 81: CoreLang, LocallyNameless
-  - Lemma `steps_regular` at line 88: CoreLang, LocallyNameless
-  - Lemma `steps_regular1` at line 94: CoreLang, LocallyNameless
-  - Lemma `steps_regular2` at line 100: CoreLang, LocallyNameless
-  - Lemma `head_step_fv_subset` at line 110: CoreLang, LocallyNameless
-  - Lemma `step_fv_subset` at line 123: CoreLang, LocallyNameless
-  - Lemma `steps_fv_subset` at line 132: CoreLang, LocallyNameless
-  - Lemma `steps_closed_result` at line 142: CoreLang, LocallyNameless
-  - Lemma `msubst_closed_tm` at line 156: CoreLang, LocallyNameless
-  - Lemma `value_steps_self` at line 169: CoreLang, LocallyNameless
-  - Lemma `value_reduction_any_ctx` at line 173: CoreLang, LocallyNameless
-  - Lemma `basic_step_preservation` at line 178: CoreLang, LocallyNameless
-  - Lemma `basic_steps_preservation` at line 182: CoreLang, LocallyNameless
-  - Lemma `basic_steps_result_closed` at line 186: CoreLang, LocallyNameless
-  - Lemma `beta_step_regular` at line 199: CoreLang, LocallyNameless
-  - Lemma `fix_step_regular` at line 208: CoreLang, LocallyNameless
-  - Lemma `reduction_lete` at line 217: CoreLang, LocallyNameless
-  - Lemma `reduction_lete_intro` at line 240: CoreLang, LocallyNameless
-  - Lemma `reduction_lete_msubst_intro` at line 260: CoreLang, LocallyNameless
-  - Lemma `reduction_lete_iff` at line 271: CoreLang, LocallyNameless
-  - Lemma `let_result_decompose` at line 303: CoreLang, LocallyNameless
-  - Lemma `let_result_compose` at line 308: CoreLang, LocallyNameless
-  - Lemma `all_results_let_intro` at line 317: CoreLang, LocallyNameless
-  - Lemma `reduction_beta` at line 328: CoreLang, LocallyNameless
-  - Lemma `reduction_beta_intro` at line 340: CoreLang, LocallyNameless
-  - Lemma `reduction_beta_iff` at line 353: CoreLang, LocallyNameless
-  - Lemma `reduction_prim_intro` at line 364: CoreLang, LocallyNameless
-  - Lemma `reduction_prim_const` at line 373: CoreLang, LocallyNameless
-  - Lemma `reduction_prim_fvar_msubst_const` at line 386: CoreLang, LocallyNameless
-  - Lemma `reduction_fix` at line 398: CoreLang, LocallyNameless
-  - Lemma `reduction_fix_intro` at line 410: CoreLang, LocallyNameless
-  - Lemma `reduction_fix_iff` at line 423: CoreLang, LocallyNameless
-  - Lemma `reduction_match_true` at line 434: CoreLang, LocallyNameless
-  - Lemma `reduction_match_true_intro` at line 445: CoreLang, LocallyNameless
-  - Lemma `reduction_match_true_iff` at line 457: CoreLang, LocallyNameless
-  - Lemma `reduction_match_false` at line 468: CoreLang, LocallyNameless
-  - Lemma `reduction_match_false_intro` at line 479: CoreLang, LocallyNameless
-  - Lemma `reduction_match_false_iff` at line 491: CoreLang, LocallyNameless
+  - Public lemma `head_step_regular` at line 10: CoreLang, LocallyNameless
+  - Public lemma `step_regular` at line 46: CoreLang, LocallyNameless
+  - Public lemma `step_regular1` at line 60: CoreLang, LocallyNameless
+  - Public lemma `step_regular2` at line 64: CoreLang, LocallyNameless
+  - Public lemma `steps_trans` at line 68: CoreLang, LocallyNameless
+  - Public lemma `steps_R` at line 74: CoreLang, LocallyNameless
+  - Public lemma `steps_inv` at line 81: CoreLang, LocallyNameless
+  - Public lemma `steps_regular` at line 88: CoreLang, LocallyNameless
+  - Public lemma `steps_regular1` at line 94: CoreLang, LocallyNameless
+  - Public lemma `steps_regular2` at line 100: CoreLang, LocallyNameless
+  - Public lemma `head_step_fv_subset` at line 110: CoreLang, LocallyNameless
+  - Public lemma `step_fv_subset` at line 123: CoreLang, LocallyNameless
+  - Public lemma `steps_fv_subset` at line 132: CoreLang, LocallyNameless
+  - Public lemma `steps_closed_result` at line 142: CoreLang, LocallyNameless
+  - Public lemma `msubst_closed_tm` at line 156: CoreLang, LocallyNameless
+  - Public lemma `value_steps_self` at line 169: CoreLang, LocallyNameless
+  - Public lemma `value_reduction_any_ctx` at line 173: CoreLang, LocallyNameless
+  - Public lemma `basic_step_preservation` at line 178: CoreLang, LocallyNameless
+  - Public lemma `basic_steps_preservation` at line 182: CoreLang, LocallyNameless
+  - Public lemma `basic_steps_result_closed` at line 186: CoreLang, LocallyNameless
+  - Public lemma `beta_step_regular` at line 199: CoreLang, LocallyNameless
+  - Public lemma `fix_step_regular` at line 208: CoreLang, LocallyNameless
+  - Public lemma `reduction_lete` at line 217: CoreLang, LocallyNameless
+  - Public lemma `reduction_lete_intro` at line 240: CoreLang, LocallyNameless
+  - Public lemma `reduction_lete_msubst_intro` at line 260: CoreLang, LocallyNameless
+  - Public lemma `reduction_lete_iff` at line 271: CoreLang, LocallyNameless
+  - Public lemma `let_result_decompose` at line 303: CoreLang, LocallyNameless
+  - Public lemma `let_result_compose` at line 308: CoreLang, LocallyNameless
+  - Public lemma `all_results_let_intro` at line 317: CoreLang, LocallyNameless
+  - Public lemma `reduction_beta` at line 328: CoreLang, LocallyNameless
+  - Public lemma `reduction_beta_intro` at line 340: CoreLang, LocallyNameless
+  - Public lemma `reduction_beta_iff` at line 353: CoreLang, LocallyNameless
+  - Public lemma `reduction_prim_intro` at line 364: CoreLang, LocallyNameless
+  - Public lemma `reduction_prim_const` at line 373: CoreLang, LocallyNameless
+  - Public lemma `reduction_prim_fvar_msubst_const` at line 386: CoreLang, LocallyNameless
+  - Public lemma `reduction_fix` at line 398: CoreLang, LocallyNameless
+  - Public lemma `reduction_fix_intro` at line 410: CoreLang, LocallyNameless
+  - Public lemma `reduction_fix_iff` at line 423: CoreLang, LocallyNameless
+  - Public lemma `reduction_match_true` at line 434: CoreLang, LocallyNameless
+  - Public lemma `reduction_match_true_intro` at line 445: CoreLang, LocallyNameless
+  - Public lemma `reduction_match_true_iff` at line 457: CoreLang, LocallyNameless
+  - Public lemma `reduction_match_false` at line 468: CoreLang, LocallyNameless
+  - Public lemma `reduction_match_false_intro` at line 479: CoreLang, LocallyNameless
+  - Public lemma `reduction_match_false_iff` at line 491: CoreLang, LocallyNameless
 
 ### theories/OperationalResults.v
 - Direct definition folders available to lemmas: CoreLang
-- Direct import commands by folder: Import from CoreLang [CoreLang]
-- Local definitions/notation/typeclasses: Definition expr_result_incl_on@13, Definition expr_result_equiv_on@21
+- Direct import commands by folder: CoreLang [From CoreLang Require Import Instantiation InstantiationProps SmallStep OperationalProps.]
+- Local definitions/notation/typeclasses: definition `expr_result_incl_on`@13, definition `expr_result_equiv_on`@21
 - Lemmas/theorems and available definition folders:
-  - Lemma `expr_result_incl_on_refl` at line 24: CoreLang
-  - Lemma `expr_result_incl_on_trans` at line 32: CoreLang
-  - Lemma `expr_result_equiv_on_refl` at line 43: CoreLang
-  - Lemma `expr_result_equiv_on_sym` at line 50: CoreLang
-  - Lemma `expr_result_equiv_on_trans` at line 55: CoreLang
+  - Public lemma `expr_result_incl_on_refl` at line 24: CoreLang
+  - Public lemma `expr_result_incl_on_trans` at line 32: CoreLang
+  - Public lemma `expr_result_equiv_on_refl` at line 43: CoreLang
+  - Public lemma `expr_result_equiv_on_sym` at line 50: CoreLang
+  - Public lemma `expr_result_equiv_on_trans` at line 55: CoreLang
 
 ### theories/Prelude.v
-- Direct definition folders available to lemmas: ContextBase, CoreLang, stdpp
-- Direct import commands by folder: Export from ContextBase [ContextBase]; Export from stdpp [stdpp]
-- Local definitions/notation/typeclasses: Class SubstV@17, Class Open@20, Class Close@23, Class Lc@26, Class SubstM@29, Class Typing@32, Class Denotation@33, Notation "'{'@37, Notation "'{'@39, Notation "e@41, Notation "'{'@42, Notation "x@44, Notation "Γ@45, Notation "'⟦'@47
-- Lemmas/theorems and available definition folders: (none)
+- Direct definition folders available to lemmas: ContextBase, CoreLang
+- Direct import commands by folder: ContextBase [From ContextBase Require Export Prelude.]
+- Local definitions/notation/typeclasses: class `SubstV`@17, class `Open`@20, class `Close`@23, class `Lc`@26, class `SubstM`@29, class `Typing`@32, class `Denotation`@33, notation `"'`@37, notation `"'`@39, notation `"e`@41, notation `"'`@42, notation `"x`@44, notation `"Γ`@45, notation `"'⟦'`@47
+- Lemmas/theorems and available definition folders:
+  - (none)
 
 ### theories/SmallStep.v
 - Direct definition folders available to lemmas: CoreLang
-- Direct import commands by folder: Export from CoreLang [CoreLang]; Import from CoreLang [CoreLang]
-- Local definitions/notation/typeclasses: Inductive prim_step@19, Inductive head_step@56, Inductive step@98, Inductive steps@110, Notation "e@119, Definition is_val@125
+- Direct import commands by folder: CoreLang [From CoreLang Require Export Syntax BasicTyping.; From CoreLang Require Import BasicTypingProps.]
+- Local definitions/notation/typeclasses: inductive `prim_step`@19, inductive `head_step`@56, inductive `step`@98, inductive `steps`@110, notation `"e`@119, definition `is_val`@125
 - Lemmas/theorems and available definition folders:
-  - Lemma `prim_step_preserves_base` at line 33: CoreLang
-  - Lemma `prim_step_result_has_type` at line 42: CoreLang
-  - Lemma `val_no_step` at line 128: CoreLang
-  - Lemma `val_steps_self` at line 131: CoreLang
-  - Lemma `prim_step_preserves_type` at line 137: CoreLang
-  - Lemma `head_step_preserves_type` at line 147: CoreLang
-  - Lemma `step_preserves_type` at line 186: CoreLang
-  - Lemma `steps_preserves_type` at line 198: CoreLang
+  - Public lemma `prim_step_preserves_base` at line 33: CoreLang
+  - Public lemma `prim_step_result_has_type` at line 42: CoreLang
+  - Public lemma `val_no_step` at line 128: CoreLang
+  - Public lemma `val_steps_self` at line 131: CoreLang
+  - Public lemma `prim_step_preserves_type` at line 137: CoreLang
+  - Public lemma `head_step_preserves_type` at line 147: CoreLang
+  - Public lemma `step_preserves_type` at line 186: CoreLang
+  - Public lemma `steps_preserves_type` at line 198: CoreLang
 
 ### theories/StrongNormalization.v
 - Direct definition folders available to lemmas: CoreLang
-- Direct import commands by folder: Import from Stdlib [Stdlib]; Import from CoreLang [CoreLang]
-- Local definitions/notation/typeclasses: Definition result_tm@11, Definition can_step@14, Fixpoint strongly_normalizing_fuel@17, Definition strongly_normalizing@25, Inductive must_terminating@28
+- Direct import commands by folder: CoreLang [From CoreLang Require Import SmallStep OperationalProps LocallyNamelessProps Sugar.]
+- Local definitions/notation/typeclasses: definition `result_tm`@11, definition `can_step`@14, fixpoint `strongly_normalizing_fuel`@17, definition `strongly_normalizing`@25, inductive `must_terminating`@28
 - Lemmas/theorems and available definition folders:
-  - Lemma `result_tm_tret` at line 37: CoreLang
-  - Lemma `strongly_normalizing_tret` at line 42: CoreLang
-  - Lemma `must_terminating_tret` at line 49: CoreLang
-  - Lemma `must_terminating_step_inv` at line 56: CoreLang
-  - Lemma `must_terminating_reaches_result` at line 68: CoreLang
-  - Lemma `must_terminating_steps_inv` at line 78: CoreLang
-  - Lemma `strongly_normalizing_fuel_step_inv` at line 88: CoreLang
-  - Lemma `strongly_normalizing_step_inv` at line 100: CoreLang
-  - Lemma `strongly_normalizing_reaches_result` at line 112: CoreLang
-  - Lemma `strongly_normalizing_fuel_weaken` at line 125: CoreLang
-  - Lemma `strongly_normalizing_fuel_mono` at line 139: CoreLang
-  - Lemma `strongly_normalizing_steps_inv` at line 148: CoreLang
-  - Lemma `strongly_normalizing_fuel_steps_inv` at line 159: CoreLang
-  - Lemma `strongly_normalizing_fuel_tlete_elim_e1` at line 180: CoreLang
-  - Lemma `strongly_normalizing_tlete_elim_e1` at line 225: CoreLang
-  - Lemma `steps_tlete_to_body` at line 233: CoreLang
-  - Lemma `strongly_normalizing_tlete_elim_body` at line 257: CoreLang
-  - Lemma `strongly_normalizing_fuel_tlete_elim_body` at line 269: CoreLang
-  - Lemma `strongly_normalizing_fuel_tlete_intro` at line 282: CoreLang
-  - Lemma `strongly_normalizing_tlete_intro` at line 341: CoreLang
-  - Lemma `must_terminating_tlete_intro` at line 353: CoreLang
-  - Lemma `must_terminating_tlete_elim_e1` at line 394: CoreLang
-  - Lemma `must_terminating_tlete_elim_body` at line 443: CoreLang
-  - Lemma `must_terminating_tapp_tm_fun_equiv` at line 455: CoreLang
-  - Lemma `must_terminating_tapp_tm_ret_equiv` at line 491: CoreLang
-  - Lemma `must_terminating_tprim_const` at line 534: CoreLang
-  - Lemma `must_terminating_lam_app_equiv` at line 549: CoreLang
-  - Lemma `must_terminating_fix_app_equiv` at line 568: CoreLang
-  - Lemma `must_terminating_match_true_equiv` at line 587: CoreLang
-  - Lemma `must_terminating_match_false_equiv` at line 605: CoreLang
+  - Public lemma `result_tm_tret` at line 37: CoreLang
+  - Public lemma `strongly_normalizing_tret` at line 42: CoreLang
+  - Public lemma `must_terminating_tret` at line 49: CoreLang
+  - Public lemma `must_terminating_step_inv` at line 56: CoreLang
+  - Public lemma `must_terminating_reaches_result` at line 68: CoreLang
+  - Public lemma `must_terminating_steps_inv` at line 78: CoreLang
+  - Public lemma `strongly_normalizing_fuel_step_inv` at line 88: CoreLang
+  - Public lemma `strongly_normalizing_step_inv` at line 100: CoreLang
+  - Public lemma `strongly_normalizing_reaches_result` at line 112: CoreLang
+  - Public lemma `strongly_normalizing_fuel_weaken` at line 125: CoreLang
+  - Public lemma `strongly_normalizing_fuel_mono` at line 139: CoreLang
+  - Public lemma `strongly_normalizing_steps_inv` at line 148: CoreLang
+  - Public lemma `strongly_normalizing_fuel_steps_inv` at line 159: CoreLang
+  - Public lemma `strongly_normalizing_fuel_tlete_elim_e1` at line 180: CoreLang
+  - Public lemma `strongly_normalizing_tlete_elim_e1` at line 225: CoreLang
+  - Public lemma `steps_tlete_to_body` at line 233: CoreLang
+  - Public lemma `strongly_normalizing_tlete_elim_body` at line 257: CoreLang
+  - Public lemma `strongly_normalizing_fuel_tlete_elim_body` at line 269: CoreLang
+  - Public lemma `strongly_normalizing_fuel_tlete_intro` at line 282: CoreLang
+  - Public lemma `strongly_normalizing_tlete_intro` at line 341: CoreLang
+  - Public lemma `must_terminating_tlete_intro` at line 353: CoreLang
+  - Public lemma `must_terminating_tlete_elim_e1` at line 394: CoreLang
+  - Public lemma `must_terminating_tlete_elim_body` at line 443: CoreLang
+  - Public lemma `must_terminating_tapp_tm_fun_equiv` at line 455: CoreLang
+  - Public lemma `must_terminating_tapp_tm_ret_equiv` at line 491: CoreLang
+  - Public lemma `must_terminating_tprim_const` at line 534: CoreLang
+  - Public lemma `must_terminating_lam_app_equiv` at line 549: CoreLang
+  - Public lemma `must_terminating_fix_app_equiv` at line 568: CoreLang
+  - Public lemma `must_terminating_match_true_equiv` at line 587: CoreLang
+  - Public lemma `must_terminating_match_false_equiv` at line 605: CoreLang
 
 ### theories/Sugar.v
 - Direct definition folders available to lemmas: ContextBase, CoreLang
-- Direct import commands by folder: Export from CoreLang [CoreLang]; Import from CoreLang [CoreLang]; Import from ContextBase [ContextBase]
-- Local definitions/notation/typeclasses: Definition vtrue@11, Definition vfalse@12, Definition vnat@13, Fixpoint value_shift@15, Definition tapp_tm@42, Notation "e@45, Notation "'↑{'@49, Notation "'↑{'@52, Notation "v@55, Notation "e@58
+- Direct import commands by folder: ContextBase [From ContextBase Require Import Prelude.] | CoreLang [From CoreLang Require Export SmallStep OperationalProps LocallyNamelessProps.; From CoreLang Require Import BasicTypingProps.]
+- Local definitions/notation/typeclasses: definition `vtrue`@11, definition `vfalse`@12, definition `vnat`@13, fixpoint `value_shift`@15, instance `shift_value_inst`@37, instance `shift_tm_inst`@38, definition `tapp_tm`@42, notation `"e`@45, notation `"'↑`@49, notation `"'↑`@52, notation `"v`@55, notation `"e`@58
 - Lemmas/theorems and available definition folders:
-  - Lemma `value_shift_fv` at line 62: ContextBase, CoreLang
-  - Lemma `value_shift_swap_atom` at line 74: ContextBase, CoreLang
-  - Lemma `value_tm_shift_open_fvar_mutual` at line 89: ContextBase, CoreLang
-  - Lemma `value_shift_open_value_fvar` at line 130: ContextBase, CoreLang
-  - Lemma `tm_shift_open_tm_fvar` at line 136: ContextBase, CoreLang
-  - Lemma `value_tm_shift_open_fvar_before_mutual` at line 142: ContextBase, CoreLang
-  - Lemma `value_shift_open_value_fvar_before` at line 179: ContextBase, CoreLang
-  - Lemma `tm_shift_open_tm_fvar_before` at line 185: ContextBase, CoreLang
-  - Lemma `value_tm_shift_lc_id_mutual` at line 191: ContextBase, CoreLang
-  - Lemma `value_shift_lc_id` at line 248: ContextBase, CoreLang
-  - Lemma `tm_shift_lc_id` at line 253: ContextBase, CoreLang
-  - Lemma `fv_tapp_tm` at line 258: ContextBase, CoreLang
-  - Lemma `tm_swap_atom_tapp_tm` at line 265: ContextBase, CoreLang
-  - Lemma `tm_swap_atom_tapp_tm_fvar_fresh` at line 273: ContextBase, CoreLang
-  - Lemma `open_tapp_tm_lc_arg` at line 286: ContextBase, CoreLang
-  - Lemma `body_tapp_tm_body` at line 297: ContextBase, CoreLang
-  - Lemma `lc_tapp_tm` at line 307: ContextBase, CoreLang
-  - Lemma `basic_typing_tapp_tm` at line 325: ContextBase, CoreLang
-  - Lemma `basic_typing_tapp_tm_fvar_inv` at line 348: ContextBase, CoreLang
-  - Lemma `basic_typing_tapp_tm_tlete_assoc` at line 372: ContextBase, CoreLang
-  - Lemma `basic_typing_tapp_tm_tlete_assoc_rev` at line 409: ContextBase, CoreLang
-  - Lemma `basic_typing_tret_fvar_insert` at line 429: ContextBase, CoreLang
-  - Lemma `basic_typing_tapp_tm_fvar_insert` at line 436: ContextBase, CoreLang
+  - Public lemma `value_shift_fv` at line 62: ContextBase, CoreLang
+  - Public lemma `value_shift_swap_atom` at line 74: ContextBase, CoreLang
+  - Public lemma `value_tm_shift_open_fvar_mutual` at line 89: ContextBase, CoreLang
+  - Public lemma `value_shift_open_value_fvar` at line 130: ContextBase, CoreLang
+  - Public lemma `tm_shift_open_tm_fvar` at line 136: ContextBase, CoreLang
+  - Public lemma `value_tm_shift_open_fvar_before_mutual` at line 142: ContextBase, CoreLang
+  - Public lemma `value_shift_open_value_fvar_before` at line 179: ContextBase, CoreLang
+  - Public lemma `tm_shift_open_tm_fvar_before` at line 185: ContextBase, CoreLang
+  - Public lemma `value_tm_shift_lc_id_mutual` at line 191: ContextBase, CoreLang
+  - Public lemma `value_shift_lc_id` at line 248: ContextBase, CoreLang
+  - Public lemma `tm_shift_lc_id` at line 253: ContextBase, CoreLang
+  - Public lemma `fv_tapp_tm` at line 258: ContextBase, CoreLang
+  - Public lemma `ret_value_alias_fv_support_parts` at line 265: ContextBase, CoreLang
+  - Public lemma `tapp_value_arg_alias_fv_support_parts` at line 276: ContextBase, CoreLang
+  - Public lemma `tapp_value_fun_alias_fv_support_parts` at line 288: ContextBase, CoreLang
+  - Public lemma `tapp_fvar_apps_fv_subset` at line 301: ContextBase, CoreLang
+  - Public lemma `tm_swap_atom_tapp_tm` at line 318: ContextBase, CoreLang
+  - Public lemma `tm_swap_atom_tapp_tm_fvar_fresh` at line 326: ContextBase, CoreLang
+  - Public lemma `open_tapp_tm_lc_arg` at line 339: ContextBase, CoreLang
+  - Public lemma `body_tapp_tm_body` at line 350: ContextBase, CoreLang
+  - Public lemma `lc_tapp_tm` at line 360: ContextBase, CoreLang
+  - Public lemma `basic_typing_tapp_tm` at line 378: ContextBase, CoreLang
+  - Public lemma `basic_typing_tapp_tm_fvar_inv` at line 401: ContextBase, CoreLang
+  - Public lemma `basic_typing_tapp_tm_tlete_assoc` at line 425: ContextBase, CoreLang
+  - Public lemma `basic_typing_tapp_tm_tlete_assoc_rev` at line 462: ContextBase, CoreLang
+  - Public lemma `basic_typing_tret_fvar_insert` at line 482: ContextBase, CoreLang
+  - Public lemma `basic_typing_tapp_tm_fvar_insert` at line 489: ContextBase, CoreLang
 
 ### theories/Syntax.v
 - Direct definition folders available to lemmas: CoreLang
-- Direct import commands by folder: Export from CoreLang [CoreLang]
+- Direct import commands by folder: CoreLang [From CoreLang Require Export SyntaxCore SyntaxRegular.]
 - Local definitions/notation/typeclasses: (none)
-- Lemmas/theorems and available definition folders: (none)
+- Lemmas/theorems and available definition folders:
+  - (none)
 
 ### theories/SyntaxCore.v
 - Direct definition folders available to lemmas: ContextBase, CoreLang
-- Direct import commands by folder: Export from CoreLang [CoreLang]; Import from ContextBase [ContextBase]
-- Local definitions/notation/typeclasses: Inductive base_ty@14, Inductive ty@17, Notation "s1@22, Inductive constant@38, Inductive prim_op@45, Definition base_ty_of_const@54, Inductive value@75, Scheme value_mut@89, Combined Scheme value_tm_mutind@91, Fixpoint value_eqdec'@95, Fixpoint open_value@111, Fixpoint close_value@143, Fixpoint fv_value@168, Definition bvar_lvars_at@199, Fixpoint value_lvars_at@202, Definition value_lvars@220, Definition tm_lvars@223, Fixpoint value_swap_atom@232, Fixpoint value_subst@251, Definition value_subst_all@280, Definition tm_subst_all@283, Inductive lc_value@295, Scheme lc_value_mut@321, Combined Scheme lc_mutind@324, Definition body_tm@335, Definition body_val@338
-- Lemmas/theorems and available definition folders: (none)
+- Direct import commands by folder: ContextBase [From ContextBase Require Import LogicVar BaseTactics.] | CoreLang [From CoreLang Require Export Prelude.]
+- Local definitions/notation/typeclasses: inductive `base_ty`@14, inductive `ty`@17, notation `"s1`@22, instance `base_ty_eqdec`@25, instance `ty_eqdec`@26, instance `ty_inhabited`@28, instance `corelang_ty_sig`@31, inductive `constant`@38, instance `constant_eqdec`@43, inductive `prim_op`@45, instance `prim_op_eqdec`@52, definition `base_ty_of_const`@54, inductive `value`@75, fixpoint `value_eqdec'`@95, instance `value_eqdec`@103, instance `tm_eqdec`@104, fixpoint `open_value`@111, instance `open_value_inst`@129, instance `open_tm_inst`@130, instance `open_value_atom_inst`@131, instance `open_tm_atom_inst`@132, fixpoint `close_value`@143, instance `close_value_inst`@161, instance `close_tm_inst`@162, fixpoint `fv_value`@168, instance `stale_value_inst`@185, instance `stale_tm_inst`@186, definition `bvar_lvars_at`@199, fixpoint `value_lvars_at`@202, definition `value_lvars`@220, definition `tm_lvars`@223, fixpoint `value_swap_atom`@232, fixpoint `value_subst`@251, instance `subst_value_inst`@269, instance `subst_tm_inst`@270, definition `value_subst_all`@280, definition `tm_subst_all`@283, instance `substM_value_inst`@286, instance `substM_tm_inst`@288, inductive `lc_value`@295, instance `lc_value_inst`@326, instance `lc_tm_inst`@327, definition `body_tm`@335, definition `body_val`@338, instance `value_inhabited`@342, instance `corelang_value_sig`@345
+- Lemmas/theorems and available definition folders:
+  - (none)
 
 ### theories/SyntaxNotation.v
 - Direct definition folders available to lemmas: CoreLang
-- Direct import commands by folder: Export from CoreLang [CoreLang]; Import from Stdlib [Stdlib]
-- Local definitions/notation/typeclasses: Notation "'{'@19, Notation "'{'@22, Notation "e@25, Notation "e@27, Notation "'FV'@30, Notation "'FV'@33, Notation store@37, Notation tyctx@38, Notation "'𝔹'"@40, Notation "'ℕ'"@41, Notation "'𝟙'"@42, Notation "T1@43, Notation "T1@45, Notation "'true'"@48, Notation "'false'"@49, Notation "'unit'"@50, Definition constant_of_uint@52, Definition constant_to_uint@55, Notation "'#'@64, Notation "'λ@67, Notation "'fix@71, Notation "'ret'@75, Notation "'let@78, Notation "v1@83, Notation "'if'@86, Notation "'iszero'@90, Notation "'succ'@92, Notation "'pred'@94, Notation "'boolGen'@96, Notation "'natGen'@98
-- Lemmas/theorems and available definition folders: (none)
+- Direct import commands by folder: CoreLang [From CoreLang Require Export Syntax.]
+- Local definitions/notation/typeclasses: notation `"'`@19, notation `"'`@22, notation `"e`@25, notation `"e`@27, notation `"'FV'`@30, notation `"'FV'`@33, notation `store`@37, notation `tyctx`@38, notation `"'𝔹'"`@40, notation `"'ℕ'"`@41, notation `"'𝟙'"`@42, notation `"T1`@43, notation `"T1`@45, notation `"'true'"`@48, notation `"'false'"`@49, notation `"'unit'"`@50, definition `constant_of_uint`@52, definition `constant_to_uint`@55, notation `"'#'`@64, notation `"'λ`@67, notation `"'fix`@71, notation `"'ret'`@75, notation `"'let`@78, notation `"v1`@83, notation `"'if'`@86, notation `"'iszero'`@90, notation `"'succ'`@92, notation `"'pred'`@94, notation `"'boolGen'`@96, notation `"'natGen'`@98
+- Lemmas/theorems and available definition folders:
+  - (none)
 
 ### theories/SyntaxRegular.v
 - Direct definition folders available to lemmas: ContextBase, CoreLang
-- Direct import commands by folder: Export from CoreLang [CoreLang]; Import from ContextBase [ContextBase]
+- Direct import commands by folder: ContextBase [From ContextBase Require Import BaseTactics.] | CoreLang [From CoreLang Require Export SyntaxCore.]
 - Local definitions/notation/typeclasses: (none)
 - Lemmas/theorems and available definition folders:
-  - Lemma `fv_value_swap_atom` at line 6: ContextBase, CoreLang
-  - Lemma `value_swap_atom_involutive` at line 23: ContextBase, CoreLang
-  - Lemma `value_swap_atom_fresh` at line 36: ContextBase, CoreLang
-  - Lemma `value_swap_atom_open` at line 53: ContextBase, CoreLang
-  - Lemma `open_value_swap_atom` at line 68: ContextBase, CoreLang
-  - Lemma `open_tm_swap_atom` at line 76: ContextBase, CoreLang
+  - Public lemma `fv_value_swap_atom` at line 6: ContextBase, CoreLang
+  - Public lemma `value_swap_atom_involutive` at line 23: ContextBase, CoreLang
+  - Public lemma `value_swap_atom_fresh` at line 36: ContextBase, CoreLang
+  - Public lemma `value_swap_atom_open` at line 53: ContextBase, CoreLang
+  - Public lemma `open_value_swap_atom` at line 68: ContextBase, CoreLang
+  - Public lemma `open_tm_swap_atom` at line 76: ContextBase, CoreLang
+  - Public lemma `vfix_fresh_notin` at line 84: ContextBase, CoreLang
