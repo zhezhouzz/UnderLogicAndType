@@ -253,7 +253,7 @@ Lemma cty_open_fresh_notin τ y z :
   z ∉ fv_cty τ ∪ {[y]} ->
   z ∉ fv_cty (cty_open 0 y τ).
 Proof.
-  apply ContextTypeLanguage.SyntaxRegular.cty_open_fresh_notin.
+  apply ContextTypeLanguage.Syntax.cty_open_fresh_notin.
 Qed.
 
 Lemma wfworld_closed_on_open_world_from_base

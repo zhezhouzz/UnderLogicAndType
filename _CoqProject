@@ -51,9 +51,9 @@ LocallyNameless/Classes.v
 LocallyNameless/Tactics.v
 
 CoreLang/theories/Prelude.v
+CoreLang/theories/Syntax.v
 CoreLang/theories/SyntaxCore.v
 CoreLang/theories/SyntaxRegular.v
-CoreLang/theories/Syntax.v
 CoreLang/theories/SyntaxNotation.v
 CoreLang/theories/LocallyNamelessExtra.v
 CoreLang/theories/LocallyNamelessProps.v
@@ -67,9 +67,9 @@ CoreLang/theories/OperationalProps.v
 CoreLang/theories/StrongNormalization.v
 CoreLang/theories/Sugar.v
 
+ContextTypeLanguage/theories/Syntax.v
 ContextTypeLanguage/theories/SyntaxCore.v
 ContextTypeLanguage/theories/SyntaxRegular.v
-ContextTypeLanguage/theories/Syntax.v
 ContextTypeLanguage/theories/TypeOpen.v
 ContextTypeLanguage/theories/LtyEnv.v
 ContextTypeLanguage/theories/WF.v

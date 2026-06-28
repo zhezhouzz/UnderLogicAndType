@@ -5,6 +5,60 @@ From Stdlib Require Import Logic.ProofIrrelevance.
 
 (** * Algebraic operations on abstract resources *)
 
+(** ** Abstract context algebra *)
+
+Class ContextAlgebra (M : Type) := {
+  ca_one  : M;
+  ca_times_def : M → M → Prop;
+  ca_plus_def  : M → M → Prop;
+  ca_times : ∀ m1 m2, ca_times_def m1 m2 → M;
+  ca_plus  : ∀ m1 m2, ca_plus_def m1 m2 → M;
+  ca_le    : M → M → Prop;
+
+  ca_times_unit_def : ∀ m, ca_times_def m ca_one;
+  ca_times_unit : ∀ m, ca_times m ca_one (ca_times_unit_def m) = m;
+
+  ca_times_comm : ∀ m1 m2 (H12 : ca_times_def m1 m2),
+    ∃ H21 : ca_times_def m2 m1,
+      ca_times m1 m2 H12 = ca_times m2 m1 H21;
+
+  ca_plus_comm  : ∀ m1 m2 (H12 : ca_plus_def m1 m2),
+    ∃ H21 : ca_plus_def m2 m1,
+      ca_plus m1 m2 H12 = ca_plus m2 m1 H21;
+
+  ca_times_assoc : ∀ m1 m2 m3
+    (H12 : ca_times_def m1 m2)
+    (H123 : ca_times_def (ca_times m1 m2 H12) m3),
+    ∃ (H23 : ca_times_def m2 m3)
+      (H1_23 : ca_times_def m1 (ca_times m2 m3 H23)),
+      ca_times (ca_times m1 m2 H12) m3 H123 =
+      ca_times m1 (ca_times m2 m3 H23) H1_23;
+
+  ca_plus_assoc  : ∀ m1 m2 m3
+    (H12 : ca_plus_def m1 m2)
+    (H123 : ca_plus_def (ca_plus m1 m2 H12) m3),
+    ∃ (H23 : ca_plus_def m2 m3)
+      (H1_23 : ca_plus_def m1 (ca_plus m2 m3 H23)),
+      ca_plus (ca_plus m1 m2 H12) m3 H123 =
+      ca_plus m1 (ca_plus m2 m3 H23) H1_23;
+
+  ca_le_refl : ∀ m, ca_le m m;
+
+  ca_times_le_mono : ∀ m1 m2 m1' m2'
+    (H12 : ca_times_def m1 m2) (H12' : ca_times_def m1' m2'),
+    ca_le m1 m1' → ca_le m2 m2' →
+    ca_le (ca_times m1 m2 H12) (ca_times m1' m2' H12');
+
+  ca_plus_le_mono  : ∀ m1 m2 m1' m2'
+    (H12 : ca_plus_def m1 m2) (H12' : ca_plus_def m1' m2'),
+    ca_le m1 m1' → ca_le m2 m2' →
+    ca_le (ca_plus m1 m2 H12) (ca_plus m1' m2' H12');
+}.
+
+Section ContextAlgebraLemmas.
+Context `{ContextAlgebra M}.
+End ContextAlgebraLemmas.
+
 Section ResourceAlgebraA.
 
 Context {K : Type} `{Countable K} .
@@ -1399,5 +1453,24 @@ Proof.
   - simpl. reflexivity.
   - intros σ. simpl. tauto.
 Qed.
+
+#[global] Program Instance WfWorldA_ContextAlgebra :
+  ContextAlgebra WfWorldAT := {|
+  ca_one       := resA_unit;
+  ca_times_def := fun w1 w2 => worldA_compat w1 w2;
+  ca_plus_def  := fun w1 w2 => rawA_sum_defined w1 w2;
+  ca_times     := resA_product;
+  ca_plus      := resA_sum;
+  ca_le        := sqsubseteq (A := WfWorldAT);
+|}.
+Next Obligation. intro m. exact (rawA_compat_unit_r (m : WorldAT)). Qed.
+Next Obligation. intro m. apply resA_product_unit_r_eq_any. Qed.
+Next Obligation. apply resA_product_comm_eq. Qed.
+Next Obligation. apply resA_sum_comm_eq. Qed.
+Next Obligation. apply resA_product_assoc_eq. Qed.
+Next Obligation. apply resA_sum_assoc_eq. Qed.
+Next Obligation. intro w. exact (reflexivity w). Qed.
+Next Obligation. eapply resA_product_le_mono; eauto. Qed.
+Next Obligation. eapply resA_sum_le_mono; eauto. Qed.
 
 End ResourceAlgebraA.
