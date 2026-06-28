@@ -1,0 +1,255 @@
+# Definition-folder dependency report: ContextAlgebra
+This report is generated mechanically from Rocq source imports and lemma declarations.
+For each lemma/theorem, "definition folders" is a conservative over-approximation: the repo folders directly imported by the file containing that lemma, plus the current folder. Because most proof identifiers are unqualified after imports, this report is intended as a refactoring map, not a proof-term dependency trace.
+Use this to find lemmas whose file imports only lower-layer definitions and may be candidates for moving downward.
+
+## Folder Summary
+- Rocq files: 8
+- Definition/notation/typeclass declarations: 115
+- Lemma/theorem declarations: 195
+- Direct imported repo folders: ContextAlgebra, ContextBase, ContextStore
+
+## Files
+
+### theories/ContextAlgebra.v
+- Direct definition folders available to lemmas: ContextAlgebra, ContextBase
+- Direct import commands by folder: Import from ContextBase [ContextBase]; Import from ContextAlgebra [ContextAlgebra]
+- Local definitions/notation/typeclasses: Class ContextAlgebra@12
+- Lemmas/theorems and available definition folders: (none)
+
+### theories/ResourceAlgebra.v
+- Direct definition folders available to lemmas: ContextAlgebra, ContextBase, ContextStore
+- Direct import commands by folder: Import from ContextBase [ContextBase]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from Stdlib [Stdlib]
+- Local definitions/notation/typeclasses: Definition worldA_compat@17, Definition rawA_unit@31, Definition rawA_product@36, Definition rawA_sum@43, Definition rawA_sum_defined@48, Definition rawA_bind@51, Definition rawA_le@54, Definition resA_unit@57, Definition resA_product@65, Definition resA_sum@82, Definition resA_bind@98, Definition resA_subset@101, Definition resA_le@105, Definition singleton_worldA@263, Definition rawA_slice_restrict@275, Definition resA_slice_restrict@296, Definition rawA_pullback_projection@571, Definition resA_pullback_projection@595, Definition rawA_pullback_subset_projection@599, Definition resA_pullback_subset_projection@621
+- Lemmas/theorems and available definition folders:
+  - Lemma `disj_dom_worldA_compat` at line 20: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `rawA_le_dom` at line 111: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `rawA_le_refl` at line 121: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `rawA_le_antisym` at line 138: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `rawA_le_trans` at line 168: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_subset_refl` at line 218: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_subset_restrict_mono` at line 221: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `rawA_sum_le_mono` at line 231: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `rawA_compat_unit_r` at line 256: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `wf_singleton_worldA` at line 268: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `rawA_slice_restrict_wf` at line 281: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `worldA_compat_le_r` at line 304: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `worldA_compat_le_l` at line 317: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `worldA_compat_restrict_l_full_r` at line 329: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `worldA_compat_restrict_overlap` at line 349: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_restrict_le` at line 366: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_restrict_mono` at line 388: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_restrict_eq_of_le` at line 402: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_le_restrict` at line 411: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_restrict_le_eq` at line 421: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_restrict_eq_subset` at line 433: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_restrict_swap` at line 450: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_fiber_from_projection_eq_on` at line 475: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_fiber_from_projection_transport_on` at line 523: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `rawA_pullback_projection_wf` at line 578: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `rawA_pullback_subset_projection_wf` at line 606: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_pullback_subset_projection_restrict` at line 627: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_pullback_subset_projection_subset` at line 645: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_sum_pullback_subset_projection_full` at line 652: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_product_le_mono` at line 735: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_subset_lift_under` at line 790: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_le_product_l` at line 834: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_product_complement_lift_subset` at line 875: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_subset_lift_over` at line 968: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_subset_lift_under_projection_on` at line 997: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_subset_lift_over_projection_on` at line 1015: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_product_restrict_wand_le` at line 1033: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_product_restrict_frame_common_eq` at line 1106: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_product_restrict_same_le` at line 1182: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_sum_le_mono` at line 1214: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_sum_restrict_same_le` at line 1223: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_product_comm` at line 1246: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_product_unit_r_any` at line 1259: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_product_unit_r_eq_any` at line 1278: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_sum_comm` at line 1286: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_product_comm_eq` at line 1291: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_le_product_r` at line 1301: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_sum_comm_eq` at line 1309: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_product_assoc_eq` at line 1319: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_sum_assoc_eq` at line 1385: ContextAlgebra, ContextBase, ContextStore
+
+### theories/ResourceCompat.v
+- Direct definition folders available to lemmas: ContextAlgebra, ContextBase, ContextStore
+- Direct import commands by folder: Import from ContextBase [ContextBase]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from Stdlib [Stdlib]
+- Local definitions/notation/typeclasses: Definition ext_in@22, Definition ext_out@23, Definition ext_rel@24, Definition mk_fiber_extension_rel@27, Definition mk_fiber_extension@38, Definition fiber_extension_atom_swap@52, Definition mk_forall_extension@220, Definition forall_extension_shape@228, Definition one_point_projected_output_raw@231, Definition one_point_projected_output@244, Definition one_point_projected_extension@277, Definition ext_fun@579, Definition fiber_extension_input_widen@587, Record fiber_extension_input_widen_to@607, Notation "F@633
+- Lemmas/theorems and available definition folders:
+  - Lemma `res_extend_by_atom_swap` at line 136: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `one_point_projected_extension_projection_eq` at line 291: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `one_point_ext_by_projection` at line 409: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `forall_extension_from_world_dom_projection` at line 436: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_restrict_delete_extend_self` at line 458: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_full_input_frame_restrict` at line 509: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_singleton_output_preserves_notin` at line 538: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_same_singleton_output_open_world_frame` at line 553: ContextAlgebra, ContextBase, ContextStore
+
+### theories/ResourceCore.v
+- Direct definition folders available to lemmas: ContextAlgebra, ContextBase, ContextStore
+- Direct import commands by folder: Import from ContextBase [ContextBase]; Import from ContextStore [ContextStore]; Import from Stdlib [Stdlib]
+- Local definitions/notation/typeclasses: Record WorldA@15, Record wf_worldA@22, Definition WfWorldA@27, Definition worldA_wf@30, Definition rawA_rekey@69, Definition resA_rekey@75, Definition rawA_swap@93, Definition resA_swap@96, Definition rawA_shift@136, Definition resA_shift@139, Definition rawA_open@148, Definition resA_open@152, Definition rawA_restrict@171, Definition resA_restrict@177, Definition rawA_fiber@189, Definition resA_fiber@194, Definition resA_fiber_from_projection@206, Definition resA_fiber_member@211
+- Lemmas/theorems and available definition folders:
+  - Lemma `worldA_ext` at line 32: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `wfworldA_ext` at line 42: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `wfworldA_store_dom` at line 50: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `wfworldA_store_dom_subset` at line 54: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_swap_conjugate` at line 100: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_swap_involutive` at line 117: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_restrict_restrict_eq` at line 214: ContextAlgebra, ContextBase, ContextStore
+
+### theories/ResourceExtension.v
+- Direct definition folders available to lemmas: ContextAlgebra, ContextBase, ContextStore
+- Direct import commands by folder: Import from ContextBase [ContextBase]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from Stdlib [Stdlib]
+- Local definitions/notation/typeclasses: Record fiber_extensionA@17, Definition mk_fiber_extensionA@42, Definition fiber_extensionA_functional_on@55, Record extension_applicableA@63, Definition resA_extend_by@68, Notation "m@79, Definition fiber_extensionA_equiv_on@82
+- Lemmas/theorems and available definition folders:
+  - Lemma `resA_extend_by_applicable` at line 90: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_extend_by_dom` at line 95: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_extend_by_store_iff` at line 100: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `extA_projection_dom` at line 110: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `extA_output_store_dom` at line 122: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `extA_output_store_dom_from_base` at line 134: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_extend_store_compat` at line 146: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_extend_by_exists` at line 163: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_extend_by_projection_eq` at line 203: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_extend_by_restrict_base` at line 293: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_extend_by_le` at line 351: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_extend_by_le_mono` at line 362: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_extend_by_sum` at line 457: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_extend_by_product_frame_r` at line 505: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `resA_extend_by_product_frame_l` at line 595: ContextAlgebra, ContextBase, ContextStore
+
+### theories/ResourceInterface.v
+- Direct definition folders available to lemmas: ContextAlgebra
+- Direct import commands by folder: Export from ContextAlgebra [ContextAlgebra]
+- Local definitions/notation/typeclasses: (none)
+- Lemmas/theorems and available definition folders: (none)
+
+### theories/ResourceInterfaceCore.v
+- Direct definition folders available to lemmas: ContextAlgebra, ContextBase, ContextStore
+- Direct import commands by folder: Import from ContextBase [ContextBase]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from Stdlib [Stdlib]
+- Local definitions/notation/typeclasses: Definition World@17, Definition WfWorld@18, Definition LWorld@19, Definition LWfWorld@20, Definition world_dom@27, Definition lworld_dom@28, Definition world_stores@29, Definition wf_world@30, Definition raw_world@31, Definition lraw_world@32, Definition world_wf@33, Definition raw_unit@50, Definition raw_restrict@51, Definition raw_fiber@52, Definition raw_le@53, Definition res_unit@55, Definition res_restrict@56, Definition res_atom_swap@57, Definition lres_swap@58, Notation "'𝟙'"@60, Notation "'Dom'@61, Notation "r@63, Notation "m1@66, Definition lstore_lift_free@189, Definition res_lift_free@251, Record LWorldOn@293, Definition lworld_on_lift@301, Definition lworld_on_open_back@321, Definition lworld_on_atom_swap_back@330, Definition world_compat@438, Definition raw_product@439, Definition raw_sum@440, Definition raw_sum_defined@441, Definition res_product@442, Definition res_sum@444, Definition res_subset@446, Notation "m1@448, Notation "m1@451, Notation "m1@454, Definition singleton_world@588, ... (+8)
+- Lemmas/theorems and available definition folders:
+  - Lemma `world_dom_res_atom_swap` at line 69: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_restrict_atom_swap` at line 74: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_atom_swap_fresh` at line 79: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lworld_dom_lres_swap` at line 98: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lres_restrict_swap` at line 103: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lres_swap_involutive` at line 108: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lres_swap_fresh` at line 112: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lworld_compat_swap` at line 131: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lres_product_swap_eq` at line 142: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lres_open_swap_commute_fresh` at line 172: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `dom_lstore_lift_free` at line 193: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lstore_lift_free_lookup_free` at line 206: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lstore_lift_free_lookup_bound` at line 219: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lstore_lift_free_union` at line 229: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lstore_lift_free_swap` at line 237: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_lift_free_dom` at line 269: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_lift_free_atom_swap` at line 273: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lworld_on_store_dom_eq` at line 339: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lworld_on_open_back_store_swap_member` at line 349: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lworld_on_open_back_store_swap_inv` at line 361: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lworld_on_open_back_commute_fresh` at line 376: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lworld_on_ext` at line 393: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `lworld_on_lift_atom_swap_back` at line 401: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_atom_swap_involutive` at line 457: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `raw_le_atom_swap` at line 461: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_subset_atom_swap` at line 486: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `world_compat_atom_swap` at line 496: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `raw_sum_defined_atom_swap` at line 507: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_r_eq` at line 517: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_l_eq` at line 527: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_atom_swap_eq` at line 537: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_sum_atom_swap_eq` at line 567: ContextAlgebra, ContextBase, ContextStore
+
+### theories/ResourceInterfaceFacts.v
+- Direct definition folders available to lemmas: ContextAlgebra, ContextBase, ContextStore
+- Direct import commands by folder: Import from ContextBase [ContextBase]; Import from ContextStore [ContextStore]; Import from ContextAlgebra [ContextAlgebra]; Import from Stdlib [Stdlib]
+- Local definitions/notation/typeclasses: Definition res_pullback_subset_projection@909, Notation "r@1602, Notation "m1@1605, Notation "m1@1608, Notation "m1@1611, Notation "m1@1614
+- Lemmas/theorems and available definition folders:
+  - Lemma `world_ext` at line 18: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `wfworld_ext` at line 24: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `wfworld_store_dom` at line 29: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `raw_le_dom` at line 33: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `raw_le_refl` at line 38: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_subset_refl` at line 42: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `raw_compat_unit_r` at line 45: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `wf_singleton_world` at line 48: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_atom_swap_singleton_world` at line 51: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_fiber_from_projection_empty_store_dom` at line 68: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_fiber_from_projection_store_dom_subset` at line 79: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_fiber_from_projection_store_source` at line 91: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_fiber_from_projection_store_restrict` at line 106: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_fiber_from_projection_world_dom` at line 122: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_fiber_from_projection_fresh_eq` at line 133: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_fiber_from_projection_store_restrict_input` at line 172: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_fiber_from_projection_of_store_any_domain` at line 228: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_fiber_from_projection_store_restrict_substore` at line 295: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_fiber_from_projection_drop_fixed_domain` at line 327: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_fiber_from_projection_add_fixed_domain` at line 458: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_subset_fiber_source` at line 650: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_fiber_from_projection_of_store` at line 666: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_fiber_from_projection_atom_swap` at line 706: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_restrict_restrict_eq` at line 758: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_restrict_dom` at line 763: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_restrict_le` at line 767: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_restrict_mono` at line 771: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_restrict_eq_of_le` at line 776: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_le_of_restrict_eq` at line 781: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_le_of_projection_eq` at line 794: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_le_store_lift` at line 802: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_restrict_self_dom` at line 820: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_restrict_delete_notin` at line 827: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_restrict_delete_insert_dom` at line 834: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_restrict_le_eq` at line 857: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_restrict_eq_subset` at line 863: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_fiber_from_projection_transport_on` at line 870: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `world_compat_le_r` at line 881: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `world_compat_restrict_l_full_r` at line 887: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `world_compat_of_disjoint_dom` at line 893: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `world_compat_restrict_overlap` at line 902: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_pullback_subset_projection_restrict` at line 913: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_pullback_subset_projection_subset` at line 918: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_sum_pullback_subset_projection_full` at line 922: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_le_mono` at line 936: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_dom` at line 942: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_restrict_singleton_delete_dom` at line 948: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_subset_lift_under_projection_on` at line 985: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_subset_lift_over_projection_on` at line 993: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_restrict_wand_le` at line 1001: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_restrict_frame_common_eq` at line 1011: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_restrict_frame_r_eq` at line 1024: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_restrict_same_le` at line 1071: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_sum_le_mono` at line 1080: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_sum_restrict_same_le` at line 1086: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_unit_r_eq_any` at line 1095: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_comm_eq` at line 1099: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_le_l` at line 1104: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_le_r` at line 1108: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `singleton_projection_compat` at line 1112: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_restrict_singleton_world` at line 1138: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_singleton_projection_eq` at line 1165: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_sum_comm_eq` at line 1224: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_assoc_eq` at line 1229: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_sum_assoc_eq` at line 1238: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_restrict_binder_arg_compat_dom` at line 1247: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_product_restrict_binder_arg_projection` at line 1316: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_restrict_base` at line 1446: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_dom` at line 1451: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_le` at line 1456: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_le_mono` at line 1461: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_sum` at line 1469: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_applicable` at line 1479: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_input_dom` at line 1484: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_output_fresh` at line 1493: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_restrict_singleton_store_eq` at line 1502: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_singleton_output_in_world` at line 1519: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_singleton_output_open_world` at line 1533: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_singleton_output_notin_base_store` at line 1549: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_exists` at line 1566: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_projection_eq` at line 1571: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_product_frame_r` at line 1580: ContextAlgebra, ContextBase, ContextStore
+  - Lemma `res_extend_by_product_frame_l` at line 1590: ContextAlgebra, ContextBase, ContextStore

@@ -1,0 +1,307 @@
+# Definition-folder dependency report: ContextStore
+This report is generated mechanically from Rocq source imports and lemma declarations.
+For each lemma/theorem, "definition folders" is a conservative over-approximation: the repo folders directly imported by the file containing that lemma, plus the current folder. Because most proof identifiers are unqualified after imports, this report is intended as a refactoring map, not a proof-term dependency trace.
+Use this to find lemmas whose file imports only lower-layer definitions and may be candidates for moving downward.
+
+## Folder Summary
+- Rocq files: 6
+- Definition/notation/typeclass declarations: 66
+- Lemma/theorem declarations: 259
+- Direct imported repo folders: ContextBase, ContextStore, LocallyNameless
+
+## Files
+
+### LVarStore.v
+- Direct definition folders available to lemmas: ContextBase, ContextStore, LocallyNameless
+- Direct import commands by folder: Import from LocallyNameless [LocallyNameless]; Import from ContextBase [ContextBase]; Import from ContextStore [ContextStore]; Import from ContextStore [ContextStore]; Import from ContextStore [ContextStore]
+- Local definitions/notation/typeclasses: Definition lvar_store_bind@20, Notation "Σ@971, Notation "Σ@975
+- Lemmas/theorems and available definition folders:
+  - Lemma `lvar_store_open_one_dom` at line 23: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_lvars_empty` at line 40: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_lvars_singleton` at line 52: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_lvars_open_one_empty` at line 64: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_one_bound0_singleton` at line 74: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_one_succ_bound0_singleton` at line 90: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_lvars_dom` at line 106: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_lvars_lookup_fresh` at line 119: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_lvars_insert_entry` at line 143: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_lvars_insert_fresh` at line 154: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_open_insert_delete_swap` at line 176: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_lvars_open_one` at line 229: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_lvars_atom_swap` at line 245: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_to_atom_open_atom_swap` at line 271: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_to_atom_open_insert_delete_swap` at line 283: ContextBase, ContextStore, LocallyNameless
+  - Lemma `logic_var_bv_elem_singleton` at line 301: ContextBase, ContextStore, LocallyNameless
+  - Lemma `logic_var_open_fresh_noop` at line 308: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_one_fresh_noop` at line 317: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_one_involutive` at line 328: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_swap_open_one` at line 337: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_one_insert_fresh` at line 352: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_one_shift_under` at line 360: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_lvars_open_shift_dom_gen` at line 368: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_lvars_open_shift_dom` at line 376: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_one_shift_insert_bound` at line 384: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvars_bv_of_bvars` at line 408: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvars_bv_shift_from` at line 420: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_bvar_scope_shift_open_noop` at line 427: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_bvar_scope_shift_open_one_noop` at line 440: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_bvar_scope_open_one_shift_result` at line 466: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_lvars_open_shift_union_bound0` at line 475: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_lvars_open_shift_dom_union_bound0` at line 488: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_atom_dom_open_one` at line 495: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_bind_dom` at line 504: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_bind_atom_store_insert_dom` at line 525: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_bind_lvars_fv_dom` at line 557: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_lvars_fv_dom_insert_free` at line 565: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_lvars_fv_subset_insert_free_drop` at line 575: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_bind_atom_dom` at line 591: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_insert_free_commute` at line 598: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_bind_insert_free` at line 614: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_union_insert_free_singleton` at line 632: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_closed_insert_free` at line 649: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_closed_lookup_bound_none` at line 664: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_shift_closed` at line 675: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_to_atom_store_open_lvars_closed` at line 710: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_to_atom_open_insert_free_subset` at line 735: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_bind_free_notin` at line 774: ContextBase, ContextStore, LocallyNameless
+  - Lemma `logic_var_shift0_ne_bound0` at line 789: ContextBase, ContextStore, LocallyNameless
+  - Lemma `open_env_shift0_lookup_zero_none` at line 797: ContextBase, ContextStore, LocallyNameless
+  - Lemma `logic_var_open_env_shift0_bound0` at line 807: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_shift_lookup_bound0_none` at line 814: ContextBase, ContextStore, LocallyNameless
+  - Lemma `open_env_shift0_lvar_bind_inj_on` at line 825: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_bind_open_under` at line 871: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_one_under_three_binds` at line 886: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_bind_open_current` at line 907: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_open_bind_atom_store` at line 929: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_bind_open_env_shift0` at line 942: ContextBase, ContextStore, LocallyNameless
+  - Lemma `lvar_store_bind_open_env_lift` at line 959: ContextBase, ContextStore, LocallyNameless
+
+### Store.v
+- Direct definition folders available to lemmas: ContextBase, ContextStore
+- Direct import commands by folder: Import from ContextBase [ContextBase]; Export from ContextStore [ContextStore]; Export from ContextStore [ContextStore]; Export from ContextStore [ContextStore]; Export from ContextStore [ContextStore]; Export from ContextStore [ContextStore]
+- Local definitions/notation/typeclasses: Notation store_restrict@10, Ltac store_set_normalize@22, Ltac store_restrict_normalize@27, Ltac store_insert_normalize@59, Ltac store_lvar_map_normalize@71, Ltac store_lookup_normalize@81, Ltac store_key_normalize@101, Ltac store_normalize@153, Ltac store_finish@162, Ltac store_restrict_lookup_split@171, Ltac better_store_solver@187, Ltac store_norm@224, Ltac store_solver@225
+- Lemmas/theorems and available definition folders: (none)
+
+### StoreCore.v
+- Direct definition folders available to lemmas: ContextBase, ContextStore
+- Direct import commands by folder: Import from ContextBase [ContextBase]; Import from Stdlib [Stdlib]
+- Local definitions/notation/typeclasses: Record StoreAOn@10, Definition storeA_on_ext@18, Definition storeA_compat@27, Definition storeA_agree_on@31, Definition storeA_restrict@35, Notation "'storeA_map_key'@39, Definition storeA_swap@42, Definition storeA_shift@46, Definition storeA_bind@50, Notation "'storeA_map_key'@107, Notation "'storeA_rekey'@109, Definition storeA_rekey_inj_on_dom@142, Definition storeA_on_rekey@408
+- Lemmas/theorems and available definition folders:
+  - Lemma `storeA_map_eq` at line 54: ContextBase, ContextStore
+  - Lemma `storeA_agree_on_union` at line 61: ContextBase, ContextStore
+  - Lemma `storeA_agree_on_insert_same` at line 71: ContextBase, ContextStore
+  - Lemma `storeA_agree_on_insert_same_keep` at line 83: ContextBase, ContextStore
+  - Lemma `storeA_rekey_lookup` at line 118: ContextBase, ContextStore
+  - Lemma `storeA_rekey_dom` at line 130: ContextBase, ContextStore
+  - Lemma `storeA_rekey_inj_on_dom_insert_inv` at line 150: ContextBase, ContextStore
+  - Lemma `storeA_rekey_mapped_fst_nodup` at line 159: ContextBase, ContextStore
+  - Lemma `storeA_rekey_lookup_Some_inj_on` at line 192: ContextBase, ContextStore
+  - Lemma `storeA_rekey_lookup_None_inj_on` at line 212: ContextBase, ContextStore
+  - Lemma `storeA_rekey_dom_inj_on` at line 234: ContextBase, ContextStore
+  - Lemma `storeA_rekey_inj_on_dom_compose` at line 255: ContextBase, ContextStore
+  - Lemma `storeA_rekey_lookup_none_inj_on` at line 271: ContextBase, ContextStore
+  - Lemma `storeA_rekey_insert_inj_on` at line 290: ContextBase, ContextStore
+  - Lemma `storeA_rekey_ext_on_dom` at line 334: ContextBase, ContextStore
+  - Lemma `storeA_rekey_compose_inj_on` at line 358: ContextBase, ContextStore
+  - Lemma `storeA_rekey_compose` at line 397: ContextBase, ContextStore
+  - Lemma `storeA_rekey_empty` at line 420: ContextBase, ContextStore
+  - Lemma `storeA_rekey_insert` at line 430: ContextBase, ContextStore
+  - Lemma `storeA_rekey_delete` at line 443: ContextBase, ContextStore
+  - Lemma `storeA_rekey_union` at line 456: ContextBase, ContextStore
+  - Lemma `storeA_map_key_lookup` at line 472: ContextBase, ContextStore
+  - Lemma `storeA_map_key_dom` at line 484: ContextBase, ContextStore
+  - Lemma `storeA_map_key_insert` at line 496: ContextBase, ContextStore
+  - Lemma `storeA_map_key_union` at line 509: ContextBase, ContextStore
+  - Lemma `storeA_on_rekey_id_on_dom` at line 525: ContextBase, ContextStore
+  - Lemma `storeA_swap_lookup` at line 559: ContextBase, ContextStore
+  - Lemma `storeA_swap_lookup_inv` at line 572: ContextBase, ContextStore
+  - Lemma `storeA_swap_dom` at line 581: ContextBase, ContextStore
+  - Lemma `storeA_swap_delete` at line 595: ContextBase, ContextStore
+  - Lemma `storeA_swap_insert` at line 610: ContextBase, ContextStore
+  - Lemma `storeA_swap_union` at line 625: ContextBase, ContextStore
+  - Lemma `storeA_swap_involutive` at line 641: ContextBase, ContextStore
+  - Lemma `storeA_swap_sym` at line 653: ContextBase, ContextStore
+  - Lemma `storeA_swap_fresh` at line 664: ContextBase, ContextStore
+  - Lemma `storeA_swap_conjugate` at line 687: ContextBase, ContextStore
+  - Lemma `storeA_swap_commute_fresh` at line 702: ContextBase, ContextStore
+  - Lemma `storeA_swap_conjugate_inv` at line 718: ContextBase, ContextStore
+  - Lemma `storeA_shift_lookup` at line 740: ContextBase, ContextStore
+  - Lemma `storeA_shift_dom` at line 749: ContextBase, ContextStore
+  - Lemma `storeA_shift_empty` at line 758: ContextBase, ContextStore
+
+### StoreFilterMapKey.v
+- Direct definition folders available to lemmas: ContextBase, ContextStore
+- Direct import commands by folder: Import from ContextBase [ContextBase]; Import from ContextStore [ContextStore]
+- Local definitions/notation/typeclasses: Notation lvar_to_atom@6, Definition storeA_filter_map_key@12, Definition atom_store_to_lvar_store@146, Definition lvar_store_open@149, Definition lvar_store_to_atom_store@152, Definition lvar_store_shift_from@155, Definition lvar_store_shift@158, Definition lvar_store_open_one@161, Definition lvar_store_open_lvars@165, Definition lvar_store_atom_dom@169, Definition lvar_store_closed@172, Definition lvar_store_bvar_scope@175, Definition lvar_store_swap@178
+- Lemmas/theorems and available definition folders:
+  - Lemma `storeA_filter_map_key_empty` at line 21: ContextBase, ContextStore
+  - Lemma `storeA_filter_map_key_lookup_some_inv` at line 29: ContextBase, ContextStore
+  - Lemma `storeA_filter_map_key_lookup_some_unique` at line 62: ContextBase, ContextStore
+  - Lemma `filter_map_key_lookup_none_no_preimage` at line 108: ContextBase, ContextStore
+  - Lemma `atom_store_to_lvar_store_dom` at line 181: ContextBase, ContextStore
+  - Lemma `atom_store_to_lvar_store_insert` at line 190: ContextBase, ContextStore
+  - Lemma `atom_store_to_lvar_store_closed` at line 199: ContextBase, ContextStore
+  - Lemma `atom_store_to_lvar_store_lookup_bound_none` at line 208: ContextBase, ContextStore
+  - Lemma `atom_store_to_lvar_store_lookup_free_none` at line 218: ContextBase, ContextStore
+  - Lemma `atom_store_to_lvar_store_lookup_free` at line 230: ContextBase, ContextStore
+  - Lemma `atom_store_to_lvar_store_empty` at line 241: ContextBase, ContextStore
+  - Lemma `atom_store_to_lvar_store_union` at line 253: ContextBase, ContextStore
+  - Lemma `lvar_store_atom_dom_insert_bound` at line 281: ContextBase, ContextStore
+  - Lemma `lvar_store_shift_free_notin_from` at line 291: ContextBase, ContextStore
+  - Lemma `lvar_store_shift_free_notin` at line 305: ContextBase, ContextStore
+  - Lemma `lvar_store_shift_insert_from` at line 312: ContextBase, ContextStore
+  - Lemma `lvar_store_shift_insert` at line 320: ContextBase, ContextStore
+  - Lemma `lvar_store_shift_insert_free` at line 327: ContextBase, ContextStore
+  - Lemma `lvar_store_atom_dom_shift_from` at line 334: ContextBase, ContextStore
+  - Lemma `lvar_store_atom_dom_shift` at line 344: ContextBase, ContextStore
+  - Lemma `lvar_store_open_lvars_shift_from` at line 350: ContextBase, ContextStore
+  - Lemma `lvar_store_open_one_shift_under_gen` at line 381: ContextBase, ContextStore
+  - Lemma `lvar_store_open_one_insert` at line 396: ContextBase, ContextStore
+  - Lemma `lvar_store_shift_atom_store` at line 405: ContextBase, ContextStore
+  - Lemma `lvar_store_shift_from_atom_store` at line 438: ContextBase, ContextStore
+  - Lemma `logic_var_swap_match` at line 468: ContextBase, ContextStore
+  - Lemma `lvar_store_swap_lookup` at line 480: ContextBase, ContextStore
+  - Lemma `lvar_store_swap_lookup_inv` at line 498: ContextBase, ContextStore
+  - Lemma `lvar_store_swap_dom` at line 511: ContextBase, ContextStore
+  - Lemma `lvar_store_swap_insert` at line 529: ContextBase, ContextStore
+  - Lemma `lvar_store_swap_atom_dom` at line 541: ContextBase, ContextStore
+  - Lemma `lvar_store_atom_dom_lookup_free` at line 566: ContextBase, ContextStore
+  - Lemma `lvar_store_swap_fresh` at line 577: ContextBase, ContextStore
+  - Lemma `lvar_store_swap_atom_store_fresh` at line 604: ContextBase, ContextStore
+  - Lemma `lvar_store_swap_atom_store_insert_fresh` at line 626: ContextBase, ContextStore
+  - Lemma `lvar_store_open_one_atom_store` at line 642: ContextBase, ContextStore
+  - Lemma `lvar_store_open_one_bind_atom_store` at line 658: ContextBase, ContextStore
+  - Lemma `lvar_store_open_atom_store` at line 673: ContextBase, ContextStore
+  - Lemma `lvar_store_open_env_insert_fresh` at line 715: ContextBase, ContextStore
+  - Lemma `lvar_store_open_insert_bound_commute` at line 732: ContextBase, ContextStore
+  - Lemma `lvar_store_open_step_commute` at line 762: ContextBase, ContextStore
+  - Lemma `lvar_store_open_insert_bound_atom_store` at line 803: ContextBase, ContextStore
+  - Lemma `lvar_store_to_atom_store_atom_store` at line 857: ContextBase, ContextStore
+  - Lemma `lvar_store_to_atom_store_lookup_some` at line 864: ContextBase, ContextStore
+  - Lemma `lvar_store_to_atom_store_lookup_free_some` at line 877: ContextBase, ContextStore
+  - Lemma `lvar_store_to_atom_store_lookup` at line 891: ContextBase, ContextStore
+  - Lemma `lvar_store_to_atom_store_insert_free` at line 905: ContextBase, ContextStore
+  - Lemma `lvar_to_atom_insert_free_lookup_ne` at line 930: ContextBase, ContextStore
+  - Lemma `lvar_store_to_atom_store_swap` at line 941: ContextBase, ContextStore
+  - Lemma `lvar_store_to_atom_store_dom_subset` at line 953: ContextBase, ContextStore
+
+### StoreInterface.v
+- Direct definition folders available to lemmas: ContextBase, ContextStore
+- Direct import commands by folder: Import from ContextBase [ContextBase]; Import from ContextStore [ContextStore]
+- Local definitions/notation/typeclasses: Definition Store@13, Definition LStore@14, Notation store_restrict@45, Notation "σ@46, Notation "σ1@49, Definition lstore_rekey@52, Definition lstore_swap@55, Definition lstore_to_store@58, Definition lstore_bound_part@61, Definition lc_lstore@128, Definition LStoreOn@130, Definition lso_store@133, Definition lso_dom@136, Definition lstore_on_ext@140, Definition lstore_on_restrict@147, Definition lstore_on_mlsubst_back@154, Definition lstore_on_rekey@232, Definition lstore_on_open_back@248, Definition lstore_on_open_front@262, Definition lstore_shift_from@344, Definition lstore_on_shift_from@347, Notation "σ@703, Notation "σ1@706
+- Lemmas/theorems and available definition folders:
+  - Lemma `atom_store_to_lvar_store_store_insert` at line 30: ContextBase, ContextStore
+  - Lemma `atom_store_to_lvar_store_store_empty` at line 38: ContextBase, ContextStore
+  - Lemma `lstore_to_store_lookup` at line 65: ContextBase, ContextStore
+  - Lemma `lstore_bound_part_lookup` at line 74: ContextBase, ContextStore
+  - Lemma `lstore_to_store_restrict_lookup` at line 104: ContextBase, ContextStore
+  - Lemma `lstore_bound_part_restrict_lookup` at line 116: ContextBase, ContextStore
+  - Lemma `lstore_on_mlsubst_back_restrict_eq` at line 179: ContextBase, ContextStore
+  - Lemma `lstore_on_mlsubst_back_merge` at line 194: ContextBase, ContextStore
+  - Lemma `lstore_on_rekey_id_on_dom` at line 239: ContextBase, ContextStore
+  - Lemma `lstore_on_open_back_front` at line 278: ContextBase, ContextStore
+  - Lemma `lstore_on_open_front_back` at line 291: ContextBase, ContextStore
+  - Lemma `lstore_on_open_mlsubst_back_fresh` at line 305: ContextBase, ContextStore
+  - Lemma `lstore_shift_from_below_id` at line 352: ContextBase, ContextStore
+  - Lemma `lstore_on_shift_from_mlsubst_back_atom_store` at line 366: ContextBase, ContextStore
+  - Lemma `lstore_shift_restrict_mlsubst_back_raw` at line 400: ContextBase, ContextStore
+  - Lemma `lstore_mlsubst_back_restrict_shift_raw` at line 511: ContextBase, ContextStore
+  - Lemma `lstore_on_shift_restrict_mlsubst_back` at line 621: ContextBase, ContextStore
+  - Lemma `lstore_on_mlsubst_back_restrict_shift` at line 639: ContextBase, ContextStore
+  - Lemma `lstore_shift_from_open_swap` at line 659: ContextBase, ContextStore
+  - Lemma `lstore_on_shift_from_open_front` at line 673: ContextBase, ContextStore
+  - Lemma `lstore_on_shift_from_open_back` at line 686: ContextBase, ContextStore
+
+### StoreRestrict.v
+- Direct definition folders available to lemmas: ContextBase, ContextStore
+- Direct import commands by folder: Import from ContextBase [ContextBase]; Import from ContextStore [ContextStore]
+- Local definitions/notation/typeclasses: Definition storeA_on_restrict@17
+- Lemmas/theorems and available definition folders:
+  - Lemma `storeA_restrict_dom` at line 10: ContextBase, ContextStore
+  - Lemma `storeA_restrict_lookup` at line 26: ContextBase, ContextStore
+  - Lemma `storeA_restrict_lookup_some_2` at line 39: ContextBase, ContextStore
+  - Lemma `storeA_restrict_lookup_some` at line 49: ContextBase, ContextStore
+  - Lemma `storeA_restrict_lookup_none_l` at line 58: ContextBase, ContextStore
+  - Lemma `storeA_restrict_lookup_none_r` at line 67: ContextBase, ContextStore
+  - Lemma `storeA_restrict_dom_subset` at line 76: ContextBase, ContextStore
+  - Lemma `storeA_restrict_rekey` at line 85: ContextBase, ContextStore
+  - Lemma `storeA_restrict_empty` at line 110: ContextBase, ContextStore
+  - Lemma `storeA_restrict_empty_set` at line 117: ContextBase, ContextStore
+  - Lemma `storeA_restrict_idemp` at line 129: ContextBase, ContextStore
+  - Lemma `storeA_restrict_restrict` at line 137: ContextBase, ContextStore
+  - Lemma `storeA_restrict_twice_same` at line 145: ContextBase, ContextStore
+  - Lemma `storeA_restrict_twice_subset` at line 155: ContextBase, ContextStore
+  - Lemma `storeA_restrict_dom_intersection` at line 166: ContextBase, ContextStore
+  - Lemma `storeA_restrict_comm` at line 186: ContextBase, ContextStore
+  - Lemma `storeA_restrict_idemp_eq` at line 197: ContextBase, ContextStore
+  - Lemma `storeA_restrict_insert_in` at line 206: ContextBase, ContextStore
+  - Lemma `storeA_restrict_insert_notin` at line 216: ContextBase, ContextStore
+  - Lemma `storeA_restrict_eq_mono` at line 225: ContextBase, ContextStore
+  - Lemma `storeA_restrict_swap_fresh` at line 242: ContextBase, ContextStore
+  - Lemma `storeA_restrict_empty_union_elements` at line 269: ContextBase, ContextStore
+  - Lemma `storeA_restrict_lookup_transport` at line 289: ContextBase, ContextStore
+  - Lemma `storeA_restrict_swap` at line 308: ContextBase, ContextStore
+  - Lemma `storeA_restrict_shift` at line 328: ContextBase, ContextStore
+  - Lemma `storeA_restrict_empty_union_elements_subset` at line 369: ContextBase, ContextStore
+  - Lemma `storeA_restrict_induce_disjoint` at line 389: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union` at line 420: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_cover` at line 458: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_same` at line 499: ContextBase, ContextStore
+  - Lemma `storeA_restrict_projection_dom` at line 537: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_residual_l` at line 556: ContextBase, ContextStore
+  - Lemma `storeA_restrict_insert_singleton` at line 619: ContextBase, ContextStore
+  - Lemma `storeA_restrict_singleton_lookup` at line 634: ContextBase, ContextStore
+  - Lemma `storeA_restrict_insert_singleton_ne` at line 651: ContextBase, ContextStore
+  - Lemma `storeA_restrict_insert_fresh_union` at line 662: ContextBase, ContextStore
+  - Lemma `storeA_restrict_insert_union_none` at line 691: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_singleton_insert` at line 701: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_from_parts` at line 732: ContextBase, ContextStore
+  - Lemma `storeA_eq_insert_of_restrict_singleton` at line 774: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_partition` at line 800: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_piece_l` at line 824: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_piece_r` at line 846: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_ignore_r` at line 871: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_singleton_ignore_r` at line 893: ContextBase, ContextStore
+  - Lemma `lookup_union_singleton_r_eq` at line 905: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_absorb_l_on` at line 918: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_absorb_r_on` at line 937: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_ignore_l` at line 961: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_absorb_r` at line 980: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_frame_star` at line 1005: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_frame_comma` at line 1072: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_base_singleton` at line 1149: ContextBase, ContextStore
+  - Lemma `storeA_restrict_union_base_project` at line 1185: ContextBase, ContextStore
+  - Lemma `storeA_restrict_wand_product` at line 1219: ContextBase, ContextStore
+  - Lemma `storeA_restrict_product_frame_common` at line 1262: ContextBase, ContextStore
+  - Lemma `storeA_compat_refl` at line 1331: ContextBase, ContextStore
+  - Lemma `storeA_compat_sym` at line 1338: ContextBase, ContextStore
+  - Lemma `storeA_compat_swap` at line 1345: ContextBase, ContextStore
+  - Lemma `storeA_compat_union_inv_l` at line 1361: ContextBase, ContextStore
+  - Lemma `storeA_compat_union_inv_r` at line 1374: ContextBase, ContextStore
+  - Lemma `storeA_compat_union_r_inv_l` at line 1395: ContextBase, ContextStore
+  - Lemma `storeA_compat_union_r_inv_r` at line 1408: ContextBase, ContextStore
+  - Lemma `storeA_compat_union_intro_r` at line 1429: ContextBase, ContextStore
+  - Lemma `storeA_union_comm` at line 1444: ContextBase, ContextStore
+  - Lemma `storeA_compat_union_intro_l` at line 1465: ContextBase, ContextStore
+  - Lemma `storeA_union_swap_right` at line 1477: ContextBase, ContextStore
+  - Lemma `storeA_union_extend_frame_r` at line 1489: ContextBase, ContextStore
+  - Lemma `storeA_union_absorb_l` at line 1501: ContextBase, ContextStore
+  - Lemma `storeA_union_absorb_r` at line 1526: ContextBase, ContextStore
+  - Lemma `storeA_union_absorb_restrict_r` at line 1539: ContextBase, ContextStore
+  - Lemma `storeA_union_absorb_prefix_r` at line 1553: ContextBase, ContextStore
+  - Lemma `storeA_compat_insert_l_fresh` at line 1590: ContextBase, ContextStore
+  - Lemma `storeA_compat_insert_r_fresh` at line 1605: ContextBase, ContextStore
+  - Lemma `storeA_insert_union_l` at line 1618: ContextBase, ContextStore
+  - Lemma `storeA_insert_union_l_fresh` at line 1629: ContextBase, ContextStore
+  - Lemma `storeA_insert_union_r_fresh` at line 1638: ContextBase, ContextStore
+  - Lemma `storeA_union_singleton_insert_fresh` at line 1649: ContextBase, ContextStore
+  - Lemma `storeA_union_dom` at line 1661: ContextBase, ContextStore
+  - Lemma `storeA_disj_dom_compat` at line 1670: ContextBase, ContextStore
+  - Lemma `storeA_compat_restrict_singleton_fresh` at line 1683: ContextBase, ContextStore
+  - Lemma `storeA_compat_restrict` at line 1698: ContextBase, ContextStore
+  - Lemma `storeA_compat_restrict_r` at line 1710: ContextBase, ContextStore
+  - Lemma `storeA_compat_restrict_overlap` at line 1720: ContextBase, ContextStore
+  - Lemma `storeA_compat_restricts_same` at line 1736: ContextBase, ContextStore
+  - Lemma `storeA_compat_restrict_l_full_r` at line 1746: ContextBase, ContextStore
+  - Lemma `storeA_compat_restrict_eq` at line 1759: ContextBase, ContextStore
+  - Lemma `storeA_compat_spec` at line 1782: ContextBase, ContextStore

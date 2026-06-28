@@ -1,0 +1,45 @@
+# Definition-folder dependency report: ContextQualifier
+This report is generated mechanically from Rocq source imports and lemma declarations.
+For each lemma/theorem, "definition folders" is a conservative over-approximation: the repo folders directly imported by the file containing that lemma, plus the current folder. Because most proof identifiers are unqualified after imports, this report is intended as a refactoring map, not a proof-term dependency trace.
+Use this to find lemmas whose file imports only lower-layer definitions and may be candidates for moving downward.
+
+## Folder Summary
+- Rocq files: 1
+- Definition/notation/typeclass declarations: 21
+- Lemma/theorem declarations: 27
+- Direct imported repo folders: ContextBase, ContextStore, CoreLang
+
+## Files
+
+### theories/Qualifier.v
+- Direct definition folders available to lemmas: ContextBase, ContextQualifier, ContextStore, CoreLang
+- Direct import commands by folder: Export from CoreLang [CoreLang]; Export from ContextBase [ContextBase]; Export from ContextStore [ContextStore]; Import from Stdlib [Stdlib]
+- Local definitions/notation/typeclasses: Record qualifier@26, Definition qual_vars@31, Definition qual_dom@34, Definition qual_bvars@37, Definition qual_open_atom@55, Definition lstore_on_atom_swap_back@63, Definition lstore_on_atom_swap_front@75, Definition qual_atom_swap@114, Definition qual_mlsubst@201, Definition qual_msubst_store@293, Definition qual_open_env@348, Definition qual_top_on@357, Notation qual_top@360, Definition qual_and@382, Definition lc_qualifier@391, Definition body_qualifier@394, Notation "q@406, Definition qual_rename@523, Definition qual_shift_from@534, Notation type_qualifier@724, Notation qual_top@725
+- Lemmas/theorems and available definition folders:
+  - Lemma `qual_ext` at line 40: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `lstore_on_atom_swap_back_front` at line 87: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `lstore_on_atom_swap_front_back` at line 100: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_atom_swap_involutive` at line 122: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_atom_swap_fresh_id` at line 141: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_atom_swap_open_conjugate` at line 164: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_mlsubst_empty` at line 208: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_mlsubst_merge` at line 233: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_atom_swap_mlsubst` at line 249: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_msubst_store_merge` at line 297: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_mlsubst_open_atom_fresh` at line 311: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_msubst_store_open_atom_fresh` at line 330: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_open_env_empty` at line 351: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_vars_top_on` at line 362: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_lvars_top_on` at line 366: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_dom_top_on` at line 370: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_open_atom_top_on` at line 374: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_open_atom_vars` at line 408: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_open_env_vars` at line 414: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_open_atom_dom_subset` at line 439: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_open_commute_fvar` at line 446: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_open_atom_commute_fresh` at line 487: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_open_env_insert_fresh` at line 494: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_shift_from_vars` at line 541: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_open_shift_from_under_gen` at line 547: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_open_shift_from_lc_fresh` at line 587: ContextBase, ContextQualifier, ContextStore, CoreLang
+  - Lemma `qual_open_atom_fresh_lc_at` at line 669: ContextBase, ContextQualifier, ContextStore, CoreLang

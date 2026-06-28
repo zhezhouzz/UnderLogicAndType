@@ -1,0 +1,277 @@
+# Definition-folder dependency report: ContextBase
+This report is generated mechanically from Rocq source imports and lemma declarations.
+For each lemma/theorem, "definition folders" is a conservative over-approximation: the repo folders directly imported by the file containing that lemma, plus the current folder. Because most proof identifiers are unqualified after imports, this report is intended as a refactoring map, not a proof-term dependency trace.
+Use this to find lemmas whose file imports only lower-layer definitions and may be candidates for moving downward.
+
+## Folder Summary
+- Rocq files: 8
+- Definition/notation/typeclass declarations: 79
+- Lemma/theorem declarations: 217
+- Direct imported repo folders: ContextBase, Corelib, stdpp
+
+## Files
+
+### BaseTactics.v
+- Direct definition folders available to lemmas: ContextBase
+- Direct import commands by folder: Import from ContextBase [ContextBase]
+- Local definitions/notation/typeclasses: Ltac base_swap_normalize_step@13, Ltac base_swap_normalize@57, Ltac base_open_env_normalize_step@59, Ltac base_open_env_normalize@95, Ltac better_base_solver@109
+- Lemmas/theorems and available definition folders: (none)
+
+### LogicVar.v
+- Direct definition folders available to lemmas: ContextBase
+- Direct import commands by folder: Export from ContextBase [ContextBase]
+- Local definitions/notation/typeclasses: Inductive logic_var@8, Notation lvset@22, Definition logic_var_fv@24, Definition logic_var_bv@30, Definition logic_var_support@36, Definition lvars_fv@38, Definition lvars_bv@41, Definition logic_var_open_onesided@46, Notation logic_var_open@52, Notation lvars_open@55, Notation lvars_open_onesided@58, Definition logic_var_shift_by@63, Definition lvars_shift_by@69, Notation logic_var_shift@72, Notation lvars_shift@73, Definition lc_logic_var_key@75, Definition lc_lvars@81, Definition logic_var_to_atom@84, Notation logic_var_swap@90, Notation lvars_swap@93, Definition lvars_of_atoms@95, Definition lvars_of_bvars@98, Class IntoLVars@101
+- Lemmas/theorems and available definition folders:
+  - Lemma `lvars_fv_elem` at line 115: ContextBase
+  - Lemma `atom_notin_lvars_fv_iff_free_notin` at line 128: ContextBase
+  - Lemma `lvars_bv_elem` at line 134: ContextBase
+  - Lemma `lc_lvars_no_bv` at line 147: ContextBase
+  - Lemma `logic_var_open_involutive` at line 162: ContextBase
+  - Lemma `logic_var_swap_open_one` at line 168: ContextBase
+  - Lemma `lvars_open_involutive` at line 176: ContextBase
+  - Lemma `lvars_open_elem_open` at line 182: ContextBase
+  - Lemma `lvars_open_subseteq_iff` at line 191: ContextBase
+  - Lemma `lvars_open_mono` at line 203: ContextBase
+  - Lemma `lvars_open_subset_insert_fresh` at line 211: ContextBase
+  - Lemma `lvars_open_union` at line 238: ContextBase
+  - Lemma `logic_var_open_commute_fresh` at line 244: ContextBase
+  - Lemma `lvars_open_commute_fresh` at line 256: ContextBase
+  - Lemma `lvars_open_fresh_index` at line 279: ContextBase
+  - Lemma `lvars_swap_fresh` at line 290: ContextBase
+  - Lemma `lvars_open_difference_bound` at line 301: ContextBase
+  - Lemma `lvars_bv_open_insert_dom` at line 308: ContextBase
+  - Lemma `lvars_fv_open_prime_except` at line 327: ContextBase
+  - Lemma `lvars_fv_open_prime_fresh` at line 339: ContextBase
+  - Lemma `logic_var_open_sym` at line 349: ContextBase
+  - Lemma `logic_var_open_onesided_swap_fresh` at line 355: ContextBase
+  - Lemma `lvars_open_onesided_swap_fresh` at line 367: ContextBase
+  - Lemma `logic_var_swap_open_fresh` at line 388: ContextBase
+  - Lemma `logic_var_swap_open_conjugate` at line 404: ContextBase
+  - Lemma `lvars_swap_open_fresh` at line 411: ContextBase
+  - Lemma `lvars_swap_open_conjugate` at line 450: ContextBase
+  - Lemma `logic_var_shift_by_inj` at line 475: ContextBase
+  - Lemma `logic_var_free_swap` at line 486: ContextBase
+  - Lemma `lvars_fv_swap` at line 492: ContextBase
+  - Lemma `lvars_fv_of_atoms` at line 508: ContextBase
+  - Lemma `lvars_of_atoms_swap` at line 520: ContextBase
+  - Lemma `lvars_bv_of_atoms` at line 549: ContextBase
+  - Lemma `lvars_bv_empty_subset_of_atoms_fv` at line 559: ContextBase
+  - Lemma `lc_lvars_of_atoms_fv_eq` at line 573: ContextBase
+  - Lemma `lvars_fv_singleton_bound` at line 590: ContextBase
+  - Lemma `lvars_fv_singleton_free` at line 598: ContextBase
+  - Lemma `lvars_fv_empty` at line 607: ContextBase
+  - Lemma `lvars_fv_open` at line 613: ContextBase
+  - Lemma `lvars_fv_union` at line 637: ContextBase
+  - Lemma `lvars_fv_intersection_of_atoms` at line 647: ContextBase
+  - Lemma `lvars_fv_mono` at line 669: ContextBase
+  - Lemma `lvars_fv_subset_insert_free_drop` at line 679: ContextBase
+  - Lemma `lvars_fv_difference_singleton_free` at line 693: ContextBase
+  - Lemma `lvars_fv_difference_singleton_bound` at line 705: ContextBase
+  - Lemma `lvars_fv_difference_of_atoms` at line 715: ContextBase
+  - Lemma `lvars_bv_union` at line 733: ContextBase
+  - Lemma `lvars_bv_swap` at line 743: ContextBase
+  - Lemma `logic_var_swap_involutive` at line 754: ContextBase
+  - Lemma `lvars_fv_open_subset` at line 760: ContextBase
+
+### LogicVarOpenEnv.v
+- Direct definition folders available to lemmas: ContextBase
+- Direct import commands by folder: Export from ContextBase [ContextBase]
+- Local definitions/notation/typeclasses: Definition logic_var_open_env@7, Definition open_env_avoids_atom@18, Definition lvars_open_env@21, Definition open_env_fresh_for_lvars@24, Definition logic_var_open_env_inj_on@30, Notation open_env_atom_swap@37, Definition open_env_lift_by@172, Definition open_env_values_inj@332, Definition open_env_atoms@565
+- Lemmas/theorems and available definition folders:
+  - Lemma `logic_var_open_env_empty` at line 40: ContextBase
+  - Lemma `logic_var_open_env_not_free_of_lvars_fv` at line 48: ContextBase
+  - Lemma `logic_var_open_env_singleton_fresh` at line 58: ContextBase
+  - Lemma `logic_var_open_env_open_one_fresh` at line 75: ContextBase
+  - Lemma `logic_var_open_env_open_fresh` at line 93: ContextBase
+  - Lemma `logic_var_open_env_insert_fresh` at line 122: ContextBase
+  - Lemma `open_env_lift_insert` at line 145: ContextBase
+  - Lemma `open_env_lift_lookup_none` at line 154: ContextBase
+  - Lemma `open_env_lift_lookup_zero_none` at line 164: ContextBase
+  - Lemma `open_env_lift_by_empty` at line 175: ContextBase
+  - Lemma `open_env_lift_by_insert` at line 181: ContextBase
+  - Lemma `open_env_lift_by_one` at line 191: ContextBase
+  - Lemma `open_env_lift_by_two` at line 203: ContextBase
+  - Lemma `open_env_lift_by_lookup_none` at line 217: ContextBase
+  - Lemma `open_env_avoids_atom_lift_by` at line 228: ContextBase
+  - Lemma `open_env_avoids_atom_empty` at line 239: ContextBase
+  - Lemma `open_env_avoids_atom_insert` at line 245: ContextBase
+  - Lemma `open_env_avoids_atom_lift` at line 256: ContextBase
+  - Lemma `open_env_atom_swap_lookup` at line 270: ContextBase
+  - Lemma `open_env_atom_swap_dom` at line 277: ContextBase
+  - Lemma `open_env_atom_swap_involutive` at line 283: ContextBase
+  - Lemma `open_env_atom_swap_delete` at line 293: ContextBase
+  - Lemma `open_env_atom_swap_insert` at line 307: ContextBase
+  - Lemma `open_env_atom_swap_avoids` at line 320: ContextBase
+  - Lemma `open_env_values_inj_empty` at line 338: ContextBase
+  - Lemma `open_env_values_inj_insert` at line 345: ContextBase
+  - Lemma `open_env_values_inj_lift` at line 369: ContextBase
+  - Lemma `open_env_values_inj_lift_by` at line 393: ContextBase
+  - Lemma `open_env_values_inj_insert_inv` at line 407: ContextBase
+  - Lemma `open_env_values_inj_singleton` at line 425: ContextBase
+  - Lemma `logic_var_open_env_atom_swap` at line 438: ContextBase
+  - Lemma `lvars_swap_elem_iff` at line 459: ContextBase
+  - Lemma `lvars_open_env_atom_swap` at line 467: ContextBase
+  - Lemma `open_env_fresh_for_lvars_atom_swap` at line 507: ContextBase
+  - Lemma `open_env_fresh_for_lvars_atom_swap_inv` at line 524: ContextBase
+  - Lemma `lvar_to_atom_insert_open_env_fresh` at line 543: ContextBase
+  - Lemma `lvar_to_atom_open_env_free` at line 556: ContextBase
+  - Lemma `open_env_atoms_empty` at line 568: ContextBase
+  - Lemma `open_env_atoms_insert` at line 575: ContextBase
+  - Lemma `open_env_atoms_lookup` at line 588: ContextBase
+  - Lemma `open_env_avoids_atom_of_notin_atoms` at line 606: ContextBase
+  - Lemma `lvars_open_env_empty` at line 614: ContextBase
+  - Lemma `open_env_fresh_for_lvars_singleton` at line 625: ContextBase
+  - Lemma `lvars_open_env_union` at line 645: ContextBase
+  - Lemma `lvars_open_env_mono` at line 663: ContextBase
+  - Lemma `lvars_fv_open_env_env_mono` at line 674: ContextBase
+  - Lemma `lvars_open_env_insert_fresh` at line 692: ContextBase
+  - Lemma `lvars_open_env_open_one_fresh` at line 718: ContextBase
+  - Lemma `open_env_fresh_for_lvars_empty` at line 746: ContextBase
+  - Lemma `open_env_fresh_for_lvars_mono` at line 752: ContextBase
+  - Lemma `open_env_fresh_for_lvars_insert_head` at line 764: ContextBase
+  - Lemma `open_env_fresh_for_lvars_insert_tail` at line 779: ContextBase
+  - Lemma `open_env_fresh_for_lvars_insert_open_back` at line 802: ContextBase
+  - Lemma `lvars_bv_delete_open_dom` at line 838: ContextBase
+  - Lemma `open_env_fresh_delete_open_atom` at line 857: ContextBase
+  - Lemma `lvars_fv_open_env_lookup` at line 899: ContextBase
+  - Lemma `lvars_fv_open_env_free` at line 912: ContextBase
+  - Lemma `open_env_insert_delete_swap_back_on` at line 923: ContextBase
+  - Lemma `open_env_fresh_for_lvars_inj_on` at line 961: ContextBase
+  - Lemma `lvar_to_atom_inj_on_fresh` at line 990: ContextBase
+  - Lemma `lvars_fv_open_env_union` at line 1006: ContextBase
+
+### LogicVarShift.v
+- Direct definition folders available to lemmas: ContextBase
+- Direct import commands by folder: Import from Stdlib [Stdlib]; Export from ContextBase [ContextBase]
+- Local definitions/notation/typeclasses: Notation "'↑['@6, Definition logic_var_shift_from@9, Definition open_env_shift_key_from@75, Definition open_env_shift_from@78, Definition lvars_shift_from@143, Definition lvar_wf_at@148, Definition lvars_wf_at@154, Definition lvars_lc_at@157, Definition logic_var_at_depth@257, Definition lvars_at_depth@264
+- Lemmas/theorems and available definition folders:
+  - Lemma `logic_var_shift_from_lt` at line 15: ContextBase
+  - Lemma `logic_var_shift_from_ge` at line 23: ContextBase
+  - Lemma `logic_var_open_shift_from_under_gen` at line 31: ContextBase
+  - Lemma `logic_var_open_shift_from_under` at line 53: ContextBase
+  - Lemma `logic_var_shift_from_inj` at line 61: ContextBase
+  - Lemma `open_env_shift_key_from_inj` at line 81: ContextBase
+  - Lemma `open_env_shift_key_from_zero` at line 89: ContextBase
+  - Lemma `open_env_shift_from_zero` at line 96: ContextBase
+  - Lemma `open_env_shift_from_lookup` at line 105: ContextBase
+  - Lemma `logic_var_open_env_shift_from` at line 115: ContextBase
+  - Lemma `lvars_wf_at_mono` at line 160: ContextBase
+  - Lemma `lvars_wf_at_lc` at line 170: ContextBase
+  - Lemma `lvars_wf_at_fv_subset` at line 179: ContextBase
+  - Lemma `lvars_wf_at_drop_fresh` at line 188: ContextBase
+  - Lemma `lvars_wf_at_open_body` at line 201: ContextBase
+  - Lemma `lvars_wf_at_open_at` at line 222: ContextBase
+  - Lemma `lvars_wf_at_shift` at line 242: ContextBase
+  - Lemma `lvars_shift_from_fv` at line 280: ContextBase
+  - Lemma `lvars_shift_from_bv` at line 294: ContextBase
+  - Lemma `lvars_shift_from_mono` at line 323: ContextBase
+  - Lemma `lvars_shift_from_union` at line 334: ContextBase
+  - Lemma `lvars_shift_from_difference_of_atoms` at line 341: ContextBase
+  - Lemma `lvars_at_depth_elem` at line 375: ContextBase
+  - Lemma `lvars_at_depth_0` at line 416: ContextBase
+  - Lemma `lvars_at_depth_empty` at line 434: ContextBase
+  - Lemma `lvars_at_depth_union` at line 440: ContextBase
+  - Lemma `lvars_at_depth_singleton_free` at line 457: ContextBase
+  - Lemma `lvars_at_depth_singleton_bound0_succ` at line 470: ContextBase
+  - Lemma `lvars_open0_difference_subset_depth1` at line 483: ContextBase
+  - Lemma `lvars_at_depth_mono` at line 530: ContextBase
+  - Lemma `lvars_at_depth_difference_subset` at line 540: ContextBase
+  - Lemma `lvars_at_depth_difference_of_atoms` at line 546: ContextBase
+  - Lemma `logic_var_at_depth_open` at line 576: ContextBase
+  - Lemma `lvars_at_depth_open` at line 628: ContextBase
+  - Lemma `lvars_fv_lvars_at_depth` at line 662: ContextBase
+  - Lemma `lvars_at_depth_free_elem` at line 676: ContextBase
+  - Lemma `lvars_at_depth_depth` at line 689: ContextBase
+  - Lemma `lvars_at_depth_succ_body` at line 732: ContextBase
+  - Lemma `lvars_bv_at_depth_succ_empty_of_open0` at line 764: ContextBase
+  - Lemma `logic_var_at_depth_shift_from` at line 793: ContextBase
+  - Lemma `lvars_at_depth_shift_from` at line 819: ContextBase
+  - Lemma `logic_var_at_depth_shift_under` at line 846: ContextBase
+  - Lemma `lvars_at_depth_shift_under` at line 868: ContextBase
+  - Lemma `lvars_shift_from_succ_body_union` at line 890: ContextBase
+  - Lemma `lvars_shift_from_below_id` at line 909: ContextBase
+  - Lemma `lvars_shift_from_lc_at_id` at line 937: ContextBase
+  - Lemma `lvars_shift_from_lc` at line 945: ContextBase
+  - Lemma `lvars_shift_from_lc_eq` at line 956: ContextBase
+  - Lemma `lvars_open_shift_from_lc_at_fresh` at line 967: ContextBase
+  - Lemma `lvars_open_env_shift_from` at line 979: ContextBase
+  - Lemma `open_env_shift_from_fresh_for_lvars` at line 999: ContextBase
+  - Lemma `lvars_open_shift_from_under_gen` at line 1020: ContextBase
+  - Lemma `lvars_open_shift_from_under` at line 1046: ContextBase
+  - Lemma `lvars_bv_shift_from_under_iff` at line 1054: ContextBase
+
+### Prelude.v
+- Direct definition folders available to lemmas: ContextBase, Corelib
+- Direct import commands by folder: Export from ContextBase.Swap [ContextBase]; Export from Corelib [Corelib]; Export from Stdlib [Stdlib]
+- Local definitions/notation/typeclasses: Definition atom@11, Notation aset@15, Class Stale@18, Notation "'FV'@22, Notation "x@26, Class Shift@30, Notation "'↑{'@32, Notation "x@36, Class Erase@41, Notation "'⌊'@43, Class ShiftKey@49, Definition nat_shift_key@54, Definition map_compat@164, Definition map_restrict@167, Class ValueSig@311, Definition fresh_for@319, Ltac pick_fresh@324
+- Lemmas/theorems and available definition folders:
+  - Lemma `nat_shift_key_inj` at line 56: ContextBase, Corelib
+  - Lemma `atom_key_shift_inj` at line 66: ContextBase, Corelib
+  - Lemma `elem_of_gset_shift` at line 76: ContextBase, Corelib
+  - Lemma `gset_shift_union` at line 87: ContextBase, Corelib
+  - Lemma `gset_shift_intersection` at line 107: ContextBase, Corelib
+  - Lemma `dom_gmap_filter_key_in` at line 129: ContextBase, Corelib
+  - Lemma `gmap_filter_key_pair` at line 143: ContextBase, Corelib
+  - Corollary `dom_gmap_filter_key_in_pair` at line 150: ContextBase, Corelib
+  - Lemma `map_compat_refl` at line 170: ContextBase, Corelib
+  - Lemma `map_delete_insert_same` at line 175: ContextBase, Corelib
+  - Lemma `map_delete_insert_ne` at line 185: ContextBase, Corelib
+  - Lemma `map_fold_ext_on_lookup` at line 201: ContextBase, Corelib
+  - Lemma `map_restrict_dom` at line 221: ContextBase, Corelib
+  - Lemma `map_restrict_lookup` at line 227: ContextBase, Corelib
+  - Lemma `map_restrict_idemp` at line 239: ContextBase, Corelib
+  - Lemma `map_restrict_restrict` at line 247: ContextBase, Corelib
+  - Lemma `map_restrict_lookup_some` at line 257: ContextBase, Corelib
+  - Lemma `map_restrict_insert_in` at line 265: ContextBase, Corelib
+  - Lemma `map_restrict_insert_notin` at line 273: ContextBase, Corelib
+  - Lemma `map_restrict_agree` at line 281: ContextBase, Corelib
+  - Lemma `fresh_for_not_in` at line 321: ContextBase, Corelib
+
+### Swap/SetSwap.v
+- Direct definition folders available to lemmas: ContextBase
+- Direct import commands by folder: Export from ContextBase.Swap [ContextBase]
+- Local definitions/notation/typeclasses: Definition set_swap@5
+- Lemmas/theorems and available definition folders:
+  - Lemma `set_swap_elem` at line 8: ContextBase
+  - Lemma `set_swap_involutive` at line 19: ContextBase
+  - Lemma `set_swap_sym` at line 26: ContextBase
+  - Lemma `set_swap_fresh` at line 33: ContextBase
+  - Lemma `elem_of_set_swap` at line 49: ContextBase
+  - Lemma `set_swap_conjugate` at line 55: ContextBase
+  - Lemma `set_swap_conjugate_inv` at line 64: ContextBase
+  - Lemma `set_swap_empty` at line 73: ContextBase
+  - Lemma `set_swap_mono` at line 80: ContextBase
+  - Lemma `set_swap_union` at line 91: ContextBase
+  - Lemma `set_swap_intersection` at line 98: ContextBase
+  - Lemma `set_swap_difference` at line 105: ContextBase
+  - Lemma `set_swap_difference_l` at line 113: ContextBase
+  - Lemma `set_swap_difference_fresh` at line 121: ContextBase
+  - Lemma `set_swap_singleton` at line 137: ContextBase
+
+### Swap/Swap.v
+- Direct definition folders available to lemmas: ContextBase
+- Direct import commands by folder: Export from ContextBase [ContextBase]
+- Local definitions/notation/typeclasses: Definition swap@5
+- Lemmas/theorems and available definition folders:
+  - Lemma `swap_involutive` at line 8: ContextBase
+  - Lemma `swap_sym` at line 14: ContextBase
+  - Lemma `swap_fresh` at line 20: ContextBase
+  - Lemma `swap_l` at line 28: ContextBase
+  - Lemma `swap_r` at line 34: ContextBase
+  - Lemma `swap_conjugate` at line 40: ContextBase
+  - Lemma `swap_conjugate_inv` at line 47: ContextBase
+  - Lemma `swap_inj` at line 54: ContextBase
+
+### Tactics.v
+- Direct definition folders available to lemmas: ContextBase, stdpp
+- Direct import commands by folder: Export from stdpp [stdpp]
+- Local definitions/notation/typeclasses: Ltac fast_set_solver@29, Ltac set_fold_not@32, Ltac set_prune_hyps_safe@36, Ltac set_prune_hyps@100, Ltac set_normalize_step@132, Ltac set_normalize@166, Ltac better_set_solver@168, Ltac solve_set@179, Ltac map_normalize_step@226, Ltac map_normalize@296, Ltac map_lookup_split@298, Ltac map_lookup_case_step@314, Ltac better_map_solver@324
+- Lemmas/theorems and available definition folders:
+  - Lemma `set_difference_pull_singleton` at line 7: ContextBase, stdpp
+  - Lemma `map_lookup_insert` at line 183: ContextBase, stdpp
+  - Lemma `map_lookup_insert_ne` at line 190: ContextBase, stdpp
+  - Lemma `map_lookup_singleton` at line 196: ContextBase, stdpp
+  - Lemma `map_lookup_singleton_ne` at line 203: ContextBase, stdpp
+  - Lemma `map_lookup_union_Some_raw` at line 209: ContextBase, stdpp
+  - Lemma `map_lookup_union_None` at line 215: ContextBase, stdpp
+  - Lemma `map_elem_of_dom_lookup_some` at line 220: ContextBase, stdpp

@@ -1,0 +1,334 @@
+# Definition-folder dependency report: ContextLogic
+This report is generated mechanically from Rocq source imports and lemma declarations.
+For each lemma/theorem, "definition folders" is a conservative over-approximation: the repo folders directly imported by the file containing that lemma, plus the current folder. Because most proof identifiers are unqualified after imports, this report is intended as a refactoring map, not a proof-term dependency trace.
+Use this to find lemmas whose file imports only lower-layer definitions and may be candidates for moving downward.
+
+## Folder Summary
+- Rocq files: 10
+- Definition/notation/typeclass declarations: 114
+- Lemma/theorem declarations: 262
+- Direct imported repo folders: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore, CoreLang
+
+## Files
+
+### theories/FormulaAtom.v
+- Direct definition folders available to lemmas: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore
+- Direct import commands by folder: Export from ContextAlgebra [ContextAlgebra]; Import from ContextAlgebra [ContextAlgebra]; Export from ContextBase [ContextBase]; Import from ContextBase [ContextBase]; Export from ContextStore [ContextStore]; Export from ContextQualifier [ContextQualifier]; Import from Stdlib [Stdlib]
+- Local definitions/notation/typeclasses: Definition lstore_in_lworld_on@27, Definition lstore_on_lift_store@31, Definition qualifier_holds_store@50, Definition atom_store_extend_lstore_on@84, Definition qualifier_saturated_raw_world@170, Definition qualifier_saturated_world@177, Definition qualifier_exact_denote@215, Definition lworld_on_mlsubst_back@285
+- Lemmas/theorems and available definition folders:
+  - Lemma `dom_lstore_to_store_lc` at line 59: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore
+  - Lemma `atom_store_extend_lstore_on_dom` at line 89: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore
+  - Lemma `atom_store_extend_lstore_on_lift_restrict` at line 131: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore
+  - Lemma `lstore_in_lworld_on_atom_swap_front` at line 189: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore
+  - Lemma `qualifier_exact_denote_atom_swap` at line 225: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore
+  - Lemma `lstore_lift_free_restrict_fv_lvars_eq` at line 323: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore
+  - Lemma `qualifier_saturated_world_exact` at line 358: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore
+  - Lemma `lstore_in_lworld_on_lift_store_of_world` at line 453: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore
+  - Lemma `res_fiber_from_projection_lookup` at line 475: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore
+  - Lemma `lstore_lift_restrict_singleton_free_eq` at line 527: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore
+  - Lemma `lstore_in_lworld_on_singleton_free_lookup` at line 562: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore
+  - Lemma `lvars_closed_difference_atom_store_to_lvar_store_empty` at line 612: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore
+  - Lemma `lstore_on_mlsubst_back_full_lift` at line 634: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore
+  - Lemma `lstore_on_mlsubst_back_lift_store` at line 665: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore
+  - Lemma `qualifier_exact_denote_restrict` at line 711: ContextAlgebra, ContextBase, ContextLogic, ContextQualifier, ContextStore
+
+### theories/FormulaConnectives.v
+- Direct definition folders available to lemmas: ContextAlgebra, ContextBase, ContextLogic
+- Direct import commands by folder: Import from ContextLogic [ContextLogic]; Import from ContextAlgebra [ContextAlgebra]; Import from ContextBase [ContextBase]; Import from Stdlib [Stdlib]
+- Local definitions/notation/typeclasses: Ltac normalize_models_ands_in@1524, Ltac normalize_models_ands_goal@1527, Ltac destruct_models_formula_hyps@1530, Ltac split_models_formula_goal@1540
+- Lemmas/theorems and available definition folders:
+  - Lemma `formula_scoped_atom_swap_iff` at line 28: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_fuel_atom_swap` at line 46: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_atom_swap` at line 542: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_from_restrict_extension_on_fv` at line 550: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_and_intro_from_models` at line 569: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_and_iff` at line 580: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_or_iff` at line 590: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_or_intro_l_from_model` at line 605: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_or_intro_r_from_model` at line 616: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `formula_scoped_star_from_models` at line 627: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_star_intro` at line 653: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_star_iff` at line 668: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `formula_scoped_plus_from_models` at line 683: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_plus_intro` at line 705: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_plus_iff` at line 720: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_over_intro_same` at line 735: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_over_intro_same_from_model` at line 746: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_under_intro_same` at line 756: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_under_intro_same_from_model` at line 767: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `formula_scoped_persist_from_singleton` at line 777: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_persist_intro` at line 799: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_persist_iff` at line 816: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_persist_elim` at line 834: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_FFibVars_intro` at line 845: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_FFibVars_iff` at line 861: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_FAtom_store_holds` at line 886: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_over_FAtom_store_holds` at line 909: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_over_FAtom_intro_store_holds` at line 923: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_FFiberAtom_fibers_iff` at line 966: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_fiber_from_projection_empty_self` at line 986: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_fibvars_empty_elim` at line 1001: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_fiber_from_projection_empty_eq` at line 1016: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_fibvars_empty_intro` at line 1049: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_fibvars_msubst_store_fixed` at line 1179: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_fiber_from_projection_lookup_eq` at line 1307: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_FFiberAtom_store_iff` at line 1339: ContextAlgebra, ContextBase, ContextLogic
+
+### theories/FormulaConnectivesHigher.v
+- Direct definition folders available to lemmas: ContextAlgebra, ContextBase, ContextLogic
+- Direct import commands by folder: Import from ContextLogic [ContextLogic]; Import from ContextAlgebra [ContextAlgebra]; Import from ContextBase [ContextBase]; Import from Stdlib [Stdlib]
+- Local definitions/notation/typeclasses: Ltac use_models_impl@215, Definition res_extend_by_input_widened_to@483, Notation "φ@793, Definition ext@799, Definition over_closure@802, Definition under_closure@805, Notation "φ@822, Definition formula_equiv@825, Notation "φ@828, Definition persistent_formula@831
+- Lemmas/theorems and available definition folders:
+  - Lemma `res_models_impl_future_iff_local` at line 27: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `models_impl_future_iff_of_scope` at line 52: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_impl_intro_future` at line 66: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_impl_intro` at line 82: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_impl_intro_scoped` at line 94: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_impl_elim_future` at line 107: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_impl_elim` at line 123: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_impl2_intro` at line 132: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_impl2_elim` at line 146: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_impl_map` at line 158: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_impl2_map` at line 175: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_impl2_map_dep` at line 194: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_fbwand_intro` at line 242: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_fbwand_rev` at line 265: ContextAlgebra, ContextBase, ContextLogic
+  - Theorem `res_models_fbwand_bi_of_wf` at line 304: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_fbwand_open_one_named_fresh` at line 377: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_forall_intro` at line 490: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_forall_iff` at line 509: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_forall_rev` at line 531: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_forall_open_named_fresh` at line 566: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_forall_rev_intro` at line 614: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_forall_full_world_map` at line 635: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_forall_full_world_impl2_map` at line 672: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_forall_full_world_impl_map` at line 707: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `res_models_forall_full_world_impl2_map_dep` at line 741: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `persistent_formula_of_singleton_projection` at line 834: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `persistent_formula_of_singleton_projection_subset` at line 853: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `persist_elim_entails` at line 881: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `persistent_formula_persist` at line 887: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `persistent_formula_equiv_persist` at line 909: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `persistent_star_and` at line 918: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `persistent_star_self` at line 948: ContextAlgebra, ContextBase, ContextLogic
+  - Lemma `persistent_formula_and_covered_l` at line 962: ContextAlgebra, ContextBase, ContextLogic
+
+### theories/FormulaFiberwise.v
+- Direct definition folders available to lemmas: ContextAlgebra, ContextLogic
+- Direct import commands by folder: Import from ContextLogic [ContextLogic]; Import from ContextAlgebra [ContextAlgebra]
+- Local definitions/notation/typeclasses: Definition fiberwise_joinable_on@19, Definition fiberwise_joinable@26, Definition fiberwise_stable_on@29, Definition fiberwise_stable@35, Ltac formula_regular_fiber_dom@65, Ltac formula_regular@78, Definition subset_upward_closed_formula@627, Definition subset_downward_closed_formula@630
+- Lemmas/theorems and available definition folders:
+  - Lemma `res_fiber_from_projection_world_dom` at line 48: ContextAlgebra, ContextLogic
+  - Lemma `res_fiber_from_projection_fresh_eq` at line 56: ContextAlgebra, ContextLogic
+  - Lemma `res_fiber_from_projection_restrict_open_world` at line 326: ContextAlgebra, ContextLogic
+  - Lemma `res_fiber_open_world_shape` at line 406: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_true` at line 436: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_true` at line 445: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_false` at line 449: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_false` at line 462: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_atom` at line 466: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_atom` at line 538: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_and` at line 542: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_and` at line 557: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_stable_on_and` at line 566: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_stable_and` at line 578: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_impl` at line 587: ContextAlgebra, ContextLogic
+  - Lemma `subset_downward_closed_over` at line 633: ContextAlgebra, ContextLogic
+  - Lemma `subset_upward_closed_under` at line 656: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_stable_on_over` at line 679: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_under` at line 687: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_under_any` at line 703: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_under` at line 729: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_over_downward` at line 735: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_over_atom` at line 751: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_star_persistent_l` at line 775: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_star_persistent_l` at line 796: ContextAlgebra, ContextLogic
+  - Lemma `res_fiber_product_subset_of_projection` at line 931: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_plus_subset_upward` at line 1151: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_fibvars` at line 1186: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_fiber_atom` at line 1219: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_fiber_atom` at line 1230: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_fibvars_over_atom` at line 1234: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_fibvars_under_atom` at line 1245: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_forall` at line 1256: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_forall` at line 1301: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_on_fbwand1` at line 1312: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_joinable_fbwand1` at line 1387: ContextAlgebra, ContextLogic
+  - Lemma `fiberwise_stable_on_fibvars_over_atom` at line 1401: ContextAlgebra, ContextLogic
+
+### theories/FormulaNotation.v
+- Direct definition folders available to lemmas: ContextLogic, CoreLang
+- Direct import commands by folder: Export from CoreLang [CoreLang]; Export from ContextLogic [ContextLogic]
+- Local definitions/notation/typeclasses: Notation "'⊤'"@15, Notation "'⊥'"@16, Notation "'@atom'@17, Notation "'pure'@19, Notation "'fiber_atom'@21, Notation "'over'@23, Notation "'under'@25, Notation "'persist'@27, Notation "'□'@29, Notation "'fib'@31, Notation "φ@33, Notation "φ@35, Notation "φ@37, Notation "φ@39, Notation "φ@41, Notation "φ@43, Notation "'∀.'@45, Notation "'{'@47, Notation "φ@50, Notation "'{η'@53, Notation "'FV'@56, Notation "<{@60, Notation "@61, Notation "φ"@62, Notation "'$'@64, Notation "'⊤'"@67, Notation "'⊥'"@68, Notation "'@atom'@69, Notation "'@pure'@71, Notation "'@fiber_atom'@73, Notation "'over'@76, Notation "'under'@78, Notation "'persist'@80, Notation "'□'@82, Notation "'fib'@84, Notation "φ@88, Notation "φ@90, Notation "φ@93, Notation "φ@95, Notation "φ@97, ... (+3)
+- Lemmas/theorems and available definition folders: (none)
+
+### theories/FormulaSemantics.v
+- Direct definition folders available to lemmas: ContextBase, ContextLogic
+- Direct import commands by folder: Export from ContextLogic [ContextLogic]; Import from ContextLogic [ContextLogic]; Import from ContextBase [ContextBase]; Import from Stdlib [Stdlib]
+- Local definitions/notation/typeclasses: Definition formula_scoped_in_world@21, Definition open_env_binds@277, Fixpoint res_models_fuel@298, Definition res_models@895, Definition entails@914, Ltac models_fuel_finish@1005, Ltac models_fuel_irrel_auto@1015, Ltac formula_scope_syntax_norm@1018, Ltac formula_scope_syntax_norm_in@1031, Ltac formula_semantics_norm@1048, Ltac formula_semantics_norm_in@1052, Ltac formula_scope_step@1056, Ltac formula_scope_solve@1111, Ltac pose_formula_scoped_forall_open_from_dom@1114
+- Lemmas/theorems and available definition folders:
+  - Lemma `formula_scoped_true_iff` at line 27: ContextBase, ContextLogic
+  - Lemma `formula_scoped_false_iff` at line 37: ContextBase, ContextLogic
+  - Lemma `formula_scoped_atom_iff` at line 47: ContextBase, ContextLogic
+  - Lemma `formula_scoped_and_iff` at line 55: ContextBase, ContextLogic
+  - Lemma `formula_scoped_and_l` at line 63: ContextBase, ContextLogic
+  - Lemma `formula_scoped_and_r` at line 68: ContextBase, ContextLogic
+  - Lemma `formula_scoped_or_iff` at line 73: ContextBase, ContextLogic
+  - Lemma `formula_scoped_or_l` at line 81: ContextBase, ContextLogic
+  - Lemma `formula_scoped_or_r` at line 86: ContextBase, ContextLogic
+  - Lemma `formula_scoped_impl_iff` at line 91: ContextBase, ContextLogic
+  - Lemma `formula_scoped_impl_l` at line 99: ContextBase, ContextLogic
+  - Lemma `formula_scoped_impl_r` at line 104: ContextBase, ContextLogic
+  - Lemma `formula_scoped_star_iff` at line 109: ContextBase, ContextLogic
+  - Lemma `formula_scoped_star_l` at line 117: ContextBase, ContextLogic
+  - Lemma `formula_scoped_star_r` at line 122: ContextBase, ContextLogic
+  - Lemma `formula_scoped_fbwand_iff` at line 127: ContextBase, ContextLogic
+  - Lemma `formula_scoped_fbwand_l` at line 137: ContextBase, ContextLogic
+  - Lemma `formula_scoped_fbwand_r` at line 142: ContextBase, ContextLogic
+  - Lemma `formula_scoped_plus_iff` at line 147: ContextBase, ContextLogic
+  - Lemma `formula_scoped_plus_l` at line 155: ContextBase, ContextLogic
+  - Lemma `formula_scoped_plus_r` at line 160: ContextBase, ContextLogic
+  - Lemma `formula_scoped_forall_iff` at line 165: ContextBase, ContextLogic
+  - Lemma `formula_scoped_forall_body` at line 173: ContextBase, ContextLogic
+  - Lemma `formula_scoped_over_iff` at line 178: ContextBase, ContextLogic
+  - Lemma `formula_scoped_over_body` at line 186: ContextBase, ContextLogic
+  - Lemma `formula_scoped_under_iff` at line 191: ContextBase, ContextLogic
+  - Lemma `formula_scoped_under_body` at line 199: ContextBase, ContextLogic
+  - Lemma `formula_scoped_persist_iff` at line 204: ContextBase, ContextLogic
+  - Lemma `formula_scoped_persist_body` at line 212: ContextBase, ContextLogic
+  - Lemma `formula_scoped_fibvars_iff` at line 217: ContextBase, ContextLogic
+  - Lemma `formula_scoped_fibvars_r` at line 225: ContextBase, ContextLogic
+  - Lemma `formula_scoped_open_from_fv` at line 230: ContextBase, ContextLogic
+  - Lemma `formula_scoped_open_res_le` at line 240: ContextBase, ContextLogic
+  - Lemma `formula_scoped_forall_open_res_le` at line 253: ContextBase, ContextLogic
+  - Lemma `open_env_binds_one_inv` at line 281: ContextBase, ContextLogic
+  - Lemma `res_models_fuel_scoped` at line 371: ContextBase, ContextLogic
+  - Lemma `res_models_fuel_irrel` at line 379: ContextBase, ContextLogic
+  - Lemma `res_restrict_scope_eq` at line 468: ContextBase, ContextLogic
+  - Lemma `formula_scoped_projection_on` at line 479: ContextBase, ContextLogic
+  - Lemma `extension_applicable_for_open` at line 492: ContextBase, ContextLogic
+  - Lemma `res_extend_by_open_projection_eq` at line 508: ContextBase, ContextLogic
+  - Lemma `res_restrict_eq_union_l` at line 542: ContextBase, ContextLogic
+  - Lemma `res_restrict_eq_union_r` at line 552: ContextBase, ContextLogic
+  - Lemma `res_models_fuel_projection_fbwand_case` at line 562: ContextBase, ContextLogic
+  - Lemma `res_models_fuel_projection` at line 668: ContextBase, ContextLogic
+  - Lemma `res_models_fuel_restrict_fv` at line 871: ContextBase, ContextLogic
+  - Lemma `res_models_fuel_kripke` at line 882: ContextBase, ContextLogic
+  - Lemma `res_models_true` at line 898: ContextBase, ContextLogic
+  - Lemma `res_models_scoped` at line 907: ContextBase, ContextLogic
+  - Lemma `res_models_kripke` at line 917: ContextBase, ContextLogic
+  - Lemma `res_models_restrict_fv` at line 926: ContextBase, ContextLogic
+  - Lemma `res_models_projection` at line 933: ContextBase, ContextLogic
+  - Lemma `res_models_minimal_on` at line 941: ContextBase, ContextLogic
+  - Lemma `res_models_and_elim_l` at line 954: ContextBase, ContextLogic
+  - Lemma `res_models_and_elim_r` at line 962: ContextBase, ContextLogic
+  - Lemma `res_models_and_intro` at line 970: ContextBase, ContextLogic
+  - Lemma `res_models_or_intro_l` at line 982: ContextBase, ContextLogic
+  - Lemma `res_models_or_intro_r` at line 991: ContextBase, ContextLogic
+
+### theories/FormulaSyntax.v
+- Direct definition folders available to lemmas: ContextLogic
+- Direct import commands by folder: Export from ContextLogic [ContextLogic]
+- Local definitions/notation/typeclasses: (none)
+- Lemmas/theorems and available definition folders: (none)
+
+### theories/FormulaSyntaxCore.v
+- Direct definition folders available to lemmas: ContextBase, ContextLogic, CoreLang
+- Direct import commands by folder: Export from ContextLogic [ContextLogic]; Import from CoreLang [CoreLang]; Import from ContextBase [ContextBase]; Import from Stdlib [Stdlib]
+- Local definitions/notation/typeclasses: Inductive Formula@20, Fixpoint formula_lvars_at@36, Definition formula_lvars@50, Definition formula_fv@53, Fixpoint formula_wf@56, Definition formula_stale@71, Fixpoint formula_measure@78, Fixpoint formula_mlsubst@88, Definition formula_msubst_store@107, Definition FFiberAtom@110, Definition store_without_lvars@113, Fixpoint formula_open@117, Fixpoint formula_atom_swap@138, Definition formula_open_env@157, Definition FPure@161
+- Lemmas/theorems and available definition folders: (none)
+
+### theories/FormulaSyntaxRegular.v
+- Direct definition folders available to lemmas: ContextBase, ContextLogic, CoreLang
+- Direct import commands by folder: Export from ContextLogic [ContextLogic]; Import from CoreLang [CoreLang]; Import from ContextBase [ContextBase]; Import from Stdlib [Stdlib]
+- Local definitions/notation/typeclasses: Ltac formula_fv_syntax_norm@1007, Ltac formula_fv_syntax_norm_in@1018, Ltac formula_open_syntax_norm@1037, Ltac formula_open_syntax_norm_in@1045, Ltac formula_open_env_syntax_norm@1061, Ltac formula_open_env_syntax_norm_in@1071, Ltac formula_msubst_syntax_norm_once@1086, Ltac formula_msubst_syntax_norm_once_in@1129, Ltac formula_msubst_syntax_norm@1172, Ltac formula_msubst_syntax_norm_in@1175, Ltac formula_syntax_norm@1178, Ltac formula_syntax_norm_in@1184
+- Lemmas/theorems and available definition folders:
+  - Lemma `formula_fv_true` at line 20: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_fv_false` at line 24: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_fv_atom` at line 28: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_fv_and` at line 32: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_fv_or` at line 36: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_fv_impl` at line 40: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_fv_star` at line 44: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_fv_fbwand` at line 48: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_fv_plus` at line 53: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_fv_forall` at line 57: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_fv_over` at line 61: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_fv_under` at line 65: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_fv_persist` at line 69: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_fv_fibvars` at line 73: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_lvars_at_fv` at line 80: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_msubst_store_fibvars` at line 109: ContextBase, ContextLogic, CoreLang
+  - Lemma `lvars_fv_difference_atoms` at line 118: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_mlsubst_fiber_atom` at line 145: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_msubst_store_fiber_atom` at line 153: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_fv_fiber_atom` at line 158: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_msubst_store_empty` at line 166: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_mlsubst_merge` at line 186: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_msubst_store_merge` at line 201: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_mlsubst_preserves_measure` at line 216: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_msubst_store_preserves_measure` at line 222: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_lvars_at_msubst_store` at line 226: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_msubst_store_fv` at line 261: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_mlsubst_fv_subset` at line 270: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_msubst_store_fv_subset` at line 309: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_true` at line 314: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_false` at line 318: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_atom` at line 322: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_and` at line 326: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_or` at line 331: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_impl` at line 336: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_star` at line 341: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_fbwand` at line 346: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_plus` at line 351: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_forall` at line 356: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_over` at line 361: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_under` at line 366: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_persist` at line 371: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_fibvars` at line 376: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_fiber_atom` at line 381: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_preserves_measure` at line 389: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_mlsubst_open_fresh` at line 395: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_msubst_store_open_fresh` at line 414: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_atom_swap_preserves_measure` at line 432: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_fv_atom_swap` at line 438: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_atom_swap_involutive` at line 471: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_atom_swap_fresh_id` at line 480: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_atom_swap_open_conjugate` at line 514: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_atom_swap_open_fresh` at line 533: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_atom_swap_mlsubst` at line 546: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_atom_swap_msubst_store` at line 563: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_commute_fresh` at line 573: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_preserves_measure` at line 598: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_empty` at line 607: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_singleton` at line 613: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_insert_fresh` at line 621: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_atom_swap_open_env_fresh` at line 641: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_true` at line 667: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_false` at line 678: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_and` at line 689: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_or` at line 704: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_impl` at line 719: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_star` at line 734: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_fbwand` at line 749: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_plus` at line 785: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_over` at line 800: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_under` at line 813: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_persist` at line 826: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_atom` at line 839: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_fibvars` at line 848: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_fiber_atom` at line 871: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_forall` at line 884: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_fv_subset` at line 906: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_fv_open_fibvars_qual_body_obs` at line 944: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_env_fv_subset` at line 964: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_open_fv_ne` at line 983: ContextBase, ContextLogic, CoreLang
+  - Lemma `formula_measure_pos` at line 993: ContextBase, ContextLogic, CoreLang
+
+### theories/FormulaWorldExtension.v
+- Direct definition folders available to lemmas: ContextAlgebra, ContextLogic
+- Direct import commands by folder: Import from ContextAlgebra [ContextAlgebra]; Import from ContextLogic [ContextLogic]
+- Local definitions/notation/typeclasses: (none)
+- Lemmas/theorems and available definition folders:
+  - Lemma `res_models_extend_mono` at line 18: ContextAlgebra, ContextLogic
+  - Lemma `res_models_pullback_subset_projection` at line 30: ContextAlgebra, ContextLogic

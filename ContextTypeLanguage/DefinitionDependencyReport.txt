@@ -1,0 +1,160 @@
+# Definition-folder dependency report: ContextTypeLanguage
+This report is generated mechanically from Rocq source imports and lemma declarations.
+For each lemma/theorem, "definition folders" is a conservative over-approximation: the repo folders directly imported by the file containing that lemma, plus the current folder. Because most proof identifiers are unqualified after imports, this report is intended as a refactoring map, not a proof-term dependency trace.
+Use this to find lemmas whose file imports only lower-layer definitions and may be candidates for moving downward.
+
+## Folder Summary
+- Rocq files: 6
+- Definition/notation/typeclass declarations: 126
+- Lemma/theorem declarations: 112
+- Direct imported repo folders: ContextBase, ContextQualifier, ContextStore, ContextTypeLanguage, LocallyNameless
+
+## Files
+
+### theories/LtyEnv.v
+- Direct definition folders available to lemmas: ContextStore, ContextTypeLanguage, LocallyNameless
+- Direct import commands by folder: Import from LocallyNameless [LocallyNameless]; Export from ContextStore [ContextStore]; Export from ContextTypeLanguage [ContextTypeLanguage]
+- Local definitions/notation/typeclasses: Notation lty_env@16, Notation lty_env_shift_from@21, Notation lty_env_shift@23, Notation lty_env_open_one@25, Notation lty_env_closed@27, Notation atom_env_to_lty_env@29, Notation lty_env_open@31, Notation lty_env_to_atom_env@33, Notation lty_env_open_lvars@35, Notation lty_env_atom_dom@37, Notation lty_env_bvar_scope@39, Notation lty_env_swap@41, Notation typed_lty_env_bind@44, Notation "'↑ₗ'@47, Notation "'↑ₗ'@50, Definition lty_env_msubst_store@53, Ltac type_env_norm@89
+- Lemmas/theorems and available definition folders:
+  - Lemma `lty_env_msubst_store_lookup_some` at line 76: ContextStore, ContextTypeLanguage, LocallyNameless
+  - Lemma `lty_env_open_one_dom` at line 93: ContextStore, ContextTypeLanguage, LocallyNameless
+  - Lemma `lty_env_open_lvars_empty` at line 97: ContextStore, ContextTypeLanguage, LocallyNameless
+  - Lemma `lty_env_open_lvars_singleton` at line 101: ContextStore, ContextTypeLanguage, LocallyNameless
+  - Lemma `lty_env_open_lvars_dom` at line 107: ContextStore, ContextTypeLanguage, LocallyNameless
+  - Lemma `lty_env_open_lvars_insert_fresh` at line 113: ContextStore, ContextTypeLanguage, LocallyNameless
+  - Lemma `lty_env_open_lvars_lift_bound0_singleton` at line 121: ContextStore, ContextTypeLanguage, LocallyNameless
+  - Lemma `typed_lty_env_bind_dom` at line 174: ContextStore, ContextTypeLanguage, LocallyNameless
+  - Lemma `typed_lty_env_bind_lookup_free` at line 179: ContextStore, ContextTypeLanguage, LocallyNameless
+  - Lemma `typed_lty_env_bind_lvars_fv_dom` at line 193: ContextStore, ContextTypeLanguage, LocallyNameless
+  - Lemma `lvars_at_depth_typed_lty_env_bind` at line 197: ContextStore, ContextTypeLanguage, LocallyNameless
+  - Lemma `lty_env_closed_insert_free` at line 207: ContextStore, ContextTypeLanguage, LocallyNameless
+  - Lemma `lty_env_insert_free_commute` at line 212: ContextStore, ContextTypeLanguage, LocallyNameless
+  - Lemma `lty_env_closed_lookup_bound_none` at line 230: ContextStore, ContextTypeLanguage, LocallyNameless
+  - Lemma `typed_lty_env_bind_open_current` at line 235: ContextStore, ContextTypeLanguage, LocallyNameless
+  - Lemma `lty_env_open_one_under_three_binds` at line 242: ContextStore, ContextTypeLanguage, LocallyNameless
+  - Lemma `typed_lty_env_bind_open_env_lift` at line 253: ContextStore, ContextTypeLanguage, LocallyNameless
+
+### theories/Syntax.v
+- Direct definition folders available to lemmas: ContextTypeLanguage
+- Direct import commands by folder: Export from ContextTypeLanguage [ContextTypeLanguage]
+- Local definitions/notation/typeclasses: (none)
+- Lemmas/theorems and available definition folders: (none)
+
+### theories/SyntaxCore.v
+- Direct definition folders available to lemmas: ContextBase, ContextQualifier, ContextTypeLanguage
+- Direct import commands by folder: Import from Stdlib [Stdlib]; Export from ContextQualifier [ContextQualifier]; Import from ContextBase [ContextBase]
+- Local definitions/notation/typeclasses: Notation "'#ₗ'@20, Notation "'$ₗ'@23, Inductive context_ty@31, Inductive ctx@41, Notation "'#ₗ'@52, Notation "'$ₗ'@55, Notation "'Emp'"@58, Notation "x@61, Notation "Γ1@64, Notation "Γ1@67, Notation "Γ1@70, Notation "τ1@74, Notation "τ1@77, Notation "τ1@80, Notation "τx@83, Notation "τx@86, Notation "'□'@89, Inductive ctx_hole@93, Fixpoint plug_ctx@100, Fixpoint context_ty_lvars_at@109, Definition context_ty_lvars@120, Definition context_ty_open_lvars@123, Definition context_ty_shift_lvars@126, Definition fv_cty@129, Definition bv_cty@132, Notation "'FV'@135, Notation "'FV'@139, Fixpoint cty_depth@143, Fixpoint ctx_dom@154, Fixpoint ctx_stale@163, Fixpoint ctx_fv@172, Notation "'FV'@181, Fixpoint cty_open@190, Notation "'{'@205, Notation "τ@208, Fixpoint cty_shift@214, Notation "'↑{'@229, Notation "τ@232, Fixpoint context_ty_msubst_store@236, Fixpoint erase_ty@254, ... (+26)
+- Lemmas/theorems and available definition folders: (none)
+
+### theories/SyntaxRegular.v
+- Direct definition folders available to lemmas: ContextBase, ContextTypeLanguage
+- Direct import commands by folder: Import from Stdlib [Stdlib]; Export from ContextTypeLanguage [ContextTypeLanguage]; Import from ContextBase [ContextBase]
+- Local definitions/notation/typeclasses: Ltac cty_lvars_syntax_norm@441, Ltac cty_lvars_syntax_norm_in@451, Ltac cty_fv_syntax_norm@466, Ltac cty_fv_syntax_norm_in@470, Ltac cty_open_syntax_norm@474, Ltac cty_open_syntax_norm_in@478, Ltac cty_shift_syntax_norm@483, Ltac cty_shift_syntax_norm_in@488, Ltac cty_erase_syntax_norm@495, Ltac cty_erase_syntax_norm_in@500, Ltac ctx_syntax_norm@506, Ltac ctx_syntax_norm_in@514, Ltac type_syntax_norm@525, Ltac type_syntax_norm_in@532, Ltac type_lvars_norm@539, Notation "@569, Ltac cty_depth_norm@573, Ltac cty_depth_norm_in@577, Ltac cty_depth_solve@582
+- Lemmas/theorems and available definition folders:
+  - Lemma `erase_ctx_bind_dom` at line 7: ContextBase, ContextTypeLanguage
+  - Lemma `erase_ctx_comma_bind_dom` at line 23: ContextBase, ContextTypeLanguage
+  - Lemma `erase_ctx_star_bind_dom` at line 54: ContextBase, ContextTypeLanguage
+  - Lemma `erase_ctx_comma_bind_fresh` at line 85: ContextBase, ContextTypeLanguage
+  - Lemma `erase_ctx_star_bind_fresh` at line 95: ContextBase, ContextTypeLanguage
+  - Lemma `context_ty_lvars_at_open` at line 106: ContextBase, ContextTypeLanguage
+  - Lemma `cty_open_vars` at line 156: ContextBase, ContextTypeLanguage
+  - Lemma `context_ty_lvars_at_depth` at line 164: ContextBase, ContextTypeLanguage
+  - Lemma `context_ty_lvars_depth` at line 180: ContextBase, ContextTypeLanguage
+  - Lemma `cty_lvars_open_body_closed_no_fresh` at line 187: ContextBase, ContextTypeLanguage
+  - Lemma `context_ty_lvars_fv_at` at line 205: ContextBase, ContextTypeLanguage
+  - Lemma `context_ty_lvars_fv` at line 220: ContextBase, ContextTypeLanguage
+  - Lemma `context_ty_lvars_free_notin_of_fv` at line 226: ContextBase, ContextTypeLanguage
+  - Lemma `context_ty_lvars_over_fv` at line 236: ContextBase, ContextTypeLanguage
+  - Lemma `context_ty_lvars_under_fv` at line 243: ContextBase, ContextTypeLanguage
+  - Lemma `context_ty_lvars_at_shift_under` at line 250: ContextBase, ContextTypeLanguage
+  - Lemma `context_ty_lvars_at_shift` at line 270: ContextBase, ContextTypeLanguage
+  - Lemma `cty_shift0_vars` at line 295: ContextBase, ContextTypeLanguage
+  - Lemma `cty_shift_vars` at line 303: ContextBase, ContextTypeLanguage
+  - Lemma `cty_open_fv_subset` at line 309: ContextBase, ContextTypeLanguage
+  - Lemma `cty_shift_fv` at line 317: ContextBase, ContextTypeLanguage
+  - Lemma `cty_open_preserves_erasure` at line 331: ContextBase, ContextTypeLanguage
+  - Lemma `cty_shift_preserves_erasure` at line 337: ContextBase, ContextTypeLanguage
+  - Lemma `cty_open_preserves_depth` at line 343: ContextBase, ContextTypeLanguage
+  - Lemma `cty_shift_preserves_depth` at line 349: ContextBase, ContextTypeLanguage
+  - Lemma `cty_open_shift_under_gen` at line 355: ContextBase, ContextTypeLanguage
+  - Lemma `cty_open_commute_fvar` at line 367: ContextBase, ContextTypeLanguage
+  - Lemma `cty_vars_equiv_erase` at line 384: ContextBase, ContextTypeLanguage
+  - Lemma `cty_vars_equiv_open` at line 395: ContextBase, ContextTypeLanguage
+  - Lemma `ctx_stale_eq_fv_dom` at line 409: ContextBase, ContextTypeLanguage
+  - Lemma `constant_lt_for_base_wf` at line 562: ContextBase, ContextTypeLanguage
+  - Lemma `erase_fix_rec_call_ty` at line 585: ContextBase, ContextTypeLanguage
+  - Lemma `fv_cty_fix_rec_call_ty_subset` at line 596: ContextBase, ContextTypeLanguage
+  - Lemma `fv_cty_fix_rec_call_ty_fresh` at line 618: ContextBase, ContextTypeLanguage
+  - Lemma `fv_cty_over_lt_bound_fvar` at line 630: ContextBase, ContextTypeLanguage
+  - Lemma `fv_cty_over_lt_bound_fvar_fresh` at line 642: ContextBase, ContextTypeLanguage
+
+### theories/TypeOpen.v
+- Direct definition folders available to lemmas: ContextBase, ContextTypeLanguage, LocallyNameless
+- Direct import commands by folder: Import from Stdlib [Stdlib]; Import from LocallyNameless [LocallyNameless]; Export from ContextTypeLanguage [ContextTypeLanguage]; Import from ContextBase [ContextBase]
+- Local definitions/notation/typeclasses: Class MOpen@17, Class OpenCommute@20, Class OpenProper@29, Class MOpenInsertLaws@75, Definition open_cty_env@106, Definition qual_open_env@109, Definition qual_with_vars@113, Ltac qual_open_env_syntax_norm@560, Ltac qual_open_env_syntax_norm_in@565, Ltac cty_open_env_syntax_norm@570, Ltac cty_open_env_syntax_norm_in@583, Ltac type_open_env_syntax_norm@598, Ltac type_open_env_syntax_norm_in@603, Ltac mopen_norm@608
+- Lemmas/theorems and available definition folders:
+  - Lemma `open_map_fold_insert_fresh_eq` at line 84: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_cty_env_empty` at line 119: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_cty_env_singleton` at line 125: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_cty_env_insert_fresh` at line 134: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `qual_open_env_empty` at line 146: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `qual_open_env_insert_fresh` at line 152: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_cty_env_inter` at line 169: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_cty_env_union` at line 180: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_cty_env_sum` at line 191: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_cty_env_persist` at line 202: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_cty_env_arrow` at line 213: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_cty_env_wand` at line 234: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_cty_env_over` at line 255: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_cty_env_under` at line 275: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_cty_env_preserves_erasure` at line 295: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `qual_open_env_vars` at line 305: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `context_ty_lvars_open_cty_env` at line 328: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_env_lift_qual_diff_bound0` at line 354: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `lvars_fv_open_env_lift_subset_at_depth1` at line 390: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_env_lift_fresh_for_lvars_at_depth1` at line 422: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_env_lift2_fresh_for_lvars_at_depth2` at line 443: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_env_lift_fresh_for_bound0_singleton` at line 455: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_cty_env_lift_shift0_exact` at line 474: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `open_cty_env_lift2_shift1_exact` at line 511: ContextBase, ContextTypeLanguage, LocallyNameless
+
+### theories/WF.v
+- Direct definition folders available to lemmas: ContextBase, ContextTypeLanguage, LocallyNameless
+- Direct import commands by folder: Import from LocallyNameless [LocallyNameless]; Export from ContextTypeLanguage [ContextTypeLanguage]; Import from ContextBase [ContextBase]
+- Local definitions/notation/typeclasses: Fixpoint cty_lc_at@12, Definition lc_context_ty@27, Fixpoint context_ty_shape_ok@30, Definition basic_context_ty_lvars@43, Fixpoint wf_context_ty_at@54, Definition basic_context_ty@74, Class ScopedIn@96, Fixpoint basic_ctx@552, Definition basic_qualifier@655, Definition basic_qualifier_body@658
+- Lemmas/theorems and available definition folders:
+  - Lemma `basic_context_ty_lvars_mono` at line 46: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `wf_context_ty_at_mono_env` at line 77: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_context_ty_iff_wf_context_ty_at` at line 100: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `context_ty_shape_ok_open` at line 106: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_context_ty_lvars_open` at line 117: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `cty_lc_at_mono_depth` at line 131: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `cty_open_above_lc_fresh` at line 151: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `cty_open_shift_from_lc_fresh` at line 218: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `wf_context_ty_at_lc` at line 289: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_context_ty_lc` at line 306: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `context_ty_lvars_at_lc` at line 314: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_context_ty_lvars_lc` at line 379: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `lvars_lc_at_depth_bv_empty` at line 389: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `cty_lc_at_lvars_bv_empty` at line 405: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `wf_context_ty_at_fv_subset` at line 425: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `wf_context_ty_at_notin_fv` at line 456: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `wf_context_ty_at_open_at` at line 466: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_context_ty_fv_subset` at line 506: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `wf_context_ty_at_to_lvars_shape` at line 513: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_context_ty_to_lvars` at line 539: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_ctx_fv_subset` at line 574: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_ctx_dom_fresh` at line 596: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_ctx_erase_dom` at line 617: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_ctx_empty_fv` at line 643: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_qualifier_lc` at line 661: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_qualifier_body_lc` at line 671: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_qualifier_fv_subset` at line 683: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_qualifier_body_fv_subset` at line 690: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `lc_context_ty_over_lt_bound_fvar` at line 697: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `lc_context_ty_fix_rec_call_ty` at line 713: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `cty_open_shift_fix_rec_call_ty_fresh` at line 728: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_ctx_empty` at line 743: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_ctx_bind` at line 749: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_ctx_star` at line 757: ContextBase, ContextTypeLanguage, LocallyNameless
+  - Lemma `basic_ctx_sum` at line 766: ContextBase, ContextTypeLanguage, LocallyNameless

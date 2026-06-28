@@ -1,0 +1,24 @@
+# Definition-folder dependency report: LocallyNameless
+This report is generated mechanically from Rocq source imports and lemma declarations.
+For each lemma/theorem, "definition folders" is a conservative over-approximation: the repo folders directly imported by the file containing that lemma, plus the current folder. Because most proof identifiers are unqualified after imports, this report is intended as a refactoring map, not a proof-term dependency trace.
+Use this to find lemmas whose file imports only lower-layer definitions and may be candidates for moving downward.
+
+## Folder Summary
+- Rocq files: 2
+- Definition/notation/typeclass declarations: 54
+- Lemma/theorem declarations: 0
+- Direct imported repo folders: ContextBase, CoreLang
+
+## Files
+
+### Classes.v
+- Direct definition folders available to lemmas: CoreLang, LocallyNameless
+- Direct import commands by folder: Export from CoreLang [CoreLang]
+- Local definitions/notation/typeclasses: Class OpenVar@13, Class OpenArgLc@15, Class CloseOpenVar@23, Class OpenFv@29, Class OpenFvPrime@34, Class CloseVarFv@39, Class CloseFreshRec@44, Class CloseRmFv@50, Class Fact1@55, Class OpenRecLc@62, Class OpenCloseVar@68, Class OpenSwap@74, Class OpenLcRespect@82, Class OpenIdemp@90, Class SubstFresh@98, Class SubstOpen@104, Class SubstOpenVar@111, Class SubstLc@119, Class SubstIntro@127, Class FvOfSubst@134, Class FvOfSubstClosed@139
+- Lemmas/theorems and available definition folders: (none)
+
+### Tactics.v
+- Direct definition folders available to lemmas: ContextBase, CoreLang, LocallyNameless
+- Direct import commands by folder: Export from ContextBase [ContextBase]; Export from CoreLang [CoreLang]; Import from Stdlib [Stdlib]
+- Local definitions/notation/typeclasses: Ltac revert_all@21, Ltac get_hyps@28, Ltac fold_hyps@57, Ltac destruct_hyp_conj@73, Ltac destruct_hyp_disj@88, Ltac mydestr@93, Ltac invclear@95, Ltac crush_binders@106, Ltac inv_lc@118, Ltac ln_simpl@132, Ltac my_set_simpl@135, Ltac my_map_simpl@137, Ltac my_set_norm@143, Ltac solve_set@150, Ltac my_set_solver@158, Ltac smart_ln_simpl@166, Ltac pose_fresh_from@184, Ltac collect_one_stale@189, Ltac collect_stales@201, Ltac auto_exists_L@210, Ltac auto_pose_fv@216, Ltac specialize_with@225, Ltac pose_fresh_fv@239, Ltac rw_decide_true@249, Ltac rw_decide_true_in@254, Ltac auto_exfalso@259, Ltac var_dec_solver@267, Ltac var_dec_simpl@312, Ltac var_dec_set_solver@319, Ltac curry_tac@334, Ltac econstructor_L@389, Ltac auto_specialization@402, Ltac econstructor_L_specialized@412
+- Lemmas/theorems and available definition folders: (none)
