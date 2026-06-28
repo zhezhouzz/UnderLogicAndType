@@ -154,16 +154,21 @@ Fixpoint ty_denote_gas
             ⟦ty (τ2 ↑)%cty ⟧[Σr, gas'] (ret # 0)%core)%formula
       | CTArrow τx τr =>
           let Σf := (Σg ▷ (⌊(τx → τr)%cty⌋)%cty)%lvar in
+          let Σx := (Σf ▷ (⌊(τx ↑)%cty⌋)%cty)%lvar in
           (∀.
             FResult[(⇑ₗ (dom Σg))%lvar ⊢ (e ↑)%core ⇓ #ₗ 0] →
-            arrow_value_denote_gas_with ty_denote_gas gas' Σf
-              (τx ↑)%cty (↑{1} τr)%cty (ret # 0)%core)%formula
+            (∀.
+              ⟦ty ((τx ↑)%cty ↑)%cty ⟧[Σx, gas'] (ret # 0)%core →
+              ⟦ty (↑{1} τr)%cty ⟧[Σx, gas']
+                (((ret # 0)%core ↑)%core ·ₜ # 0)))%formula
       | CTWand τx τr =>
           let Σf := (Σg ▷ (⌊(τx -∗ τr)%cty⌋)%cty)%lvar in
+          let Σx := (Σf ▷ (⌊(τx ↑)%cty⌋)%cty)%lvar in
           (∀.
             FResult[(⇑ₗ (dom Σg))%lvar ⊢ (e ↑)%core ⇓ #ₗ 0] →
-            wand_value_denote_gas_with ty_denote_gas gas' Σf
-              (τx ↑)%cty (↑{1} τr)%cty (ret # 0)%core)%formula
+            (⟦ty ((τx ↑)%cty ↑)%cty ⟧[Σx, gas'] (ret # 0)%core -∗[1]
+             ⟦ty (↑{1} τr)%cty ⟧[Σx, gas']
+               (((ret # 0)%core ↑)%core ·ₜ # 0)))%formula
       | CTPersist τ1 =>
           let Σr := (Σg ▷ (⌊(□ τ1)%cty⌋)%cty)%lvar in
           (∀.

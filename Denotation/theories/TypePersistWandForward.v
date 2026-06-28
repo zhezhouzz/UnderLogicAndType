@@ -794,7 +794,8 @@ Proof.
     - exact Hrestrict.
   }
   cbn [formula_open] in Hopened_src.
-  rewrite (formula_open_result_first_wand_value_ret_bvar0
+  cbn beta.
+	  rewrite (formula_open_result_first_wand_value_ret_bvar0
     gas_src Σg (CTOver bx φx) τr
     (erase_ty (CTWand (CTOver bx φx) τr)) f) in Hopened_src.
   2:{ subst Σg. apply relevant_env_closed. exact HΣclosed. }
@@ -818,7 +819,8 @@ Proof.
   {
     cbn [formula_open] in Hscope_open.
     pose proof (formula_scoped_impl_r _ _ _ Hscope_open) as Hscope_value.
-    rewrite (formula_open_result_first_wand_value_ret_bvar0
+    cbn beta.
+	  rewrite (formula_open_result_first_wand_value_ret_bvar0
       gas_tgt
       (relevant_env Σ (CTWand (CTPersist (CTOver bx φx)) τr) e)
       (CTPersist (CTOver bx φx)) τr
@@ -856,7 +858,8 @@ Proof.
         (erase_ty (CTWand (CTPersist (CTOver bx φx)) τr)))
       (cty_shift 0 (CTPersist (CTOver bx φx))) (cty_shift 1 τr)
       (tret (vbvar 0)) ^^ f)%formula).
-  rewrite (formula_open_result_first_wand_value_ret_bvar0
+  cbn beta.
+	  rewrite (formula_open_result_first_wand_value_ret_bvar0
     gas_tgt
     (relevant_env Σ (CTWand (CTPersist (CTOver bx φx)) τr) e)
     (CTPersist (CTOver bx φx)) τr

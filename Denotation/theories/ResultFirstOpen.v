@@ -599,6 +599,42 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma formula_open_result_first_arrow_value_ret_bvar0_inline
+    gas (Σ : lty_env) τx τr Tf f :
+  lty_env_closed Σ ->
+  LVFree f ∉ dom Σ ->
+  lc_context_ty τx ->
+  cty_lc_at 1 τr ->
+  f ∉ fv_cty τx ->
+  f ∉ fv_cty τr ->
+  formula_open 0 f
+    (FForall
+       (FImpl
+         (ty_denote_gas gas
+           (typed_lty_env_bind
+             (typed_lty_env_bind Σ Tf)
+             (erase_ty (cty_shift 0 τx)))
+           (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0)))
+         (ty_denote_gas gas
+           (typed_lty_env_bind
+             (typed_lty_env_bind Σ Tf)
+             (erase_ty (cty_shift 0 τx)))
+           (cty_shift 1 τr)
+           (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0))))) =
+  arrow_value_denote_gas_with ty_denote_gas gas
+    (<[LVFree f := Tf]> Σ) τx τr (tret (vfvar f)).
+Proof.
+  intros.
+  change (formula_open 0 f
+    (arrow_value_denote_gas_with ty_denote_gas gas
+      (typed_lty_env_bind Σ Tf)
+      (cty_shift 0 τx) (cty_shift 1 τr)
+      (tret (vbvar 0))) =
+    arrow_value_denote_gas_with ty_denote_gas gas
+      (<[LVFree f := Tf]> Σ) τx τr (tret (vfvar f))).
+  apply formula_open_result_first_arrow_value_ret_bvar0; assumption.
+Qed.
+
 Lemma formula_open_result_first_wand_value_ret_bvar0
     gas (Σ : lty_env) τx τr Tf f :
   lty_env_closed Σ ->
@@ -669,6 +705,41 @@ Proof.
   rewrite (cty_open_shift_from_lc_fresh 0 f τx Hlcτx Hfτx).
   rewrite (cty_open_shift_from_lc_fresh 1 f τr Hlcτr Hfτr).
   reflexivity.
+Qed.
+
+Lemma formula_open_result_first_wand_value_ret_bvar0_inline
+    gas (Σ : lty_env) τx τr Tf f :
+  lty_env_closed Σ ->
+  LVFree f ∉ dom Σ ->
+  lc_context_ty τx ->
+  cty_lc_at 1 τr ->
+  f ∉ fv_cty τx ->
+  f ∉ fv_cty τr ->
+  formula_open 0 f
+    (FBWand 1
+       (ty_denote_gas gas
+         (typed_lty_env_bind
+           (typed_lty_env_bind Σ Tf)
+           (erase_ty (cty_shift 0 τx)))
+         (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0)))
+       (ty_denote_gas gas
+         (typed_lty_env_bind
+           (typed_lty_env_bind Σ Tf)
+           (erase_ty (cty_shift 0 τx)))
+         (cty_shift 1 τr)
+         (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0)))) =
+  wand_value_denote_gas_with ty_denote_gas gas
+    (<[LVFree f := Tf]> Σ) τx τr (tret (vfvar f)).
+Proof.
+  intros.
+  change (formula_open 0 f
+    (wand_value_denote_gas_with ty_denote_gas gas
+      (typed_lty_env_bind Σ Tf)
+      (cty_shift 0 τx) (cty_shift 1 τr)
+      (tret (vbvar 0))) =
+    wand_value_denote_gas_with ty_denote_gas gas
+      (<[LVFree f := Tf]> Σ) τx τr (tret (vfvar f))).
+  apply formula_open_result_first_wand_value_ret_bvar0; assumption.
 Qed.
 
 Lemma arrow_value_open_arg_to_regular_imp

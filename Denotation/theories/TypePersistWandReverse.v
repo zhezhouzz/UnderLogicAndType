@@ -729,7 +729,8 @@ Proof.
             (tret (vbvar 0)))))) in Hscope_open.
     eapply formula_scoped_impl_r. exact Hscope_open.
   }
-  rewrite (formula_open_result_first_wand_value_ret_bvar0
+  cbn beta.
+	  rewrite (formula_open_result_first_wand_value_ret_bvar0
     gas_src Σg (CTPersist (CTOver bx φx)) (CTOver br φr)
     (erase_ty (CTWand (CTOver bx φx) (CTOver br φr))) f)
     in Hvalue_src.
@@ -749,7 +750,8 @@ Proof.
     rewrite lvars_fv_lvars_at_depth.
     exact Hfφr.
   }
-  rewrite (formula_open_result_first_wand_value_ret_bvar0
+  cbn beta.
+	  rewrite (formula_open_result_first_wand_value_ret_bvar0
     gas_tgt (relevant_env Σ (CTWand (CTOver bx φx) (CTOver br φr)) e)
     (CTOver bx φx) (CTOver br φr)
     (erase_ty (CTWand (CTOver bx φx) (CTOver br φr))) f)
@@ -777,7 +779,8 @@ Proof.
         (erase_ty (CTWand (CTOver bx φx) (CTOver br φr))))
       (cty_shift 0 (CTOver bx φx)) (cty_shift 1 (CTOver br φr))
       (tret (vbvar 0)) ^^ f)%formula)).
-  rewrite (formula_open_result_first_wand_value_ret_bvar0
+  cbn beta.
+	  rewrite (formula_open_result_first_wand_value_ret_bvar0
     gas_tgt (relevant_env Σ (CTWand (CTOver bx φx) (CTOver br φr)) e)
     (CTOver bx φx) (CTOver br φr)
     (erase_ty (CTWand (CTOver bx φx) (CTOver br φr))) f).
@@ -965,7 +968,8 @@ Proof.
     (CTWand (CTPersist (CTOver bx φx)) (CTUnder br φr)) e)
     with (relevant_env Σ (CTWand (CTOver bx φx) (CTUnder br φr)) e)
     in Hresult_tgt.
-  rewrite (formula_open_result_first_wand_value_ret_bvar0
+  cbn beta.
+	  rewrite (formula_open_result_first_wand_value_ret_bvar0
     gas_src Σg (CTPersist (CTOver bx φx)) (CTUnder br φr)
     (erase_ty (CTWand (CTOver bx φx) (CTUnder br φr))) f)
     in Hopened_src.
@@ -1011,7 +1015,8 @@ Proof.
             (cty_shift 1 (CTUnder br φr))
             (tret (vbvar 0)))))) in Hscope_open.
     pose proof (formula_scoped_impl_r _ _ _ Hscope_open) as Hvalue_scope_open.
-    rewrite (formula_open_result_first_wand_value_ret_bvar0
+    cbn beta.
+	  rewrite (formula_open_result_first_wand_value_ret_bvar0
       gas_tgt (relevant_env Σ (CTWand (CTOver bx φx) (CTUnder br φr)) e)
       (CTOver bx φx) (CTUnder br φr)
       (erase_ty (CTWand (CTOver bx φx) (CTUnder br φr))) f)
@@ -1041,7 +1046,8 @@ Proof.
         (erase_ty (CTWand (CTOver bx φx) (CTUnder br φr))))
       (cty_shift 0 (CTOver bx φx)) (cty_shift 1 (CTUnder br φr))
       (tret (vbvar 0)) ^^ f)%formula)).
-  rewrite (formula_open_result_first_wand_value_ret_bvar0
+  cbn beta.
+	  rewrite (formula_open_result_first_wand_value_ret_bvar0
     gas_tgt (relevant_env Σ (CTWand (CTOver bx φx) (CTUnder br φr)) e)
     (CTOver bx φx) (CTUnder br φr)
     (erase_ty (CTWand (CTOver bx φx) (CTUnder br φr))) f).

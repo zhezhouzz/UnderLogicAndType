@@ -1102,7 +1102,8 @@ Proof.
 	      in Hopened_scope_raw.
 	    rewrite (ty_denote_gas_zero_relevant_env_dom_eq
 	      Σ (CTArrow τx τr) e2 m Hzero_tgt) in Hopened_scope_raw.
-	    rewrite (formula_open_result_first_arrow_value_ret_bvar0
+	    cbn beta.
+	  rewrite (formula_open_result_first_arrow_value_ret_bvar0_inline
 	      gas (relevant_env Σ (CTArrow τx τr) e2) τx τr
 	      (erase_ty (CTArrow τx τr)) f) in Hopened_scope_raw.
 	    2: exact HlcΣ_tgt.

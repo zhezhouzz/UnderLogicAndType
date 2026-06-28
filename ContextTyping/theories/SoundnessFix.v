@@ -622,6 +622,14 @@ Proof.
             τx τ (tret (vfvar z)))).
     {
       pose proof (formula_scoped_impl_r _ _ _ Hopened_scope) as Hraw.
+      change (formula_scoped_in_world mz
+        (formula_open 0 z
+          (arrow_value_denote_gas_with ty_denote_gas gas
+            (typed_lty_env_bind
+              (relevant_env Δ (CTArrow τx τ) (tret vself))
+              (erase_ty (CTArrow τx τ)))
+            (cty_shift 0 τx) (cty_shift 1 τ)
+            (tret (vbvar 0))))) in Hraw.
       rewrite (formula_open_result_first_arrow_value_ret_bvar0
         gas (relevant_env Δ (CTArrow τx τ) (tret vself))
         τx τ (erase_ty (CTArrow τx τ)) z) in Hraw.

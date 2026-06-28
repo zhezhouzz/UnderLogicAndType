@@ -521,7 +521,8 @@ Proof.
 	      in Hopened_scope_raw.
 	    rewrite (ty_denote_gas_zero_relevant_env_dom_eq
 	      Σ (CTArrow τx τr) e_tgt mx Hzero_tgt) in Hopened_scope_raw.
-	    rewrite (formula_open_result_first_arrow_value_ret_bvar0
+	    cbn beta.
+	  rewrite (formula_open_result_first_arrow_value_ret_bvar0_inline
 	      gas (relevant_env Σ (CTArrow τx τr) e_tgt) τx τr
 	      (erase_ty (CTArrow τx τr)) f) in Hopened_scope_raw.
 	    2: exact HlcΣ_tgt.
@@ -541,11 +542,11 @@ Proof.
 	      | clear -Hf; set_solver ]).
 	  rewrite (lvars_shift_from_lc_eq 0
 	    (dom (relevant_env Σ (CTArrow τx τr) e_tgt)) HlcΣ_tgt).
-	  rewrite (ty_denote_gas_zero_relevant_env_dom_eq
-	    Σ (CTArrow τx τr) e_tgt mx Hzero_tgt).
-	  rewrite (formula_open_result_first_arrow_value_ret_bvar0
-	    gas (relevant_env Σ (CTArrow τx τr) e_tgt) τx τr
-	    (erase_ty (CTArrow τx τr)) f).
+		  rewrite (ty_denote_gas_zero_relevant_env_dom_eq
+		    Σ (CTArrow τx τr) e_tgt mx Hzero_tgt).
+		  rewrite (formula_open_result_first_arrow_value_ret_bvar0
+		    gas (relevant_env Σ (CTArrow τx τr) e_tgt) τx τr
+		    (erase_ty (CTArrow τx τr)) f).
 	  2: exact HlcΣ_tgt.
 	  2: exact Hf_rel_tgt.
 	  2: exact Hlcτx.
@@ -570,11 +571,11 @@ Proof.
     in Hopened_src.
 	  rewrite (ty_denote_gas_zero_relevant_env_dom_eq
 	    Σ (CTArrow τx τr) e_src mx Hzero_src) in Hopened_src.
-	  pose proof (res_models_impl_elim _ _ _ Hopened_src Hres_src)
-	    as Hvalue_src.
-	  rewrite (formula_open_result_first_arrow_value_ret_bvar0
-	    gas (relevant_env Σ (CTArrow τx τr) e_src) τx τr
-	    (erase_ty (CTArrow τx τr)) f) in Hvalue_src.
+		  pose proof (res_models_impl_elim _ _ _ Hopened_src Hres_src)
+		    as Hvalue_src.
+		  rewrite (formula_open_result_first_arrow_value_ret_bvar0
+		    gas (relevant_env Σ (CTArrow τx τr) e_src) τx τr
+		    (erase_ty (CTArrow τx τr)) f) in Hvalue_src.
 	  2: exact HlcΣ_src.
 	  2: exact Hf_rel_src.
 	  2: exact Hlcτx.

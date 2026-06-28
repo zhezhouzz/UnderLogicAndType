@@ -808,20 +808,20 @@ Proof.
 	              (relevant_env Δ (CTArrow τx τ) (tret vf)))
 	            τx τ (tret (vfvar z)))).
 	    {
-	      rewrite <- (formula_open_result_first_arrow_value_ret_bvar0
-	        gas (relevant_env Δ (CTArrow τx τ) (tret vf))
-	        τx τ (erase_ty (CTArrow τx τ)) z).
-	      - eapply formula_scoped_impl_r. exact Hopened_scope.
-	      - apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
-	      - apply soundness_relevant_env_arrow_value_fresh.
-	        subst vf. cbn [fv_value]. clear -Hzfresh. better_set_solver.
-	      - apply (context_typing_wf_arrow_arg_lc Σ Γ (tret vf) τx τ).
-	        subst vf. exact Hwf.
-	      - apply (context_typing_wf_arrow_result_lc1 Σ Γ (tret vf) τx τ).
-	        subst vf. exact Hwf.
-	      - clear -Hzfresh. better_set_solver.
-	      - clear -Hzfresh. better_set_solver.
+	      eapply formula_scoped_arrow_value_body_obs.
+	      rewrite Hdomz.
+	      pose proof (soundness_wf_observed_vars_world_dom
+	        Σ Γ (tret vf) (CTArrow τx τ) m Hwf Hctx) as Hobs.
+	      cbn [fv_tm fv_value fv_cty] in Hobs.
+	      clear -Hobs. set_solver.
 	    }
+	    change (mz ⊨ formula_open 0 z
+	      (arrow_value_denote_gas_with ty_denote_gas gas
+	        (typed_lty_env_bind
+	          (relevant_env Δ (CTArrow τx τ) (tret vf))
+	          (erase_ty (CTArrow τx τ)))
+	        (cty_shift 0 τx) (cty_shift 1 τ)
+	        (tret (vbvar 0)))).
 	    rewrite (formula_open_result_first_arrow_value_ret_bvar0
 	      gas (relevant_env Δ (CTArrow τx τ) (tret vf))
 	      τx τ (erase_ty (CTArrow τx τ)) z).
@@ -893,22 +893,20 @@ Proof.
 	              (relevant_env Δ (CTWand τx τ) (tret vf)))
 	            τx τ (tret (vfvar z)))).
 	    {
-	      pose proof (context_typing_wf_context_ty
-	        Σ Γ (tret vf) (CTWand τx τ) Hwf) as Hτwf.
-	      cbn [wf_context_ty_at] in Hτwf.
-	      destruct Hτwf as [Hτx_wf Hτ_wf].
-	      rewrite <- (formula_open_result_first_wand_value_ret_bvar0
-	        gas (relevant_env Δ (CTWand τx τ) (tret vf))
-	        τx τ (erase_ty (CTWand τx τ)) z).
-	      - eapply formula_scoped_impl_r. exact Hopened_scope.
-	      - apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
-	      - apply soundness_relevant_env_wand_value_fresh.
-	        clear -Hzfresh. better_set_solver.
-	      - eapply wf_context_ty_at_lc. exact Hτx_wf.
-	      - eapply wf_context_ty_at_lc. exact Hτ_wf.
-	      - clear -Hzfresh. better_set_solver.
-	      - clear -Hzfresh. better_set_solver.
+	      eapply formula_scoped_wand_value_body_obs.
+	      rewrite Hdomz.
+	      pose proof (soundness_wf_observed_vars_world_dom
+	        Σ Γ (tret vf) (CTWand τx τ) m Hwf Hctx) as Hobs.
+	      cbn [fv_tm fv_value fv_cty] in Hobs.
+	      clear -Hobs. set_solver.
 	    }
+	    change (mz ⊨ formula_open 0 z
+	      (wand_value_denote_gas_with ty_denote_gas gas
+	        (typed_lty_env_bind
+	          (relevant_env Δ (CTWand τx τ) (tret vf))
+	          (erase_ty (CTWand τx τ)))
+	        (cty_shift 0 τx) (cty_shift 1 τ)
+	        (tret (vbvar 0)))).
 	    rewrite (formula_open_result_first_wand_value_ret_bvar0
 	      gas (relevant_env Δ (CTWand τx τ) (tret vf))
 	      τx τ (erase_ty (CTWand τx τ)) z).

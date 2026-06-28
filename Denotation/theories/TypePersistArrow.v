@@ -590,7 +590,8 @@ Lemma arrow_result_first_open_value_over_arg_to_persist_over_arg
 Proof.
   intros HΣclosed HfΣ Hlc_over Hlc_shift_over Hlcτr Hfφ Hfτr
     Hres_src Hres_tgt Harg_src Harg_tgt Hscope_tgt Hvalue_src.
-  rewrite (formula_open_result_first_arrow_value_ret_bvar0
+  cbn beta.
+	  rewrite (formula_open_result_first_arrow_value_ret_bvar0
     gas_tgt Σ (CTPersist (CTOver bx φx)) τr Tf f) in Hscope_tgt.
   2: exact HΣclosed.
   2: exact HfΣ.
@@ -603,7 +604,8 @@ Proof.
     exact Hfφ.
   }
   2: exact Hfτr.
-  rewrite (formula_open_result_first_arrow_value_ret_bvar0
+  cbn beta.
+	  rewrite (formula_open_result_first_arrow_value_ret_bvar0
     gas_src Σ (CTOver bx φx) τr Tf f) in Hvalue_src.
   2: exact HΣclosed.
   2: exact HfΣ.
@@ -616,7 +618,8 @@ Proof.
     exact Hfφ.
   }
   2: exact Hfτr.
-  rewrite (formula_open_result_first_arrow_value_ret_bvar0
+  cbn beta.
+	  rewrite (formula_open_result_first_arrow_value_ret_bvar0
     gas_tgt Σ (CTPersist (CTOver bx φx)) τr Tf f).
   2: exact HΣclosed.
   2: exact HfΣ.
