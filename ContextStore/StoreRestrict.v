@@ -421,6 +421,39 @@ Proof.
   apply storeA_restrict_insert_agree_on_observed; set_solver.
 Qed.
 
+Lemma storeA_restrict_obs_result_eq {K : Type} `{Countable K}
+    (σv σbase σbig : gmap K V) Dsmall Dobs Xbase y v :
+  Dobs ⊆ Dsmall ->
+  Dobs ⊆ Xbase ->
+  (storeA_restrict σv Dsmall : gmap K V) =
+    storeA_restrict σbase Dsmall ->
+  (storeA_restrict σbase Xbase : gmap K V) =
+    storeA_restrict σbig Xbase ->
+  σv !! y = Some v ->
+  σbig !! y = Some v ->
+  (storeA_restrict σv (Dobs ∪ {[y]}) : gmap K V) =
+    storeA_restrict σbig (Dobs ∪ {[y]}).
+Proof.
+  intros HDobs Hobs_base Hv_base Hbase_big Hyv Hybig.
+  apply storeA_map_eq. intros a.
+  destruct (decide (a ∈ Dobs ∪ {[y]})) as [Ha|Ha].
+  2:{
+    rewrite !storeA_restrict_lookup_none_r by exact Ha.
+    reflexivity.
+  }
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (a ∈ Dobs ∪ {[y]})) as [_|Hbad];
+    [|contradiction].
+  apply elem_of_union in Ha as [HaD|Hay].
+  - assert (Ha_small : a ∈ Dsmall) by set_solver.
+    assert (Ha_base : a ∈ Xbase) by set_solver.
+    transitivity (σbase !! a).
+    + eapply storeA_lookup_eq_of_restrict_eq; [exact Ha_small|exact Hv_base].
+    + eapply storeA_lookup_eq_of_restrict_eq; [exact Ha_base|exact Hbase_big].
+  - apply elem_of_singleton in Hay as ->.
+    transitivity (Some v); [exact Hyv|symmetry; exact Hybig].
+Qed.
+
 Lemma storeA_restrict_swap {K : Type} `{Countable K} 
     (x y : K) (s : gmap K V) (X : gset K) :
   (storeA_restrict (storeA_swap x y s) (set_swap x y X) : gmap K V) =

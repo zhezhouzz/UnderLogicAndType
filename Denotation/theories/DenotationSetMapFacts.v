@@ -7,7 +7,7 @@
     transport proofs. *)
 
 From CoreLang Require Import Syntax InstantiationProps.
-From ContextStore Require Import Store.
+From ContextStore Require Import Store StoreRestrict.
 From ContextAlgebra Require Import ResourceExtension ResourceInterface ResourceInterfaceFacts.
 From ContextTypeLanguage Require Import Syntax LtyEnv.
 From ContextBasicDenotation Require Import StoreTyping RelevantEnvRegular.
@@ -102,28 +102,13 @@ Lemma store_restrict_obs_result_eq
   store_restrict σv (lvars_fv Dobs ∪ {[y]}) =
     store_restrict σbig (lvars_fv Dobs ∪ {[y]}).
 Proof.
-  intros HDobs Hobs_base Hv_base Hbase_big Hyv Hybig.
-  apply storeA_map_eq. intros a.
-  destruct (decide (a ∈ lvars_fv Dobs ∪ {[y]})) as [Ha|Ha].
-  2:{
-    rewrite !storeA_restrict_lookup_none_r by exact Ha.
-    reflexivity.
-  }
-  rewrite !storeA_restrict_lookup.
-  destruct (decide (a ∈ lvars_fv Dobs ∪ {[y]})) as [_|Hbad];
-    [|contradiction].
-  apply elem_of_union in Ha as [HaD|Hay].
-  - assert (Ha_small : a ∈ lvars_fv Dsmall).
-    {
-      apply lvars_fv_elem. apply HDobs.
-      apply lvars_fv_elem. exact HaD.
-    }
-    assert (Ha_base : a ∈ Xbase) by set_solver.
-    transitivity ((σbase : StoreT) !! a).
-    + eapply store_lookup_eq_of_restrict_eq; [exact Ha_small|exact Hv_base].
-    + eapply store_lookup_eq_of_restrict_eq; [exact Ha_base|exact Hbase_big].
-  - apply elem_of_singleton in Hay as ->.
-    transitivity (Some v); [exact Hyv|symmetry; exact Hybig].
+  intros HDobs Hobs_base.
+  eapply storeA_restrict_obs_result_eq.
+  - intros a Ha.
+    apply lvars_fv_elem.
+    apply HDobs.
+    apply lvars_fv_elem. exact Ha.
+  - exact Hobs_base.
 Qed.
 
 Lemma notin_store_union_singleton_dom
