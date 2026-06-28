@@ -9,7 +9,7 @@
 From CoreLang Require Import Syntax InstantiationProps.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceExtension ResourceInterface.
-From ContextTypeLanguage Require Import Syntax.
+From ContextTypeLanguage Require Import Syntax LtyEnv.
 From ContextBasicDenotation Require Import StoreTyping.
 
 Notation StoreT := (Store (V := value)) (only parsing).
@@ -283,13 +283,7 @@ Lemma lty_env_insert_free_fresh
   LVFree z ∉ dom Σ ->
   LVFree z ∉ dom (<[LVFree x := T]> Σ).
 Proof.
-  intros Hzx HzΣ.
-  rewrite dom_insert_L.
-  intros Hin.
-  apply elem_of_union in Hin as [Hin|Hin].
-  - apply elem_of_singleton in Hin. inversion Hin. subst.
-    contradiction.
-  - exact (HzΣ Hin).
+  apply ContextTypeLanguage.LtyEnv.lty_env_insert_free_fresh.
 Qed.
 
 Lemma value_open_result_alias_fresh vf τ y z :
@@ -306,9 +300,7 @@ Lemma cty_open_fresh_notin τ y z :
   z ∉ fv_cty τ ∪ {[y]} ->
   z ∉ fv_cty (cty_open 0 y τ).
 Proof.
-  intros Hz.
-  pose proof (cty_open_fv_subset 0 y τ) as Hτopen.
-  set_solver.
+  apply ContextTypeLanguage.SyntaxRegular.cty_open_fresh_notin.
 Qed.
 
 Lemma wfworld_closed_on_open_world_from_base

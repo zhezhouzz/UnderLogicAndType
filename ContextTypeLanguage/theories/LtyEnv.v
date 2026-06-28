@@ -209,6 +209,21 @@ Lemma lty_env_closed_insert_free (Σ : lty_env) x T :
   lty_env_closed (<[LVFree x := T]> Σ).
 Proof. apply lvar_store_closed_insert_free. Qed.
 
+Lemma lty_env_insert_free_fresh
+    (Σ : lty_env) x z T :
+  z <> x ->
+  LVFree z ∉ dom Σ ->
+  LVFree z ∉ dom (<[LVFree x := T]> Σ).
+Proof.
+  intros Hzx HzΣ.
+  rewrite dom_insert_L.
+  intros Hin.
+  apply elem_of_union in Hin as [Hin|Hin].
+  - apply elem_of_singleton in Hin. inversion Hin. subst.
+    contradiction.
+  - exact (HzΣ Hin).
+Qed.
+
 Lemma lty_env_insert_free_commute
     (Σ : lty_env) x y Tx Ty :
   x <> y ->

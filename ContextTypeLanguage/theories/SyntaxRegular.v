@@ -314,6 +314,15 @@ Proof.
   apply lvars_fv_open_subset.
 Qed.
 
+Lemma cty_open_fresh_notin τ y z :
+  z ∉ fv_cty τ ∪ {[y]} ->
+  z ∉ fv_cty ({0 ~> y} τ).
+Proof.
+  intros Hz.
+  pose proof (cty_open_fv_subset 0 y τ) as Hτopen.
+  set_solver.
+Qed.
+
 Lemma cty_shift_fv k τ :
   fv_cty (cty_shift k τ) = fv_cty τ.
 Proof.
@@ -647,4 +656,3 @@ Proof.
   rewrite fv_cty_over_lt_bound_fvar.
   intros Hz. apply elem_of_singleton in Hz. congruence.
 Qed.
-
