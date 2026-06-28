@@ -195,6 +195,22 @@ notations for reading theorem statements are:
 | Semantic context-subtype premise | `ctxsub[Σ; X](Γ1, Γ2)` | Abbreviation for `ctx_sub_under Σ X Γ1 Γ2`. |
 | Unreachable branch premise | `unreachable[Σ; Γ] v @ b` | Abbreviation for semantic branch unreachability. |
 
+Resource notation used in the semantic clauses:
+
+| Proof notation | Meaning |
+| --- | --- |
+| `m ⊑ n` | Kripke/raw world order. |
+| `m ⊆ᵣ n` | Resource subset `res_subset m n`; this is intentionally distinct from `⊑`. |
+| `fiber(mfib, m, X, σ)` | `mfib` is the `X`-fiber of `m` selected by projection store `σ`. |
+| `m #> F ~~> mx` | Result/fiber extension relation `res_extend_by`. |
+
+The logic connective `P -∗[d] Q` carries the number `d` because the wand body
+may sit under locally nameless binders.  Opening a wand shifts both sides by
+`d`, so the semantic clause quantifies over open environments with exactly
+`d` bound atoms.  Ordinary value-level wands use `d = 1`; the parameter is
+kept explicit in the logic layer so nested result-first definitions can state
+the binder accounting directly.
+
 The canonical notation for persistence is the square `□`; the old word-style
 formula notation `persist P` is intentionally not provided.  Word-style
 `over P` and `under P` remain because they name formula modalities rather than

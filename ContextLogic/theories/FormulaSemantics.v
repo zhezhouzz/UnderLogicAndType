@@ -1,5 +1,6 @@
 From ContextLogic Require Export FormulaSyntax.
 From ContextLogic Require Import FormulaSyntax.
+From ContextAlgebra Require Import ResourceInterface.
 From ContextBase Require Import LogicVarOpenEnv.
 From Stdlib Require Import Lia.
 
@@ -328,10 +329,11 @@ Fixpoint res_models_fuel
               (Hc : world_compat m' m),
               open_env_binds d η →
               open_env_atoms η ## L →
-              world_dom (res_product m' m Hc : WorldT) =
+              let m_prod := res_product m' m Hc in
+              world_dom (m_prod : WorldT) =
                 world_dom (m : WorldT) ∪ open_env_atoms η →
               res_models_fuel gas' m' (formula_open_env η p) →
-              res_models_fuel gas' (res_product m' m Hc)
+              res_models_fuel gas' m_prod
                 (formula_open_env η q)
       | FPlus p q =>
           ∃ (m1 m2 : WfWorldT) (Hdef : raw_sum_defined m1 m2),
@@ -349,21 +351,21 @@ Fixpoint res_models_fuel
                 res_models_fuel gas' my (formula_open 0 y p)
       | FOver p =>
           ∃ m' : WfWorldT,
-            res_subset m m' ∧ res_models_fuel gas' m' p
+            m ⊆ᵣ m' ∧ res_models_fuel gas' m' p
       | FUnder p =>
           ∃ m' : WfWorldT,
-            res_subset m' m ∧ res_models_fuel gas' m' p
+            m' ⊆ᵣ m ∧ res_models_fuel gas' m' p
       | FPersist p =>
           ∃ σ : Store (V := V),
+            let σ' :=
+              (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) in
             dom (σ : Store (V := V)) = formula_fv p ∧
-            res_restrict m (formula_fv p) =
-              (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) ∧
-            res_models_fuel gas'
-              (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) p
+            res_restrict m (formula_fv p) = σ' ∧
+            res_models_fuel gas' σ' p
 	    | FFibVars D p =>
 	        lc_lvars D ∧
 	          ∀ (σ : Store (V := V)) (mfib : WfWorldT),
-	            res_fiber_from_projection m (lvars_fv D) σ mfib →
+	            fiber(mfib, m, (lvars_fv D), σ) →
 	            res_models_fuel gas' mfib (formula_msubst_store σ p)
       end
   end.  

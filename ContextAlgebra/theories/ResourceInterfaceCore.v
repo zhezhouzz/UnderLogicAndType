@@ -604,9 +604,6 @@ Notation "m '#>' F '~~>' n" := (res_extend_by m F n)
   (at level 70, F at next level, n at next level).
 Notation "wfib ∈ᶠ Fiber( w , X )" :=
   (res_fiber_member w X wfib) (at level 70).
-
-
-
 (** * Concrete resource basic interface lemmas *)
 
 
@@ -614,3 +611,12 @@ Notation "wfib ∈ᶠ Fiber( w , X )" :=
 
 
 End ResourceInterface.
+
+Notation "'fiber(' wfib ',' w ',' X ',' σ ')'" :=
+  (res_fiber_from_projection w X σ wfib)
+  (at level 70, w at level 200, X at level 200, σ at level 200,
+   wfib at level 200,
+   format "fiber( wfib ,  w ,  X ,  σ )").
+Notation "m1 '⊆ᵣ' m2" := (res_subset m1 m2)
+  (at level 70, no associativity,
+   format "m1  ⊆ᵣ  m2").
