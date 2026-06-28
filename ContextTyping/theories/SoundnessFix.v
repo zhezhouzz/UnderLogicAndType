@@ -25,40 +25,24 @@ From ContextTyping Require Import Typing TypingRegular SoundnessLam
   SoundnessFixBase SoundnessFixApply
   SoundnessFixSelf.
 
-Local Ltac fix_union_left :=
-  match goal with
-  | H : ?x ∉ ?A ∪ ?B |- ?x ∉ ?A =>
-      intros Hbad; apply H; apply elem_of_union_l; exact Hbad
-  end.
-
-Local Ltac fix_union_right :=
-  match goal with
-  | H : ?x ∉ ?A ∪ ?B |- ?x ∉ ?B =>
-      intros Hbad; apply H; apply elem_of_union_r; exact Hbad
-  end.
-
-Local Ltac fix_build_union :=
-  match goal with
-  | H : ?x ∈ ?A |- ?x ∈ ?A => exact H
-  | |- ?x ∈ ?A ∪ ?B =>
-      first [apply elem_of_union_l; fix_build_union
-            | apply elem_of_union_r; fix_build_union]
-  end.
-
 Local Ltac fix_union_side :=
   first
     [ assumption
-    | fix_union_left
-    | fix_union_right
+    | match goal with
+      | H : ?x ∉ ?A ∪ ?B |- ?x ∉ ?A =>
+          intros Hbad; apply H; apply elem_of_union_l; exact Hbad
+      end
+    | match goal with
+      | H : ?x ∉ ?A ∪ ?B |- ?x ∉ ?B =>
+          intros Hbad; apply H; apply elem_of_union_r; exact Hbad
+      end
     | intros Hbad;
       match goal with
       | H : ?x ∉ ?A ∪ ?B |- False => apply H
       | H : ?x ∉ ?A |- False => apply H
       end;
-      repeat match goal with
-      | H : _ ∈ _ ∪ _ |- _ => apply elem_of_union in H as [H|H]
-      end;
-      fix_build_union ].
+      fix_break_union Hbad;
+      fix_union_member ].
 
 Lemma fix_result_first_outer_result_plain
     (Σ : tyctx) Γ φx τ vf b t

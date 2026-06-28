@@ -136,6 +136,49 @@ Reason: no call sites and broad proof-search flavor.  The remaining
 `auto_apply` / `auto_eapply` names are kept because they still form the base of
 that local helper family.
 
+10. Formula syntax normalizer split
+
+- Removed the zero-use broad aggregators:
+    - `formula_syntax_norm_in`
+- Kept the smaller compositional entries:
+  - `formula_fv_syntax_norm` / `_in`
+  - `formula_open_syntax_norm` / `_in`
+  - `formula_open_env_syntax_norm` / `_in`
+  - `formula_msubst_syntax_norm` / `_in`
+
+Design note: callers should choose the syntax phase they actually need instead
+of invoking a broad all-in-one formula normalizer.
+
+11. TypePersist fresh-side tactic fusion
+
+- Added shared deterministic primitives in `TypePersistBase.v`:
+  - `persist_fresh_from`
+  - `persist_eta_fresh_from`
+  - `persist_outer_fresh_from`
+  - `persist_lvar_fresh_from`
+- Removed duplicate local definitions from:
+  - `TypePersistWandForward.v`
+  - `TypePersistWandReverse.v`
+
+Design note: `persist_fresh_from` is the real primitive; eta/outer names remain
+thin semantic aliases at call sites.  This keeps proof scripts readable while
+putting the proof-search behavior in one place.
+
+12. Soundness Fix union tactic fusion
+
+- Added shared compositional primitives in `SoundnessFixBase.v`:
+  - `fix_union_member`
+  - `fix_break_union`
+  - `fix_notin_union`
+  - `fix_singleton_side`
+- Rewrote the local `SoundnessFix.v` and `SoundnessFixSelf.v` tactics to use
+  these primitives instead of each file recursively rebuilding union
+  membership/destruction.
+
+Design note: `SoundnessFixSelf.v` keeps its local names as thin aliases because
+they document the recursive-self proof case, but the underlying behavior is now
+shared and compositional.
+
 Current zero-use tactics intentionally deferred
 -----------------------------------------------
 
@@ -196,53 +239,14 @@ These are not simple dead-code deletion.  Do them only with timing checks.
 - Risk:
   - if the tactic opens too broadly, proof checking may slow down.
 
-2. Consolidate Persist freshness tactics
+2. Formula syntax normalization
 
-- Current duplicate local tactic names still exist in:
-  - `Denotation/theories/TypePersistWandForward.v`
-  - `Denotation/theories/TypePersistWandReverse.v`
-- They are used, so this is not dead code.
-- Candidate action:
-  - move `persist_eta_fresh_from`, `persist_outer_fresh_from`, and
-    `persist_lvar_fresh_from` into a shared TypePersist support file.
-- Risk:
-  - low, but should be done with local timing because these files are proof
-    dense.
+- Completed for this pass: the unused formula syntax Ltac wrappers were removed.
+- Remaining formula syntax support is lemma-based.
+- Future work should add tactic wrappers only if a concrete proof family needs
+  them and timing confirms the wrapper is cheaper than explicit rewrites.
 
-3. Consolidate Fix union tactics
-
-- Current local tactic families:
-  - `SoundnessFixBase.v`: `fix_base_build_union`,
-    `fix_base_singleton_side`
-  - `SoundnessFix.v`: `fix_union_left`, `fix_union_right`,
-    `fix_build_union`, `fix_union_side`
-  - `SoundnessFixSelf.v`: `fix_self_in_union`,
-    `fix_self_break_union`, `fix_self_notin_union`
-- They are used and local.
-- Candidate action:
-  - extract shared set-union facts/tactics only if repeated proof patterns
-    remain visible.
-- Risk:
-  - medium.  A broader fix solver could slow down these already-sensitive
-    soundness files.
-
-4. Formula syntax normalizer API
-
-- The formula syntax normalizer family remains:
-  - `formula_fv_syntax_norm`
-  - `formula_open_syntax_norm`
-  - `formula_open_env_syntax_norm`
-  - `formula_msubst_syntax_norm`
-  - `formula_syntax_norm`
-- Most individual pieces are low textual-use because they are composed by
-  higher-level normalizers.
-- Candidate action:
-  - keep one documented public entry per syntax layer;
-  - avoid exposing new broad Denotation wrappers around them.
-- Risk:
-  - low if only documentation/import cleanup, higher if call sites are changed.
-
-5. `relevant_lvars_norm` compatibility
+3. `relevant_lvars_norm` compatibility
 
 - `relevant_lvars_norm` is still used, but conceptually legacy after the move
   toward direct support expressions.
@@ -317,9 +321,10 @@ runs should avoid overlapping make targets that share dependencies.
 
 Final validation for this pass:
 
-- `timeout 180s make TIMED=1` passed.
+- `timeout 180s make TIMED=1` passed after the compositional fusion changes.
 - `rg -n "Admitted\\.|admit\\." -g '*.v' .` found no admits.
 - `git diff --check` passed.
+- Current tactic scan: 174 definitions; 6 zero-use deferred LN/Prelude helpers.
 
 Next pass stopping condition
 ----------------------------

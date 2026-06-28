@@ -9,15 +9,6 @@ From ContextAlgebra Require Import ResourceAlgebra ResourceInterfaceFacts.
 
 Section TypePersist.
 
-Local Ltac persist_eta_fresh_from H :=
-  clear -H; set_solver.
-
-Local Ltac persist_outer_fresh_from H :=
-  clear -H; set_solver.
-
-Local Ltac persist_lvar_fresh_from H :=
-  intros Hbad; apply lvars_fv_elem in Hbad; clear -H Hbad; set_solver.
-
 Lemma ty_denote_gas_over_ret_fvar_fiber_stable
     gas (Σ : lty_env) b φ y X σ
     (my mfib : WfWorldT) :

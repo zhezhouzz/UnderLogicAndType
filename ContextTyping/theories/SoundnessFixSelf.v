@@ -20,29 +20,13 @@ From Denotation Require Import Context
 From ContextTyping Require Import Typing TypingRegular SoundnessLam SoundnessFixBase SoundnessFixApply.
 
 Local Ltac fix_self_in_union :=
-  first
-    [ assumption
-    | apply elem_of_union_l; fix_self_in_union
-    | apply elem_of_union_r; fix_self_in_union
-    | apply elem_of_singleton_2; reflexivity ].
+  fix_union_member.
 
 Local Ltac fix_self_break_union H :=
-  repeat match type of H with
-  | _ ∈ _ ∪ _ => apply elem_of_union in H as [H | H]
-  | _ ∈ {[ _ ]} => apply elem_of_singleton in H; subst
-  end.
+  fix_break_union H.
 
 Local Ltac fix_self_notin_union :=
-  let Hbad := fresh "Hbad" in
-  intros Hbad;
-  fix_self_break_union Hbad;
-  match type of Hbad with
-  | ?x ∈ _ =>
-    match goal with
-    | H : x ∉ _ |- False =>
-      apply H; fix_self_in_union
-    end
-  end.
+  fix_notin_union.
 
 Lemma fix_self_rec_call_zero
     (Σ : tyctx) Γ τx τ vf b t (my : WfWorldT) y :

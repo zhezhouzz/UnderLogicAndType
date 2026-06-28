@@ -25,13 +25,32 @@ From ContextTyping Require Import Typing TypingRegular SoundnessLam.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
-Local Ltac fix_base_build_union :=
+Ltac fix_union_member :=
   first
     [ assumption
-    | apply elem_of_union_l; fix_base_build_union
-    | apply elem_of_union_r; fix_base_build_union ].
+    | apply elem_of_union_l; fix_union_member
+    | apply elem_of_union_r; fix_union_member
+    | apply elem_of_singleton_2; reflexivity ].
 
-Local Ltac fix_base_singleton_side :=
+Ltac fix_break_union H :=
+  repeat match type of H with
+  | _ ∈ _ ∪ _ => apply elem_of_union in H as [H | H]
+  | _ ∈ {[ _ ]} => apply elem_of_singleton in H; subst
+  end.
+
+Ltac fix_notin_union :=
+  let Hbad := fresh "Hbad" in
+  intros Hbad;
+  fix_break_union Hbad;
+  match type of Hbad with
+  | ?x ∈ _ =>
+    match goal with
+    | H : x ∉ _ |- False =>
+      apply H; fix_union_member
+    end
+  end.
+
+Ltac fix_singleton_side :=
   cbn [fv_tm fv_value] in *;
   repeat match goal with
   | H : ?a ∈ {[?b]} |- _ =>
@@ -75,14 +94,14 @@ Proof.
       z ∉ L ∪ world_dom (m : WorldT) ∪ lvars_fv (dom Δ) ∪ {[x; y]}).
   { subst z. apply fresh_for_not_in. }
   assert (HzL : z ∉ L).
-  { intros HzL. apply Hzfresh. fix_base_build_union. }
+  { intros HzL. apply Hzfresh. fix_union_member. }
   assert (Hzm : z ∉ world_dom (m : WorldT)).
-  { intros Hzm. apply Hzfresh. fix_base_build_union. }
+  { intros Hzm. apply Hzfresh. fix_union_member. }
   assert (HzΔ : LVFree z ∉ dom Δ).
   {
     intros Hz.
     apply lvars_fv_elem in Hz.
-    apply Hzfresh. fix_base_build_union.
+    apply Hzfresh. fix_union_member.
   }
   assert (Hzx : z <> x).
   {
@@ -288,7 +307,7 @@ Proof.
     rewrite formula_fv_fibvars.
     apply elem_of_union_l.
     rewrite lvars_fv_singleton_free.
-    fix_base_singleton_side.
+    fix_singleton_side.
   }
   assert (Hy_m_dom : y ∈ world_dom (m : WorldT)).
   {
@@ -406,7 +425,7 @@ Proof.
     apply tm_eval_in_store_ret_fvar_lookup; [exact Hclosed_ret|].
     apply storeA_restrict_lookup_some_2.
     - exact Hσmx_x.
-    - fix_base_singleton_side.
+    - fix_singleton_side.
   }
   destruct (result_extension_store_lookup_output
     (tret (vfvar x)) z Fx m mx σmx HFx Hext Hσmx
@@ -426,7 +445,7 @@ Proof.
       rewrite storeA_restrict_dom.
       apply elem_of_intersection. split.
       - eapply elem_of_dom_2. exact Hσmx_x.
-      - fix_base_singleton_side.
+      - fix_singleton_side.
     }
     specialize (Hret_inv Hx_restrict_dom Heval_vz).
     assert (Hx_restrict_lookup :
@@ -434,7 +453,7 @@ Proof.
         Some vx).
     {
       apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσmx_x).
-      fix_base_singleton_side.
+      fix_singleton_side.
     }
     change ((store_restrict σmx (fv_tm (tret (vfvar x))) : StoreT) !! x =
       Some vz) in Hret_inv.
@@ -446,7 +465,7 @@ Proof.
       (store_restrict σmx {[y]} : StoreT) !! y = Some vy).
   {
     apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσmx_y).
-    fix_base_singleton_side.
+    fix_singleton_side.
   }
   exists cz, cy.
   split; [|split].
