@@ -158,6 +158,43 @@ Proof.
   exact (wf_context_ty_at_lc 1 (dom (erase_ctx Γ)) τ (proj2 Hτ)).
 Qed.
 
+Lemma context_union_fresh_erase_ctx_from_erasure_under
+    (Σ : tyctx) Γ y A B C :
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ A ∪ B ∪ C ->
+  y ∉ dom (erase_ctx Γ).
+Proof.
+  intros Hy.
+  eapply ctx_erasure_under_notin_erase_ctx.
+  intros Hyctx.
+  apply Hy.
+  apply elem_of_union_l.
+  apply elem_of_union_l.
+  apply elem_of_union_l.
+  apply elem_of_union_r.
+  exact Hyctx.
+Qed.
+
+Lemma context_union_fresh_ctx_erasure_under
+    (Σ : tyctx) Γ y A B C :
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ A ∪ B ∪ C ->
+  y ∉ dom (ctx_erasure_under Σ Γ).
+Proof.
+  intros Hy Hyctx.
+  apply Hy.
+  clear -Hyctx. set_solver.
+Qed.
+
+Lemma context_union_fresh_env_erase_ctx
+    (Σ : tyctx) Γ y A B C :
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ A ∪ B ∪ C ->
+  y ∉ dom Σ ∪ dom (erase_ctx Γ).
+Proof.
+  intros Hy Hin.
+  apply elem_of_union in Hin as [HyΣ|HyΓ].
+  - apply Hy. clear -HyΣ. set_solver.
+  - eapply context_union_fresh_erase_ctx_from_erasure_under; eauto.
+Qed.
+
 Lemma context_typing_wf_bind_context_ty Σ x τ e :
   context_typing_wf Σ (CtxBind x τ) e τ ->
   basic_context_ty {[x]} τ.

@@ -457,43 +457,6 @@ Qed.
 
 (** Opened-argument and unfolded-result support for the Fix case. *)
 
-Local Lemma fix_open_fresh_erase_ctx_from_fix_union
-    (Σ : tyctx) Γ y A B C :
-  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ A ∪ B ∪ C ->
-  y ∉ dom (erase_ctx Γ).
-Proof.
-  intros Hy.
-  eapply ctx_erasure_under_notin_erase_ctx.
-  intros Hyctx.
-  apply Hy.
-  apply elem_of_union_l.
-  apply elem_of_union_l.
-  apply elem_of_union_l.
-  apply elem_of_union_r.
-  exact Hyctx.
-Qed.
-
-Local Lemma fix_open_fresh_ctx_erasure_under_from_fix_union
-    (Σ : tyctx) Γ y A B C :
-  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ A ∪ B ∪ C ->
-  y ∉ dom (ctx_erasure_under Σ Γ).
-Proof.
-  intros Hy Hyctx.
-  apply Hy.
-  clear -Hyctx. set_solver.
-Qed.
-
-Local Lemma fix_open_fresh_env_erase_ctx_from_fix_union
-    (Σ : tyctx) Γ y A B C :
-  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ A ∪ B ∪ C ->
-  y ∉ dom Σ ∪ dom (erase_ctx Γ).
-Proof.
-  intros Hy Hin.
-  apply elem_of_union in Hin as [HyΣ|HyΓ].
-  - apply Hy. clear -HyΣ. set_solver.
-  - eapply fix_open_fresh_erase_ctx_from_fix_union; eauto.
-Qed.
-
 Lemma fix_arrow_opened_app_static_guard_full
     (Σ : tyctx) Γ τx τ vf b t
     (my : WfWorldT) y :
@@ -527,7 +490,7 @@ Proof.
     + unfold wf_ctx_under. cbn [basic_ctx]. split; [exact HbasicΓ|]. split.
       * apply basic_ctx_bind.
         -- rewrite <- HdomΓ.
-           eapply fix_open_fresh_env_erase_ctx_from_fix_union. exact Hy.
+           eapply context_union_fresh_env_erase_ctx. exact Hy.
         -- eapply (wf_context_ty_at_mono_env
              0 (dom (erase_ctx Γ)) (dom Σ ∪ ctx_dom Γ)).
            ++ rewrite HdomΓ. better_set_solver.
@@ -535,27 +498,27 @@ Proof.
       * cbn [ctx_dom]. rewrite <- HdomΓ.
         apply elem_of_disjoint. intros a Ha Hay.
         apply elem_of_singleton in Hay. subst a.
-        eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy. exact Ha.
+        eapply context_union_fresh_erase_ctx_from_erasure_under. exact Hy. exact Ha.
     + split.
       * eapply (wf_context_ty_at_mono_env
           0 (dom (erase_ctx Γ) ∪ {[y]})
           (dom (erase_ctx (CtxComma Γ (CtxBind y τx))))).
         -- rewrite erase_ctx_comma_bind_dom. reflexivity.
         -- apply wf_context_ty_at_open_at.
-           ++ eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy.
+           ++ eapply context_union_fresh_erase_ctx_from_erasure_under. exact Hy.
            ++ exact Hτ.
       * rewrite cty_open_preserves_erasure.
         replace (erase_ctx (CtxComma Γ (CtxBind y τx)))
           with (<[y := erase_ty τx]> (erase_ctx Γ)).
         -- apply basic_typing_tapp_tm_fvar_insert.
-           ++ eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy.
+           ++ eapply context_union_fresh_erase_ctx_from_erasure_under. exact Hy.
            ++ exact (context_typing_wf_basic_typing Σ Γ
                 (tret (vfix (TBase b →ₜ t) vf)) (CTArrow τx τ) Hwf).
         -- symmetry. apply erase_ctx_comma_bind_fresh.
-           eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy.
+           eapply context_union_fresh_erase_ctx_from_erasure_under. exact Hy.
   }
   eapply context_typing_wf_denot_static_guard_comma_bind_insert; eauto.
-  eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy.
+  eapply context_union_fresh_erase_ctx_from_erasure_under. exact Hy.
 Qed.
 
 Lemma fix_arrow_open_arg_normalize
@@ -647,7 +610,7 @@ Proof.
     Σ Γ τx τ vf b t my y Hwf Harg)
     as Hbind_den.
   eapply ctx_bind_from_inserted_erasure_arg_denotation.
-  - eapply fix_open_fresh_ctx_erasure_under_from_fix_union. exact Hy.
+  - eapply context_union_fresh_ctx_erasure_under. exact Hy.
   - pose proof (context_typing_wf_ctx Σ Γ
       (tret (vfix (TBase b →ₜ t) vf)) (CTArrow τx τ) Hwf) as Hwfctx.
     pose proof (wf_ctx_under_basic Σ Γ Hwfctx) as HbasicΓ.
@@ -914,7 +877,7 @@ Proof.
           (dom (erase_ctx (CtxComma Γ (CtxBind y τx))))).
         * rewrite erase_ctx_comma_bind_dom. reflexivity.
         * apply wf_context_ty_at_open_at.
-          -- eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy.
+          -- eapply context_union_fresh_erase_ctx_from_erasure_under. exact Hy.
           -- exact Hτres_outer.
       + rewrite cty_open_preserves_erasure.
         eapply basic_typing_tapp_tm.
@@ -941,9 +904,9 @@ Proof.
           rewrite erase_ctx_comma_bind_fresh.
           -- apply insert_subseteq.
              apply not_elem_of_dom.
-             eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy.
-          -- eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy.
+             eapply context_union_fresh_erase_ctx_from_erasure_under. exact Hy.
+          -- eapply context_union_fresh_erase_ctx_from_erasure_under. exact Hy.
   }
   eapply context_typing_wf_denot_static_guard_comma_bind_insert; eauto.
-  eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy.
+  eapply context_union_fresh_erase_ctx_from_erasure_under. exact Hy.
 Qed.
