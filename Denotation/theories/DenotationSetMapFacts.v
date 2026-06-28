@@ -310,21 +310,7 @@ Lemma wfworld_closed_on_open_world_from_base
   wfworld_closed_on X m ->
   wfworld_closed_on X my.
 Proof.
-  intros HX Hbase Hclosed σ Hσ.
-  assert (Hσm :
-      (m : WorldT) (store_restrict σ (world_dom (m : WorldT)))).
-  {
-    assert (Hσres :
-        (res_restrict my (world_dom (m : WorldT)) : WorldT)
-          (store_restrict σ (world_dom (m : WorldT)))).
-    { exists σ. split; [exact Hσ|reflexivity]. }
-    rewrite Hbase in Hσres.
-    exact Hσres.
-  }
-  specialize (Hclosed _ Hσm).
-  rewrite (storeA_restrict_twice_subset σ
-    (world_dom (m : WorldT)) X HX) in Hclosed.
-  exact Hclosed.
+  apply ContextBasicDenotation.StoreTyping.wfworld_closed_on_open_world_from_base.
 Qed.
 
 Lemma wfworld_closed_on_store_restrict_closed
@@ -333,8 +319,7 @@ Lemma wfworld_closed_on_store_restrict_closed
   (m : WorldT) σ ->
   store_closed (store_restrict σ X).
 Proof.
-  intros Hclosed Hσ.
-  exact (Hclosed σ Hσ).
+  apply ContextBasicDenotation.StoreTyping.wfworld_closed_on_store_restrict_closed.
 Qed.
 
 Lemma wfworld_eq_by_dom_stores (m n : WfWorldT) :
