@@ -951,13 +951,6 @@ Proof.
   - exact Hres.
 Qed.
 
-Local Lemma arrow_lvars_shift_from_lc_eq k D :
-  lc_lvars D ->
-  lvars_shift_from k D = D.
-Proof.
-  apply result_first_lvars_shift_from_lc_eq.
-Qed.
-
 Local Ltac arrow_expr_result_shift0_side :=
   first
     [ assumption
@@ -1082,7 +1075,7 @@ Proof.
 	    intros Hbad. apply HfΣ1.
 	    apply lvars_fv_elem.
 	    rewrite typed_lty_env_bind_dom.
-	    rewrite (arrow_lvars_shift_from_lc_eq 0
+	    rewrite (result_first_lvars_shift_from_lc_eq 0
 	      (dom (relevant_env Σ (CTArrow τx τr) e1)) HlcΣ_src).
 	    apply elem_of_union_l. exact Hbad.
 	  }
@@ -1092,7 +1085,7 @@ Proof.
 	    intros Hbad. apply HfΣ2.
 	    apply lvars_fv_elem.
 	    rewrite typed_lty_env_bind_dom.
-	    rewrite (arrow_lvars_shift_from_lc_eq 0
+	    rewrite (result_first_lvars_shift_from_lc_eq 0
 	      (dom (relevant_env Σ (CTArrow τx τr) e2)) HlcΣ_tgt).
 	    apply elem_of_union_l. exact Hbad.
 	  }
@@ -1118,7 +1111,7 @@ Proof.
 	        | apply result_first_lc_lvars_shift_from; exact HlcΣ_tgt
 	        | rewrite lvars_shift_from_fv; clear -Hf; set_solver
 	        | clear -Hfe; set_solver ]).
-	    rewrite (arrow_lvars_shift_from_lc_eq 0
+	    rewrite (result_first_lvars_shift_from_lc_eq 0
 	      (dom (relevant_env Σ (CTArrow τx τr) e2)) HlcΣ_tgt)
 	      in Hopened_scope_raw.
 	    rewrite (ty_denote_gas_zero_relevant_env_dom_eq
@@ -1141,7 +1134,7 @@ Proof.
 	      | apply result_first_lc_lvars_shift_from; exact HlcΣ_tgt
 	      | rewrite lvars_shift_from_fv; clear -Hf; set_solver
 	      | clear -Hfe; set_solver ]).
-	  rewrite (arrow_lvars_shift_from_lc_eq 0
+	  rewrite (result_first_lvars_shift_from_lc_eq 0
 	    (dom (relevant_env Σ (CTArrow τx τr) e2)) HlcΣ_tgt).
 	  rewrite (ty_denote_gas_zero_relevant_env_dom_eq
 	    Σ (CTArrow τx τr) e2 m Hzero_tgt).
@@ -1167,7 +1160,7 @@ Proof.
       | apply result_first_lc_lvars_shift_from; exact HlcΣ_src
       | rewrite lvars_shift_from_fv; clear -Hf; set_solver
       | clear -Hfe; set_solver ]).
-  rewrite (arrow_lvars_shift_from_lc_eq 0
+  rewrite (result_first_lvars_shift_from_lc_eq 0
     (dom (relevant_env Σ (CTArrow τx τr) e1)) HlcΣ_src) in Hopened_src.
   rewrite (ty_denote_gas_zero_relevant_env_dom_eq
     Σ (CTArrow τx τr) e1 m Hzero_src) in Hopened_src.
@@ -1270,7 +1263,7 @@ Proof.
           intros Hbad. apply HyΣ1.
           apply lvars_fv_elem.
           rewrite typed_lty_env_bind_dom.
-          rewrite (arrow_lvars_shift_from_lc_eq 0
+          rewrite (result_first_lvars_shift_from_lc_eq 0
             (dom (relevant_env Σ (CTArrow τx τr) e1)) HlcΣ_src).
           apply elem_of_union_l. exact Hbad.
         }
@@ -1280,7 +1273,7 @@ Proof.
           intros Hbad. apply HyΣ2.
           apply lvars_fv_elem.
           rewrite typed_lty_env_bind_dom.
-          rewrite (arrow_lvars_shift_from_lc_eq 0
+          rewrite (result_first_lvars_shift_from_lc_eq 0
             (dom (relevant_env Σ (CTArrow τx τr) e2)) HlcΣ_tgt).
           apply elem_of_union_l. exact Hbad.
         }
