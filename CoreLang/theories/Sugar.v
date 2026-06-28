@@ -298,6 +298,23 @@ Proof.
     rewrite fv_tapp_tm. cbn [fv_tm]. set_solver.
 Qed.
 
+Lemma tapp_fvar_apps_fv_subset e1 e2 y :
+  fv_tm (tapp_tm e1 (vfvar y)) ∪
+  fv_tm (tapp_tm e2 (vfvar y)) ⊆
+  (fv_tm e1 ∪ fv_tm e2) ∪ ({[y]} : aset).
+Proof.
+  intros a Ha.
+  apply elem_of_union in Ha as [Ha|Ha];
+    rewrite fv_tapp_tm in Ha; cbn [fv_value] in Ha;
+    apply elem_of_union in Ha as [Ha|Ha].
+  - apply elem_of_union_l. apply elem_of_union_l. exact Ha.
+  - apply elem_of_singleton in Ha. subst a.
+    apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+  - apply elem_of_union_l. apply elem_of_union_r. exact Ha.
+  - apply elem_of_singleton in Ha. subst a.
+    apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+Qed.
+
 Lemma tm_swap_atom_tapp_tm x y ef vx :
   tm_swap_atom x y (tapp_tm ef vx) =
   tapp_tm (tm_swap_atom x y ef) (value_swap_atom x y vx).

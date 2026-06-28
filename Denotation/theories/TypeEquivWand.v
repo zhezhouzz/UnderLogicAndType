@@ -3,6 +3,7 @@
     Wand case for term-result-equivalence transport. *)
 
 From Denotation Require Import Notation TypeDenote ResultFirstOpen TypeDenoteRegular.
+From CoreLang Require Import Sugar.
 From Denotation Require Import
   TypeEquivCore
   TypeEquivTermBase
@@ -79,23 +80,6 @@ Proof.
     apply elem_of_union_r. exact Ha.
   - apply elem_of_singleton in Ha. subst a.
     rewrite Hdom. apply elem_of_union_r. apply elem_of_singleton. reflexivity.
-Qed.
-
-Local Lemma wand_tapp_apps_fv_subset e1 e2 y :
-  fv_tm (tapp_tm e1 (vfvar y)) ∪
-  fv_tm (tapp_tm e2 (vfvar y)) ⊆
-  (fv_tm e1 ∪ fv_tm e2) ∪ ({[y]} : aset).
-Proof.
-  intros a Ha.
-  apply elem_of_union in Ha as [Ha|Ha];
-    rewrite fv_tapp_tm in Ha; cbn [fv_value] in Ha;
-    apply elem_of_union in Ha as [Ha|Ha].
-  - apply elem_of_union_l. apply elem_of_union_l. exact Ha.
-  - apply elem_of_singleton in Ha. subst a.
-    apply elem_of_union_r. apply elem_of_singleton. reflexivity.
-  - apply elem_of_union_l. apply elem_of_union_r. exact Ha.
-  - apply elem_of_singleton in Ha. subst a.
-    apply elem_of_union_r. apply elem_of_singleton. reflexivity.
 Qed.
 
 Local Lemma wand_result_open_vars_subset τr y :
@@ -285,7 +269,7 @@ Proof.
   }
   eapply (wfworld_closed_on_mono _
     ((fv_tm e1 ∪ fv_tm e2) ∪ ({[y]} : aset)) (res_product n my Hc)).
-  - apply wand_tapp_apps_fv_subset.
+  - apply tapp_fvar_apps_fv_subset.
   - apply (wfworld_closed_on_union (fv_tm e1 ∪ fv_tm e2) ({[y]} : aset));
       [exact Hclosed_base_prod|exact Hclosed_y_prod].
 Qed.
@@ -760,7 +744,7 @@ Proof.
 	  }
   eapply (wfworld_closed_on_mono _
     ((fv_tm e1 ∪ fv_tm e2) ∪ ({[y]} : aset))).
-  - apply wand_tapp_apps_fv_subset.
+  - apply tapp_fvar_apps_fv_subset.
   - apply (wfworld_closed_on_union (fv_tm e1 ∪ fv_tm e2)
       ({[y]} : aset)); [exact Hclosed_fun|exact Hclosed_y].
 Qed.
