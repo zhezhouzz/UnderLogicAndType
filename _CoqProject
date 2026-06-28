@@ -51,6 +51,8 @@ LocallyNameless/Classes.v
 LocallyNameless/Tactics.v
 
 CoreLang/theories/Prelude.v
+CoreLang/theories/SyntaxCore.v
+CoreLang/theories/SyntaxRegular.v
 CoreLang/theories/Syntax.v
 CoreLang/theories/SyntaxNotation.v
 CoreLang/theories/LocallyNamelessExtra.v
