@@ -107,7 +107,8 @@ equivalence or bridge theorem is listed explicitly.
 
 The paper presents typing rules as inference rules.  In the proof, the main
 rules are constructors of `has_context_type` in
-`ContextTyping/theories/Typing.v`; their soundness cases are proved in
+`ContextTyping/theories/Typing.v`, printed in the file with the judgment
+notation `Φ ⊢ᶜ [Σ; Γ] e ⋮ τ`; their soundness cases are proved in
 `ContextTyping/theories/Soundness*.v`.
 
 | Paper rule/form | Rocq rule/form | Notes |
@@ -130,8 +131,8 @@ rules are constructors of `has_context_type` in
 The semantic relations used by `CT_Sub` and `CT_CtxSub` are:
 
 ```coq
-sub_type_under Σ Γ τ1 τ2
-ctx_sub_under Σ X Γ1 Γ2
+sub[Σ; Γ](τ1, τ2)
+ctxsub[Σ; X](Γ1, Γ2)
 ```
 
 These are intentionally semantic definitions: the proof does not introduce a
@@ -188,6 +189,11 @@ notations for reading theorem statements are:
 | `□P` | `□ P` | Persistent formula. |
 | `[[τ]]Σ e` | `⟦ty⟧[Σ, gas] τ e`, `⟦ty⟧[Δ] τ e` | Gas-indexed and saturated type denotation. |
 | `[[Γ]]Σ` | `⟦ctx⟧[Σ] Γ` | Context denotation. |
+| Typing judgment | `Φ ⊢ᶜ [Σ; Γ] e ⋮ τ` | Main checked context typing judgment. |
+| Typing side condition | `wf[Σ; Γ] e ⋮ τ` | Abbreviation for `context_typing_wf Σ Γ e τ`. |
+| Semantic subtype premise | `sub[Σ; Γ](τ1, τ2)` | Abbreviation for `sub_type_under Σ Γ τ1 τ2`. |
+| Semantic context-subtype premise | `ctxsub[Σ; X](Γ1, Γ2)` | Abbreviation for `ctx_sub_under Σ X Γ1 Γ2`. |
+| Unreachable branch premise | `unreachable[Σ; Γ] v @ b` | Abbreviation for semantic branch unreachability. |
 
 The canonical notation for persistence is the square `□`; the old word-style
 formula notation `persist P` is intentionally not provided.  Word-style
@@ -225,7 +231,7 @@ The direct Fundamental theorem is:
 
 ```coq
 Theorem Fundamental (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : context_ty) :
-  has_context_type Φ Σ Γ e τ ->
+  Φ ⊢ᶜ [Σ; Γ] e ⋮ τ ->
   ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ e.
 ```
 
@@ -233,7 +239,7 @@ The closed-program denotational soundness theorem is:
 
 ```coq
 Theorem denotational_soundness e τ :
-  has_context_type Φ ∅ CtxEmpty e τ ->
+  Φ ⊢ᶜ [∅; CtxEmpty] e ⋮ τ ->
   forall x,
     exists mres : WfWorldT,
       closed_result_world_of e x mres /\
@@ -473,7 +479,7 @@ Files:
 
 ```coq
 Theorem Fundamental ... :
-  has_context_type Φ Σ Γ e τ ->
+  Φ ⊢ᶜ [Σ; Γ] e ⋮ τ ->
   ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ e.
 ```
 

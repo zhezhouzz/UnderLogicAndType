@@ -16,14 +16,16 @@ work and remains fully checked.
   concrete primitive context includes deterministic graph-precise operators
   `eq0`, `plus1`, and `minus1`, plus nondeterministic generators `boolGen` and
   `natGen`.
-- The main typing judgment is `has_context_type Φ Σ Γ e τ`.
+- The main typing judgment is written `Φ ⊢ᶜ [Σ; Γ] e ⋮ τ` in
+  `ContextTyping/theories/Typing.v`; it abbreviates
+  `has_context_type Φ Σ Γ e τ`.
 - The Fundamental theorem is:
 
   ```coq
   Theorem Fundamental Φ :
     wf_primop_ctx Φ ->
     forall Σ Γ e τ,
-      has_context_type Φ Σ Γ e τ ->
+      Φ ⊢ᶜ [Σ; Γ] e ⋮ τ ->
     ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ e.
   ```
 
@@ -36,7 +38,7 @@ work and remains fully checked.
   Theorem denotational_soundness Φ :
     wf_primop_ctx Φ ->
     forall e τ,
-      has_context_type Φ ∅ CtxEmpty e τ ->
+      Φ ⊢ᶜ [∅; CtxEmpty] e ⋮ τ ->
     forall x,
       exists mres,
         closed_result_world_of e x mres /\
