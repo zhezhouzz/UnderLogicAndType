@@ -16,7 +16,8 @@ From Denotation Require Import Context
   TypeEquiv
   ConstDenoteBase
   ConstDenote.
-From ContextTyping Require Import Typing TypingRegular SoundnessLam.
+From ContextTyping Require Import Typing TypingRegular SoundnessCaseTactics
+  SoundnessLam.
 
 Lemma context_typing_wf_match_inv Σ Γ x et ef τ :
   context_typing_wf Σ Γ (tmatch (vfvar x) et ef) τ ->
@@ -1388,9 +1389,10 @@ Lemma fundamental_match_true_case Σ Γ x τ et ef :
   ctx_denote_under Σ Γ ⊫
     ty_denote_under Σ Γ τ (tmatch (vfvar x) et ef).
 Proof.
-  intros Hwf Hbool HIH m Hctx.
-  pose proof (Hbool m Hctx) as Hbt.
-  pose proof (HIH m Hctx) as Het.
+  intros Hwf Hbool HIH.
+  soundness_case_start.
+  rename Hden into Het.
+  rename Hden0 into Hbt.
   pose proof (bool_precise_true_ret_fvar_lookup Γ x m) as Hlookup.
   pose proof (tm_equiv_match_true_var
     Σ Γ x et ef τ m Hwf Hctx
@@ -1411,9 +1413,10 @@ Lemma fundamental_match_false_case Σ Γ x τ et ef :
   ctx_denote_under Σ Γ ⊫
     ty_denote_under Σ Γ τ (tmatch (vfvar x) et ef).
 Proof.
-  intros Hwf Hbool HIH m Hctx.
-  pose proof (Hbool m Hctx) as Hbf.
-  pose proof (HIH m Hctx) as Hef.
+  intros Hwf Hbool HIH.
+  soundness_case_start.
+  rename Hden into Hef.
+  rename Hden0 into Hbf.
   pose proof (bool_precise_false_ret_fvar_lookup Γ x m) as Hlookup.
   pose proof (tm_equiv_match_false_var
     Σ Γ x et ef τ m Hwf Hctx

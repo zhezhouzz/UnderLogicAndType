@@ -25,6 +25,7 @@ From Denotation Require Import Context
   TypeEquiv
   ConstDenote.
 From ContextTyping Require Import PrimOpContext PrimOpConcreteContext Typing TypingRegular
+  SoundnessCaseTactics
   SoundnessLam
   SoundnessApp SoundnessMatch SoundnessFix SoundnessPersist.
 
@@ -160,13 +161,16 @@ Lemma fundamental_sub_case (Σ : gmap atom ty) (Γ : ctx)
   (ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ1 e) ->
   ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ2 e.
 Proof.
-  intros Hwf Hsub IH m HΓ.
+  intros Hwf Hsub IH.
+  soundness_intro_entailment.
+  soundness_pose_entailments.
+  soundness_regular.
   destruct Hsub as [_ [_ [_ [Herase Hent]]]].
   pose proof (context_typing_wf_basic_typing Σ Γ e τ2 Hwf) as Hbasic.
   rewrite <- Herase in Hbasic.
-  pose proof (Hent e Hbasic m HΓ) as Himpl.
+  pose proof (Hent e Hbasic m Hctx) as Himpl.
   eapply res_models_impl_elim; [exact Himpl|].
-  exact (IH m HΓ).
+  assumption.
 Qed.
 
 Lemma fundamental_ctx_sub_case (Σ : gmap atom ty) (Γ1 Γ2 : ctx)
