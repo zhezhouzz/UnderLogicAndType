@@ -1,0 +1,94 @@
+Compile Time Optimization Notes
+===============================
+
+Date: 2026-06-28
+Branch: codex/post-fix-qualifier-work
+
+Method
+------
+
+- Ran a clean build with `make clean && make TIMED=1`.
+- Computed `real seconds / KLOC` from the TIMED output and source line counts.
+- Ignored tiny re-export files as primary optimization targets when their high
+  sec/KLOC was just Rocq startup/import overhead.
+- For each substantial target, used Rocq `-time` to locate slow sentences before
+  editing.
+
+Build Totals
+------------
+
+- Before this pass: 160.72s real.
+- After this pass: 141.06s real.
+
+Completed Optimizations
+-----------------------
+
+1. `Denotation/theories/ConstDenoteBase.v`
+
+   - Before: 7.21s / 848 lines = 8.50s/KLOC.
+   - After: 1.06s / 848 lines = 1.25s/KLOC.
+   - Slow point: one `better_set_solver` side condition under
+     `formula_open_over_typed_body_normalize` took about 5.33s.
+   - Fix: added `const_qual_bound_no_free` and reused it in
+     `ConstDenoteBase.v` and `ConstDenote.v`.
+
+2. `CoreLang/theories/SyntaxRegular.v`
+
+   - Before: 4.43s / 91 lines = 48.68s/KLOC.
+   - After: 0.51s / 91 lines = 5.60s/KLOC.
+   - Slow point: `better_base_solver` on singleton swap took about 3.66s.
+   - Fix: replaced it with direct `rewrite set_swap_singleton`.
+
+3. `CoreLang/theories/LocallyNamelessExtra.v`
+
+   - Before: 5.43s / 757 lines = 7.17s/KLOC.
+   - After: 3.47s / 749 lines = 4.63s/KLOC.
+   - Slow points: repeated `value_mut` / `tm_mut` substitution FV inductions.
+   - Fix: merged `fv_of_subst_value` and `fv_of_subst_tm` through
+     `fv_of_subst_mutual`; merged the closed reverse direction through
+     `fv_of_subst_closed_reverse_mutual`.
+   - Remaining cost: `open_swap_mutual` and other genuine mutual inductions.
+     A direct simplification attempt for `open_swap_mutual` failed because the
+     proof needs the existing class unfolding / LN simplification.
+
+Current Substantial Files Still Above 2s/KLOC
+--------------------------------------------
+
+These are sorted by the post-optimization clean build.  They are candidates for
+future work, but most remaining top entries are structural mutual-induction
+costs rather than a single slow solver call.
+
+```text
+  6.51 sec/KLOC   2.42s   372  CoreLang/theories/LocallyNamelessProps.v
+  4.63 sec/KLOC   3.47s   749  CoreLang/theories/LocallyNamelessExtra.v
+  3.66 sec/KLOC   2.82s   771  CoreLang/theories/BasicTypingProps.v
+  3.14 sec/KLOC   3.57s  1138  ContextBasicDenotation/theories/BasicTypingFormula.v
+  3.03 sec/KLOC   3.54s  1170  ContextTyping/theories/Soundness.v
+  3.02 sec/KLOC   0.92s   305  CoreLang/theories/BasicTyping.v
+  2.93 sec/KLOC   3.48s  1188  ContextLogic/theories/FormulaSyntaxRegular.v
+  2.85 sec/KLOC   1.16s   407  ContextBasicDenotation/theories/Qualifier.v
+  2.65 sec/KLOC   2.96s  1118  ContextLogic/theories/FormulaSemantics.v
+  2.55 sec/KLOC   2.51s   985  ContextLogic/theories/FormulaConnectivesHigher.v
+  2.44 sec/KLOC   1.55s   634  ContextAlgebra/theories/ResourceCompat.v
+  2.38 sec/KLOC   2.01s   844  Denotation/theories/TypeEquivFiberBaseProjected.v
+  2.36 sec/KLOC   1.63s   690  ContextTyping/theories/SoundnessFix.v
+  2.36 sec/KLOC   1.65s   699  ContextBasicDenotation/theories/BasicTypingOpen.v
+  2.27 sec/KLOC   3.41s  1503  ContextLogic/theories/FormulaConnectives.v
+  2.20 sec/KLOC   1.01s   460  Denotation/theories/ConstDenote.v
+  2.18 sec/KLOC   1.65s   758  ContextTyping/theories/SoundnessFixApply.v
+  2.12 sec/KLOC   2.30s  1084  ContextBasicDenotation/theories/TermOpen.v
+  2.01 sec/KLOC   3.66s  1819  Denotation/theories/TypeEquiv.v
+```
+
+Deferred Notes
+--------------
+
+- `LocallyNamelessProps.v`: attempted to merge paired value/tm proofs for
+  `close_open_var_*` and `open_fv_*`, but the constructor-specific proof shapes
+  were not stable under the shared script. Left unchanged rather than risk a
+  brittle proof.
+- `FormulaSyntaxRegular.v`: attempted to replace an `all: better_set_solver`
+  with lighter solvers. The lighter version either failed or became slower due
+  to fallback overhead. Left unchanged.
+- `BasicTypingFormula.v` and `BasicTypingProps.v`: current main costs are
+  central mutual induction commands, not isolated slow side conditions.

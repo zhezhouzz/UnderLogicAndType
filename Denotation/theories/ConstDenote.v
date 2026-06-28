@@ -289,9 +289,9 @@ Proof.
           }
           2:{ constructor. constructor. }
           2:{ cbn [fv_tm fv_value]. set_solver. }
-	          rewrite formula_open_over_typed_body_normalize.
-	          2:{ rewrite const_qual_vars_bound. better_set_solver. }
-	          rewrite const_qual_open_eq.
+          rewrite formula_open_over_typed_body_normalize.
+          2:{ apply const_qual_bound_no_free. }
+          rewrite const_qual_open_eq.
 			      eapply res_models_impl_intro_scoped.
 			      * eapply const_expr_result_open_scoped.
 			        rewrite Hdom. unfold ext_out in HFout. rewrite HFout.
@@ -340,9 +340,9 @@ Proof.
           }
           2:{ constructor. constructor. }
           2:{ cbn [fv_tm fv_value]. set_solver. }
-	          rewrite formula_open_under_typed_body_normalize.
-	          2:{ rewrite const_qual_vars_bound. better_set_solver. }
-	          rewrite const_qual_open_eq.
+          rewrite formula_open_under_typed_body_normalize.
+          2:{ apply const_qual_bound_no_free. }
+          rewrite const_qual_open_eq.
 			      eapply res_models_impl_intro_scoped.
 			      * eapply const_expr_result_open_scoped.
 			        rewrite Hdom. unfold ext_out in HFout. rewrite HFout.

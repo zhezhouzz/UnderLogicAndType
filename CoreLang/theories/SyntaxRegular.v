@@ -9,7 +9,7 @@ with fv_tm_swap_atom x y e :
   fv_tm (tm_swap_atom x y e) = set_swap x y (fv_tm e).
 Proof.
   - destruct v; simpl; try reflexivity.
-    + better_base_solver.
+    + rewrite set_swap_singleton. reflexivity.
     + apply fv_tm_swap_atom.
     + apply fv_value_swap_atom.
   - destruct e; simpl.
