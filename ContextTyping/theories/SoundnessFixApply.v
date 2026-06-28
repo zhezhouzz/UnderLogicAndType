@@ -23,17 +23,6 @@ From Denotation Require Import Context
   ConstDenote.
 From ContextTyping Require Import Typing TypingRegular SoundnessLam SoundnessFixBase.
 
-Local Lemma fix_apply_bind_lvar_env_dom_subset
-    (Σ : tyctx) Γ y τx :
-  y ∉ dom (erase_ctx Γ) ->
-  dom (<[LVFree y := erase_ty τx]>
-    (atom_env_to_lty_env (erase_ctx Γ))) ⊆
-  dom (atom_env_to_lty_env
-    (ctx_erasure_under Σ (CtxComma Γ (CtxBind y τx)))).
-Proof.
-  apply ctx_erasure_under_comma_bind_insert_lty_env_dom_subset.
-Qed.
-
 Lemma fix_body_arrow_outer_value_open
     (Σ : tyctx) Γ τx τ vf b (t : ty)
     (my : WfWorldT) y :
@@ -374,7 +363,9 @@ Proof.
       dom Δy ⊆
       dom (atom_env_to_lty_env
         (ctx_erasure_under Σ (CtxComma Γ (CtxBind y τx))))).
-  { subst Δy. apply fix_apply_bind_lvar_env_dom_subset. exact HyΓ. }
+  { subst Δy.
+    apply ctx_erasure_under_comma_bind_insert_lty_env_dom_subset.
+    exact HyΓ. }
   assert (HzΔ : LVFree z ∉ dom Δy).
   {
     intros HzΔ.
