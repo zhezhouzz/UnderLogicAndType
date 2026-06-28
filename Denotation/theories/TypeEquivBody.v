@@ -43,24 +43,30 @@ Qed.
 Lemma formula_fv_open_over_body_obs b φ y :
   formula_fv
     (formula_open 0 y
-      (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FOver (FAtom φ)))) ⊆
+      (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (over_result_body b φ))) ⊆
   lvars_fv (context_ty_lvars (CTOver b φ)) ∪ {[y]}.
 Proof.
   etransitivity.
   - apply formula_fv_open_fibvars_qual_body_obs.
-    rewrite formula_fv_over, formula_fv_atom. set_solver.
+    unfold over_result_body.
+    rewrite formula_fv_over, formula_fv_and, formula_fv_atom.
+    rewrite formula_fv_result_basic_typing_formula.
+    set_solver.
   - rewrite context_ty_lvars_over_fv. set_solver.
 Qed.
 
 Lemma formula_fv_open_under_body_obs b φ y :
   formula_fv
     (formula_open 0 y
-      (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FUnder (FAtom φ)))) ⊆
+      (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (under_result_body b φ))) ⊆
   lvars_fv (context_ty_lvars (CTUnder b φ)) ∪ {[y]}.
 Proof.
   etransitivity.
   - apply formula_fv_open_fibvars_qual_body_obs.
-    rewrite formula_fv_under, formula_fv_atom. set_solver.
+    unfold under_result_body.
+    rewrite formula_fv_under, formula_fv_and, formula_fv_atom.
+    rewrite formula_fv_result_basic_typing_formula.
+    set_solver.
   - rewrite context_ty_lvars_under_fv. set_solver.
 Qed.
 
@@ -226,7 +232,7 @@ Lemma ty_denote_gas_tm_fiber_equiv_over_body
           (lvars_shift_from 0 (dom (relevant_env Σ (CTOver b φ) e1)))
           (tm_shift 0 e1) (LVBound 0))
         (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-          (FOver (FAtom φ)))) ->
+          (over_result_body b φ))) ->
   m ⊨
     FForall
       (FImpl
@@ -234,7 +240,7 @@ Lemma ty_denote_gas_tm_fiber_equiv_over_body
           (lvars_shift_from 0 (dom (relevant_env Σ (CTOver b φ) e2)))
           (tm_shift 0 e2) (LVBound 0))
         (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-          (FOver (FAtom φ)))).
+          (over_result_body b φ))).
 Proof.
   intros Hequiv Hsrc.
   pose proof (typed_fiber_equiv_zero_src _ _ _ _ _ Hequiv) as Hzero_src.
@@ -288,7 +294,7 @@ Proof.
                 (dom (relevant_env Σ (CTOver b φ) e2)))
               (tm_shift 0 e2) (LVBound 0))
             (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-              (FOver (FAtom φ)))))).
+              (over_result_body b φ))))).
 	  {
     eapply formula_scoped_forall_open_res_le.
     - exact Hscope_tgt.
@@ -336,7 +342,7 @@ Lemma ty_denote_gas_tm_fiber_equiv_under_body
           (lvars_shift_from 0 (dom (relevant_env Σ (CTUnder b φ) e1)))
           (tm_shift 0 e1) (LVBound 0))
         (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-          (FUnder (FAtom φ)))) ->
+          (under_result_body b φ))) ->
   m ⊨
     FForall
       (FImpl
@@ -344,7 +350,7 @@ Lemma ty_denote_gas_tm_fiber_equiv_under_body
           (lvars_shift_from 0 (dom (relevant_env Σ (CTUnder b φ) e2)))
           (tm_shift 0 e2) (LVBound 0))
         (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-          (FUnder (FAtom φ)))).
+          (under_result_body b φ))).
 Proof.
   intros Hequiv Hsrc.
   pose proof (typed_fiber_equiv_zero_src _ _ _ _ _ Hequiv) as Hzero_src.
@@ -398,7 +404,7 @@ Proof.
                 (dom (relevant_env Σ (CTUnder b φ) e2)))
               (tm_shift 0 e2) (LVBound 0))
             (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-              (FUnder (FAtom φ)))))).
+              (under_result_body b φ))))).
   {
     eapply formula_scoped_forall_open_res_le.
     - exact Hscope_tgt.
@@ -674,7 +680,7 @@ Lemma ty_denote_gas_tm_equiv_over_body
           (lvars_shift_from 0 (dom (relevant_env Σ (CTOver b φ) e1)))
           (tm_shift 0 e1) (LVBound 0))
         (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-          (FOver (FAtom φ)))) ->
+          (over_result_body b φ))) ->
   m ⊨
     FForall
       (FImpl
@@ -682,7 +688,7 @@ Lemma ty_denote_gas_tm_equiv_over_body
           (lvars_shift_from 0 (dom (relevant_env Σ (CTOver b φ) e2)))
           (tm_shift 0 e2) (LVBound 0))
         (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-          (FOver (FAtom φ)))).
+          (over_result_body b φ))).
 Proof.
   intros Hequiv Hsrc.
   eapply (ty_denote_gas_tm_fiber_equiv_over_body
@@ -703,7 +709,7 @@ Lemma ty_denote_gas_tm_equiv_under_body
           (lvars_shift_from 0 (dom (relevant_env Σ (CTUnder b φ) e1)))
           (tm_shift 0 e1) (LVBound 0))
         (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-          (FUnder (FAtom φ)))) ->
+          (under_result_body b φ))) ->
   m ⊨
     FForall
       (FImpl
@@ -711,7 +717,7 @@ Lemma ty_denote_gas_tm_equiv_under_body
           (lvars_shift_from 0 (dom (relevant_env Σ (CTUnder b φ) e2)))
           (tm_shift 0 e2) (LVBound 0))
         (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-          (FUnder (FAtom φ)))).
+          (under_result_body b φ))).
 Proof.
   intros Hequiv Hsrc.
   eapply (ty_denote_gas_tm_fiber_equiv_under_body

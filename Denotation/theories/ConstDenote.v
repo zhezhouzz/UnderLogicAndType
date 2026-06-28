@@ -134,6 +134,54 @@ Proof.
   - apply elem_of_singleton in Ha. subst. exact Hy.
 Qed.
 
+Local Lemma const_open_fib_over_typed_scoped c y (m : WfWorldT) :
+  y ∈ world_dom (m : WorldT) ->
+  formula_scoped_in_world m
+    (FFibVars
+      (qual_vars (mk_q_eq (vfvar y) (vconst c)) ∖ {[LVFree y]})
+      (formula_open 0 y
+        (over_result_body (base_ty_of_const c)
+          (mk_q_eq (vbvar 0) (vconst c))))).
+Proof.
+  intros Hy.
+  unfold formula_scoped_in_world.
+  rewrite formula_fv_fibvars.
+  rewrite formula_open_over_result_body.
+  rewrite formula_fv_over, formula_fv_and, formula_fv_atom.
+  rewrite formula_fv_expr_basic_typing_formula.
+  rewrite const_qual_open_eq, const_qual_open_vars.
+  rewrite dom_insert_L, dom_empty_L, lvars_fv_union,
+    lvars_fv_empty, lvars_fv_singleton_free.
+  replace ({[LVFree y]} ∖ {[LVFree y]} : lvset)
+    with (∅ : lvset) by better_set_solver.
+  rewrite lvars_fv_empty.
+  set_solver.
+Qed.
+
+Local Lemma const_open_fib_under_typed_scoped c y (m : WfWorldT) :
+  y ∈ world_dom (m : WorldT) ->
+  formula_scoped_in_world m
+    (FFibVars
+      (qual_vars (mk_q_eq (vfvar y) (vconst c)) ∖ {[LVFree y]})
+      (formula_open 0 y
+        (under_result_body (base_ty_of_const c)
+          (mk_q_eq (vbvar 0) (vconst c))))).
+Proof.
+  intros Hy.
+  unfold formula_scoped_in_world.
+  rewrite formula_fv_fibvars.
+  rewrite formula_open_under_result_body.
+  rewrite formula_fv_under, formula_fv_and, formula_fv_atom.
+  rewrite formula_fv_expr_basic_typing_formula.
+  rewrite const_qual_open_eq, const_qual_open_vars.
+  rewrite dom_insert_L, dom_empty_L, lvars_fv_union,
+    lvars_fv_empty, lvars_fv_singleton_free.
+  replace ({[LVFree y]} ∖ {[LVFree y]} : lvset)
+    with (∅ : lvset) by better_set_solver.
+  rewrite lvars_fv_empty.
+  set_solver.
+Qed.
+
 Local Ltac const_scope_set :=
   intros z Hz; better_set_solver.
 
@@ -143,11 +191,16 @@ Local Ltac const_forall_scope_norm :=
 	    ?formula_fv_over, ?formula_fv_under, ?formula_fv_expr_result_formula,
 	    ?formula_fv_expr_result_formula_at,
 	    ?formula_fv_atom, ?formula_fv_basic_world_formula;
-	  unfold basic_world_formula, expr_result_formula, expr_result_formula_at;
-	  unfold FFiberAtom, qual_dom, qual_vars;
-	  cbn [formula_lvars formula_lvars_at
-	    tm_shift value_shift tm_lvars tm_lvars_at value_lvars_at
-	    lvar_value_keys qual_lvars];
+	  unfold basic_world_formula, expr_basic_typing_formula,
+	    expr_result_formula, expr_result_formula_at;
+	  unfold over_result_body, under_result_body, result_basic_typing_formula;
+	  unfold FFiberAtom, qual_dom, qual_vars, expr_basic_typing_qual,
+	    expr_result_qual, bound0_lvset, empty_lvset;
+  cbn [formula_lvars formula_lvars_at
+    tm_shift value_shift tm_lvars tm_lvars_at value_lvars_at
+    lvar_value_keys qual_lvars];
+  rewrite ?typed_lty_env_bind_dom;
+  cbn [qual_vars qual_lvars];
   rewrite ?const_lvars_shift_empty;
   repeat rewrite ?lvars_at_depth_union;
   rewrite ?lvars_at_depth_empty;
@@ -222,33 +275,7 @@ Proof.
   - rewrite relevant_env_const_over_atom_env_empty.
 		    eapply res_models_and_intro_from_models; [solve_const_over_guard|].
 		    eapply res_models_forall_intro.
-		    + unfold formula_scoped_in_world.
-		      intros z Hz.
-		      unfold formula_fv, formula_lvars in Hz.
-		      unfold expr_result_formula_at,
-		        expr_result_qual, qual_vars, const_bound_removed_qual,
-		        bound0_lvset, empty_lvset in Hz.
-		      cbn [formula_lvars_at qual_lvars tm_shift value_shift
-		        tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hz.
-		      rewrite ?const_lvars_shift_empty in Hz.
-		      rewrite ?const_qual_vars_bound in Hz.
-		      repeat match type of Hz with
-		      | context[∅ ∪ ?D] => rewrite (left_id ∅ union D) in Hz
-		      | context[?D ∪ ∅] => rewrite (right_id ∅ union D) in Hz
-		      | context[{[LVBound 0]} ∖ {[LVBound 0]}] =>
-		          replace ({[LVBound 0]} ∖ {[LVBound 0]} : lvset)
-		            with (∅ : lvset) in Hz by set_solver
-		      end.
-			      rewrite ?lvars_at_depth_union, ?lvars_at_depth_empty,
-			        ?lvars_at_depth_singleton_bound0_succ in Hz.
-			      cbn [qual_vars qual_lvars] in Hz.
-			      replace (∅ ∪ {[LVBound 0]} : lvset)
-			        with ({[LVBound 0]} : lvset) in Hz by set_solver.
-			      rewrite ?lvars_at_depth_union, ?lvars_at_depth_empty,
-			        ?lvars_at_depth_singleton_bound0_succ in Hz.
-			      rewrite ?lvars_fv_union, ?lvars_fv_empty,
-			        ?lvars_fv_singleton_bound in Hz.
-			      set_solver.
+				    + solve_const_forall_closed_scope.
     + exists (∅ : aset). intros y _ F HFin HFout my Hext.
 		      pose proof (res_extend_by_dom m F my Hext) as Hdom.
 		      rewrite !formula_open_impl.
@@ -262,36 +289,29 @@ Proof.
           }
           2:{ constructor. constructor. }
           2:{ cbn [fv_tm fv_value]. set_solver. }
-          rewrite formula_open_fibvars, formula_open_over.
-          rewrite formula_open_atom.
-          rewrite const_qual_open_eq.
-		      eapply res_models_impl_intro_scoped.
-		      * eapply const_expr_result_open_scoped.
+	          rewrite formula_open_over_typed_body_normalize.
+	          2:{ rewrite const_qual_vars_bound. better_set_solver. }
+	          rewrite const_qual_open_eq.
+			      eapply res_models_impl_intro_scoped.
+			      * eapply const_expr_result_open_scoped.
+			        rewrite Hdom. unfold ext_out in HFout. rewrite HFout.
+			        set_solver.
+			      * eapply const_open_fib_over_typed_scoped.
+			        rewrite Hdom. unfold ext_out in HFout. rewrite HFout.
+			        set_solver.
+		      * intros Hexpr.
+		        assert (Hold : my ⊨ over_open_body
+		            (mk_q_eq (vbvar 0) (vconst c)) y).
+		        {
+		          unfold over_open_body.
+		          rewrite const_qual_open_eq.
+		          change (my ⊨ expr_result_formula (tret (vconst c)) (LVFree y)) in Hexpr.
+		          exact (const_fib_over_from_expr c y my Hexpr).
+		        }
+		        rewrite <- const_qual_open_eq.
+		        apply over_open_body_to_typed; [|exact Hold].
 		        rewrite Hdom. unfold ext_out in HFout. rewrite HFout.
 		        set_solver.
-		      * eapply const_open_fib_over_swapped_scoped.
-		        rewrite Hdom. unfold ext_out in HFout. rewrite HFout.
-		        set_solver.
-	      * intros Hexpr.
-	        replace
-	          (set_swap (LVBound 0) (LVFree y)
-	             (qual_vars (mk_q_eq (vbvar 0) (vconst c)) ∖ {[LVBound 0]}))
-	          with
-	          (qual_vars (mk_q_eq (vfvar y) (vconst c)) ∖
-	          {[LVFree y]}).
-	        2:{
-	          rewrite const_qual_vars_bound, const_qual_open_vars.
-	          replace ({[LVBound 0]} ∖ {[LVBound 0]} : lvset)
-	            with (∅ : lvset)
-	            by set_solver.
-	          replace ({[LVFree y]} ∖ {[LVFree y]} : lvset)
-	            with (∅ : lvset)
-	            by set_solver.
-	          rewrite set_swap_empty.
-	          reflexivity.
-          }
-          change (my ⊨ expr_result_formula (tret (vconst c)) (LVFree y)) in Hexpr.
-          exact (const_fib_over_from_expr c y my Hexpr).
 Qed.
 
 Lemma const_under_denotation_gas gas (Σ : gmap atom ty) c (m : WfWorldT) :
@@ -306,34 +326,7 @@ Proof.
   - rewrite relevant_env_const_under_atom_env_empty.
 		    eapply res_models_and_intro_from_models; [solve_const_under_guard|].
 		    eapply res_models_forall_intro.
-		    + unfold formula_scoped_in_world.
-		      intros z Hz.
-		      unfold formula_fv, formula_lvars in Hz.
-		      unfold expr_result_formula_at,
-		        expr_result_qual, qual_vars, const_bound_removed_qual,
-		        bound0_lvset, empty_lvset in Hz.
-		      cbn [formula_lvars_at qual_lvars tm_shift value_shift
-		        tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hz.
-		      rewrite ?const_lvars_shift_empty in Hz.
-		      rewrite ?const_qual_vars_bound in Hz.
-		      repeat match type of Hz with
-		      | context[∅ ∪ ?D] => rewrite (left_id ∅ union D) in Hz
-		      | context[?D ∪ ∅] => rewrite (right_id ∅ union D) in Hz
-		      | context[{[LVBound 0]} ∖ {[LVBound 0]}] =>
-		          replace ({[LVBound 0]} ∖ {[LVBound 0]} : lvset)
-		            with (∅ : lvset) in Hz by set_solver
-		      end.
-			      rewrite ?lvars_at_depth_union, ?lvars_at_depth_empty,
-			        ?lvars_at_depth_singleton_bound0_succ in Hz.
-			      cbn [qual_vars qual_lvars] in Hz.
-			      replace (∅ ∪ {[LVBound 0]} : lvset)
-			        with ({[LVBound 0]} : lvset) in Hz by set_solver.
-			      rewrite ?lvars_at_depth_union, ?lvars_at_depth_empty,
-			        ?lvars_at_depth_singleton_bound0_succ in Hz.
-			      rewrite ?lvars_fv_union, ?lvars_fv_empty,
-			        ?lvars_fv_singleton_bound in Hz.
-			      change (z ∈ (∅ : aset)) in Hz.
-			      rewrite elem_of_empty in Hz. contradiction.
+			    + solve_const_forall_closed_scope.
     + exists (∅ : aset). intros y _ F HFin HFout my Hext.
 		      pose proof (res_extend_by_dom m F my Hext) as Hdom.
 		      rewrite !formula_open_impl.
@@ -347,36 +340,29 @@ Proof.
           }
           2:{ constructor. constructor. }
           2:{ cbn [fv_tm fv_value]. set_solver. }
-          rewrite formula_open_fibvars, formula_open_under.
-          rewrite formula_open_atom.
-          rewrite const_qual_open_eq.
-		      eapply res_models_impl_intro_scoped.
-		      * eapply const_expr_result_open_scoped.
+	          rewrite formula_open_under_typed_body_normalize.
+	          2:{ rewrite const_qual_vars_bound. better_set_solver. }
+	          rewrite const_qual_open_eq.
+			      eapply res_models_impl_intro_scoped.
+			      * eapply const_expr_result_open_scoped.
+			        rewrite Hdom. unfold ext_out in HFout. rewrite HFout.
+			        set_solver.
+			      * eapply const_open_fib_under_typed_scoped.
+			        rewrite Hdom. unfold ext_out in HFout. rewrite HFout.
+			        set_solver.
+		      * intros Hexpr.
+		        assert (Hold : my ⊨ under_open_body
+		            (mk_q_eq (vbvar 0) (vconst c)) y).
+		        {
+		          unfold under_open_body.
+		          rewrite const_qual_open_eq.
+		          change (my ⊨ expr_result_formula (tret (vconst c)) (LVFree y)) in Hexpr.
+		          exact (const_fib_under_from_expr c y my Hexpr).
+		        }
+		        rewrite <- const_qual_open_eq.
+		        apply under_open_body_to_typed; [|exact Hold].
 		        rewrite Hdom. unfold ext_out in HFout. rewrite HFout.
 		        set_solver.
-		      * eapply const_open_fib_under_swapped_scoped.
-		        rewrite Hdom. unfold ext_out in HFout. rewrite HFout.
-		        set_solver.
-	      * intros Hexpr.
-	        replace
-	          (set_swap (LVBound 0) (LVFree y)
-	             (qual_vars (mk_q_eq (vbvar 0) (vconst c)) ∖ {[LVBound 0]}))
-	          with
-	          (qual_vars (mk_q_eq (vfvar y) (vconst c)) ∖
-	          {[LVFree y]}).
-	        2:{
-	          rewrite const_qual_vars_bound, const_qual_open_vars.
-	          replace ({[LVBound 0]} ∖ {[LVBound 0]} : lvset)
-	            with (∅ : lvset)
-	            by set_solver.
-	          replace ({[LVFree y]} ∖ {[LVFree y]} : lvset)
-	            with (∅ : lvset)
-	            by set_solver.
-	          rewrite set_swap_empty.
-	          reflexivity.
-          }
-          change (my ⊨ expr_result_formula (tret (vconst c)) (LVFree y)) in Hexpr.
-          exact (const_fib_under_from_expr c y my Hexpr).
 Qed.
 
 Lemma const_direct_denotation_gas_in_ctx

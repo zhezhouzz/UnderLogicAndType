@@ -4,7 +4,8 @@
     Fundamental. *)
 
 From Denotation Require Import Context DenotationSetMapFacts TypeEquivCore
-  TypeEquivTermBase TypeEquivTermResult TypeEquivFiberBaseCore TypeEquivFiberBaseProjected TypeEquiv.
+  TypeEquivTermBase TypeEquivTermResult TypeEquivFiberBaseCore TypeEquivFiberBaseProjected TypeEquiv
+  TypePersistBase.
 From CoreLang Require Import StrongNormalization.
 
 Section ConstDenoteBase.
@@ -512,25 +513,6 @@ Proof.
     apply elem_of_singleton in Hyfv as ->.
     apply elem_of_union_r. apply elem_of_singleton. reflexivity.
   }
-  rewrite formula_open_fibvars in Hopened.
-  rewrite formula_open_over in Hopened.
-  rewrite formula_open_atom in Hopened.
-  rewrite const_qual_open_eq in Hopened.
-  replace
-    (set_swap (LVBound 0) (LVFree y)
-      (qual_vars (mk_q_eq (vbvar 0) (vconst c)) ∖ {[LVBound 0]}))
-    with
-      (qual_vars (mk_q_eq (vfvar y) (vconst c)) ∖
-        {[LVFree y]})
-    in Hopened.
-  2:{
-    rewrite const_qual_vars_bound, const_qual_open_vars.
-    replace ({[LVBound 0]} ∖ {[LVBound 0]} : lvset)
-      with (∅ : lvset) by better_set_solver.
-    replace ({[LVFree y]} ∖ {[LVFree y]} : lvset)
-      with (∅ : lvset) by better_set_solver.
-    rewrite set_swap_empty. reflexivity.
-  }
   assert (Hyden :
       mx ⊨ ty_denote_gas (S gas) (<[LVFree y := erase_ty τc]> Δ)
         τc (tret (vfvar y))).
@@ -611,10 +593,17 @@ Proof.
         apply expr_basic_typing_formula_models_iff in Hbasic as [_ [_ Hty]].
         exact (basic_tm_has_ltype_lvars _ _ _ Hty).
   }
-  rewrite (lvars_shift_from_lc_eq 0
-    (dom (relevant_env Δ τc (tret (vfvar x)))) Hlc_rel) in Hopened.
-  pose proof (res_models_impl_elim mx _ _ Hopened Hexpr_y)
-    as Hfib_over.
+	  rewrite (lvars_shift_from_lc_eq 0
+	    (dom (relevant_env Δ τc (tret (vfvar x)))) Hlc_rel) in Hopened.
+	  pose proof (res_models_impl_elim mx _ _ Hopened Hexpr_y)
+	    as Hfib_over.
+  rewrite formula_open_over_typed_body_normalize in Hfib_over.
+  2:{ rewrite const_qual_vars_bound. better_set_solver. }
+  pose proof (over_open_body_from_typed
+    (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)) y mx Hfib_over)
+    as Hbody_y.
+  unfold over_open_body in Hbody_y.
+  rewrite const_qual_open_eq in Hbody_y.
   assert (Hfib_empty :
       mx ⊨ FFibVars ∅
         (FOver (FAtom
@@ -624,7 +613,7 @@ Proof.
       with (qual_vars (mk_q_eq (vfvar y) (vconst c)) ∖
         {[LVFree y]})
       by (rewrite const_qual_open_vars; better_set_solver).
-    exact Hfib_over.
+    exact Hbody_y.
   }
   pose proof (res_models_fibvars_empty_elim mx _ Hfib_empty) as Hover.
   unfold res_models in Hover.

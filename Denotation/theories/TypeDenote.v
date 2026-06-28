@@ -49,6 +49,29 @@ Lemma fiberwise_joinable_ty_guard_formula Σ τ e :
   fiberwise_joinable (ty_guard_formula Σ τ e).
 Proof. intros X. apply fiberwise_joinable_on_ty_guard_formula. Qed.
 
+Definition result_basic_typing_formula (b : base_ty) : FormulaT :=
+  expr_basic_typing_formula
+    (typed_lty_env_bind ∅ (TBase b))
+    (tret (vbvar 0))
+    (TBase b).
+
+Definition over_result_body (b : base_ty) (φ : type_qualifier) : FormulaT :=
+  FOver (FAnd (FAtom φ) (result_basic_typing_formula b)).
+
+Definition under_result_body (b : base_ty) (φ : type_qualifier) : FormulaT :=
+  FUnder (FAnd (FAtom φ) (result_basic_typing_formula b)).
+
+Lemma formula_fv_result_basic_typing_formula b :
+  formula_fv (result_basic_typing_formula b) = ∅.
+Proof.
+  unfold result_basic_typing_formula.
+  rewrite formula_fv_expr_basic_typing_formula.
+  rewrite typed_lty_env_bind_dom, dom_empty_L.
+  rewrite lvars_fv_union, lvars_shift_from_fv,
+    lvars_fv_empty, lvars_fv_singleton_bound.
+  set_solver.
+Qed.
+
 Definition arrow_value_denote_gas_with
     (denote : nat -> lty_env -> context_ty -> tm -> FormulaT)
     (gas : nat) (Σ : lty_env) (τx τr : context_ty) (ef : tm) :
@@ -88,14 +111,14 @@ Fixpoint ty_denote_gas
               (expr_result_formula_at (lvars_shift_from 0 (dom Σg))
                 (tm_shift 0 e) (LVBound 0))
               (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-                (FOver (FAtom φ))))
+                (over_result_body b φ)))
       | CTUnder b φ =>
           FForall
             (FImpl
               (expr_result_formula_at (lvars_shift_from 0 (dom Σg))
                 (tm_shift 0 e) (LVBound 0))
               (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-                (FUnder (FAtom φ))))
+                (under_result_body b φ)))
       | CTInter τ1 τ2 =>
           FAnd
             (ty_denote_gas gas' Σ τ1 e)
@@ -159,6 +182,33 @@ Proof.
     with ({[LVBound 0]} : lvset)
     by (rewrite dom_insert_L, dom_empty_L; set_solver).
   apply open_env_lift_fresh_for_bound0_singleton.
+Qed.
+
+Lemma formula_open_env_lift_result_basic_typing_formula η b :
+  open_env_values_inj η ->
+  formula_open_env (kmap S η) (result_basic_typing_formula b) =
+  result_basic_typing_formula b.
+Proof.
+  intros Hinj.
+  unfold result_basic_typing_formula.
+  rewrite formula_open_env_expr_basic_typing_formula.
+  - rewrite typed_lty_env_bind_open_env_lift.
+    + rewrite open_tm_env_lift_tret_bound0.
+      reflexivity.
+    + intros k x _.
+      intros Hx.
+      apply lvars_fv_elem in Hx.
+      unfold lvars_open_env in Hx.
+      apply elem_of_map in Hx as [u [_ Hu]].
+      set_solver.
+  - replace (dom (typed_lty_env_bind ∅ (TBase b)) ∪
+        tm_lvars (tret (vbvar 0)))
+      with (dom (typed_lty_env_bind ∅ (TBase b))) by
+      (rewrite typed_lty_env_bind_dom, dom_empty_L;
+       cbn [tm_lvars tm_lvars_at value_lvars_at bvar_lvars_at];
+       set_solver).
+    apply open_env_lift_fresh_for_bound0_bind_dom.
+  - apply open_env_values_inj_lift. exact Hinj.
 Qed.
 
 Lemma formula_open_env_denot_guard η Σ τ e :
@@ -305,9 +355,13 @@ Ltac denot_open_env_qual_case η Hfresh Hinj φ e :=
 	      [|eapply open_env_fresh_for_lvars_mono; [|exact Hfreshφ]; set_solver];
 	      rewrite open_env_lift_qual_diff_bound0
 	        by exact Hfreshφ;
+	      unfold over_result_body, under_result_body;
 	      first [rewrite formula_open_env_over
 	            |rewrite formula_open_env_under];
+	      rewrite formula_open_env_and;
 	      rewrite formula_open_env_atom;
+	      rewrite formula_open_env_lift_result_basic_typing_formula
+	        by exact Hinj;
 	      reflexivity ] ].
 
 Ltac denot_open_env_binary_case IH Hfresh Hinj :=
@@ -1041,6 +1095,57 @@ Proof.
   apply set_swap_bound0_difference_free_normalize.
 Qed.
 
+Lemma formula_open_result_basic_typing_formula b y :
+  formula_open 0 y (result_basic_typing_formula b) =
+  expr_basic_typing_formula
+    (<[LVFree y := TBase b]> ∅)
+    (tret (vfvar y))
+    (TBase b).
+Proof.
+  unfold result_basic_typing_formula.
+  rewrite formula_open_expr_basic_typing_formula.
+  - rewrite typed_lty_env_bind_open_current.
+    + reflexivity.
+    + rewrite dom_empty_L. set_solver.
+    + unfold lvar_store_closed, lc_lvars.
+      rewrite dom_empty_L. set_solver.
+  - rewrite typed_lty_env_bind_lvars_fv_dom.
+    rewrite dom_empty_L, lvars_fv_empty.
+    cbn [fv_tm fv_value]. set_solver.
+Qed.
+
+Lemma formula_open_over_result_body b φ y :
+  formula_open 0 y (over_result_body b φ) =
+  FOver
+    (FAnd
+      (FAtom (qual_open_atom 0 y φ))
+      (expr_basic_typing_formula
+        (<[LVFree y := TBase b]> ∅)
+        (tret (vfvar y))
+        (TBase b))).
+Proof.
+  unfold over_result_body.
+  rewrite formula_open_over, formula_open_and, formula_open_atom.
+  rewrite formula_open_result_basic_typing_formula.
+  reflexivity.
+Qed.
+
+Lemma formula_open_under_result_body b φ y :
+  formula_open 0 y (under_result_body b φ) =
+  FUnder
+    (FAnd
+      (FAtom (qual_open_atom 0 y φ))
+      (expr_basic_typing_formula
+        (<[LVFree y := TBase b]> ∅)
+        (tret (vfvar y))
+        (TBase b))).
+Proof.
+  unfold under_result_body.
+  rewrite formula_open_under, formula_open_and, formula_open_atom.
+  rewrite formula_open_result_basic_typing_formula.
+  reflexivity.
+Qed.
+
 Lemma set_swap_qual_vars_open_atom0 z (φ : type_qualifier) :
   set_swap (LVBound 0) (LVFree z) (qual_vars φ) =
   qual_vars (qual_open_atom 0 z φ).
@@ -1632,6 +1737,7 @@ Ltac rewrite_tm_support :=
 
 Ltac unfold_formula_lvars_atoms :=
   unfold ty_guard_formula, context_ty_wf_formula, basic_world_formula,
+    result_basic_typing_formula, over_result_body, under_result_body,
     expr_basic_typing_formula, expr_total_formula, expr_result_formula,
     expr_result_formula_at, expr_result_atom_formula, FFiberAtom;
   cbn [formula_lvars_at];
@@ -1697,7 +1803,8 @@ Ltac solve_lvars_element v :=
 	    | left; left; assumption
 	    | left; right; assumption
 	    | right; left; assumption
-	    | right; right; assumption ].
+	    | right; right; assumption
+      | set_solver ].
 
 Lemma expr_result_shift0_lvars_subset d D e :
   formula_lvars_at (S d)
@@ -1753,10 +1860,27 @@ Proof.
 	      intros v Hv.
 	      set_unfold in Hrel.
 	      set_unfold in Hresult.
-	      set_unfold in Hqual.
-	      set_unfold in Hv.
-	      set_unfold.
-	      solve_lvars_element v.
+		      set_unfold in Hqual.
+		      set_unfold in Hv.
+		      set_unfold.
+          repeat match type of Hv with
+          | _ \/ _ => destruct Hv as [Hv|Hv]
+          end;
+          try solve
+            [ left; exact Hv
+            | right; exact Hv
+            | contradiction
+            | specialize (Hrel v Hv); tauto
+            | specialize (Hresult v Hv); tauto
+            | specialize (Hqual v Hv); tauto
+            | rewrite typed_lty_env_bind_dom in Hv;
+              rewrite dom_empty_L in Hv;
+              rewrite !lvars_at_depth_union in Hv;
+              rewrite !lvars_at_depth_shift_under in Hv by lia;
+              rewrite !lvars_at_depth_singleton_bound0_succ in Hv;
+              rewrite !lvars_at_depth_empty in Hv;
+              set_solver
+            | rewrite elem_of_empty in Hv; contradiction ].
 	    + normalize_denot_formula_lvars.
 	      pose proof (lvars_at_depth_relevant_env_subset_relevant
 	        d Σ (CTUnder b φ) e) as Hrel.
@@ -1770,10 +1894,27 @@ Proof.
 	      intros v Hv.
 	      set_unfold in Hrel.
 	      set_unfold in Hresult.
-	      set_unfold in Hqual.
-	      set_unfold in Hv.
-	      set_unfold.
-	      solve_lvars_element v.
+		      set_unfold in Hqual.
+		      set_unfold in Hv.
+		      set_unfold.
+          repeat match type of Hv with
+          | _ \/ _ => destruct Hv as [Hv|Hv]
+          end;
+          try solve
+            [ left; exact Hv
+            | right; exact Hv
+            | contradiction
+            | specialize (Hrel v Hv); tauto
+            | specialize (Hresult v Hv); tauto
+            | specialize (Hqual v Hv); tauto
+            | rewrite typed_lty_env_bind_dom in Hv;
+              rewrite dom_empty_L in Hv;
+              rewrite !lvars_at_depth_union in Hv;
+              rewrite !lvars_at_depth_shift_under in Hv by lia;
+              rewrite !lvars_at_depth_singleton_bound0_succ in Hv;
+              rewrite !lvars_at_depth_empty in Hv;
+              set_solver
+            | rewrite elem_of_empty in Hv; contradiction ].
 	    + unfold_formula_lvars_atoms.
 	      repeat rewrite ?lvars_at_depth_union.
 	      rewrite_tm_support.

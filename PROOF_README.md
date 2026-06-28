@@ -9,6 +9,31 @@ The current proof has no `Admitted.`/`admit.` in compiled Rocq files on
 `main`.  The top-level results are in
 `ContextTyping/theories/Soundness.v`.
 
+## Implementation/Paper Alignment Notes
+
+This repository intentionally differs from the paper presentation in a few
+places.  Keep these in mind when comparing statements.
+
+- Primitive operations are parameterized in the abstract proof.  The concrete
+  checked instance is `concrete_Φ`, proved well formed by `concrete_Φ_wf`.
+- The core semantics is nondeterministic-ready.  In particular, `boolGen` and
+  `natGen` are concrete generator primitives with `Unit` arguments.
+- Concrete primitive result types are graph precise.  Deterministic primitives
+  use their exact input/output graph; generators use graph qualifiers whose
+  graphs enumerate all boolean or natural results.
+- Qualifier top is not empty-support top.  `qual_top_on D` carries an explicit
+  support domain, and the usual `qual_top` notation observes the result binder.
+  This is necessary because an empty-support qualifier would impose no
+  result-slot constraint.
+- The type denotation for `CTOver b φ` and `CTUnder b φ` interprets the result
+  refinement in the typed carrier for `b`: the result body is
+  `FOver`/`FUnder` of `FAnd (FAtom φ) result_basic_typing_formula`.
+  Consequently `CTUnder b qual_top` covers all values of base type `b`, not all
+  syntactic values.
+- The implementation has additional infrastructure compared with the paper,
+  including `FPersist`/`CTPersist`, `FExists`, result-first Arrow/Wand
+  denotation, and fixed tree/list support in the core language.
+
 ## Quick Checks
 
 Use focused checks while editing:
@@ -168,7 +193,9 @@ basic typing of the term, and totality of the term.  The recursive body uses
 the result-first shape for result-sensitive types:
 
 - `CTOver` / `CTUnder`: quantify over a result slot and then check the opened
-  over/under body.
+  over/under body.  The body is typed: `over_result_body b φ` and
+  `under_result_body b φ` combine the refinement atom with
+  `result_basic_typing_formula b`.
 - `CTSum`: quantify over a result slot and split the result resource with
   `FPlus`.
 - `CTArrow` / `CTWand`: first quantify over the function result, then check
@@ -234,6 +261,19 @@ soundness theorem assumes `wf_primop_ctx Φ`.
 ```coq
 Theorem concrete_Φ_wf : wf_primop_ctx concrete_Φ.
 ```
+
+The current concrete context uses graph-precise result qualifiers for all
+primitive operations:
+
+- `eq0 : Nat -> Bool`, graph `ν = (x =? 0)`;
+- `plus1 : Nat -> Nat`, graph `ν = S x`;
+- `minus1 : Nat -> Nat`, graph `ν = pred x`;
+- `boolGen : Unit -> Bool`, graph ranges over all boolean results;
+- `natGen : Unit -> Nat`, graph ranges over all natural results.
+
+The abstract soundness proof never unfolds these concrete graphs.  It only uses
+the `wf_primop_ctx Φ` interface.  All primitive-specific reasoning is confined
+to `PrimOpConcreteContext.v`.
 
 ### Context Denotation And Context Algebra
 
@@ -333,4 +373,3 @@ When a soundness case breaks:
    argument slot.
 5. If a solver is slow, clear irrelevant hypotheses or extract the set/store
    side condition into a deterministic lemma.
-

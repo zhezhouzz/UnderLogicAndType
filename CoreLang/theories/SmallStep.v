@@ -23,10 +23,10 @@ Inductive prim_step : prim_op → constant → constant → Prop :=
       prim_step op_plus1 (cnat n) (cnat (S n))
   | Prim_minus1 n :
       prim_step op_minus1 (cnat n) (cnat (Nat.pred n))
-  | Prim_boolGen c b :
-      prim_step op_boolGen c (cbool b)
-  | Prim_natGen c n :
-      prim_step op_natGen c (cnat n).
+  | Prim_boolGen b :
+      prim_step op_boolGen cunit (cbool b)
+  | Prim_natGen n :
+      prim_step op_natGen cunit (cnat n).
 
 #[global] Hint Constructors prim_step : core.
 

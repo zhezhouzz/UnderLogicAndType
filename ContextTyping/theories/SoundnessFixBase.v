@@ -148,10 +148,8 @@ Proof.
   }
   2:{ apply LC_ret. apply LC_fvar. }
   2:{ exact Hze. }
-		  rewrite formula_open_fibvars in Hopened.
-	  rewrite formula_open_over in Hopened.
-	  rewrite formula_open_atom in Hopened.
-	  replace
+			  rewrite formula_open_fibvars in Hopened.
+		  replace
     (set_swap (LVBound 0) (LVFree z)
       (qual_vars (mk_q_lt_base b (vbvar 0) (vfvar y)) ∖ {[LVBound 0]}))
     with
@@ -264,21 +262,24 @@ Proof.
         rewrite <- tm_lvars_fv.
         apply lvars_fv_elem. exact Hze_bad.
   }
-	  pose proof (res_models_impl_elim mx _ _ Hopened Hexpr_z)
-	    as Hfib_over.
-  assert (Hfib_y :
-      mx ⊨ FFibVars ({[LVFree y]} : lvset)
-        (FOver (FAtom
-          (qual_open_atom 0 z (mk_q_lt_base b (vbvar 0) (vfvar y)))))).
+		  pose proof (res_models_impl_elim mx _ _ Hopened Hexpr_z)
+		    as Hfib_over.
+  pose proof (over_open_body_from_typed b
+    (mk_q_lt_base b (vbvar 0) (vfvar y)) z mx Hfib_over)
+    as Hfib_over_old.
+	  assert (Hfib_y :
+	      mx ⊨ FFibVars ({[LVFree y]} : lvset)
+	        (FOver (FAtom
+	          (qual_open_atom 0 z (mk_q_lt_base b (vbvar 0) (vfvar y)))))).
   {
     replace ({[LVFree y]} : lvset)
       with
-        (qual_vars
-          (qual_open_atom 0 z (mk_q_lt_base b (vbvar 0) (vfvar y))) ∖
-          {[LVFree z]})
-      by exact (lt_qual_open_vars_without_opened b z y Hzy).
-    exact Hfib_over.
-  }
+	        (qual_vars
+	          (qual_open_atom 0 z (mk_q_lt_base b (vbvar 0) (vfvar y))) ∖
+	          {[LVFree z]})
+	      by exact (lt_qual_open_vars_without_opened b z y Hzy).
+	    exact Hfib_over_old.
+	  }
   pose proof (res_models_scoped _ _ Hfib_y) as Hscope_fib.
   assert (Hy_mx_dom : y ∈ world_dom (mx : WorldT)).
   {
