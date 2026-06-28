@@ -184,65 +184,6 @@ Proof.
       destruct decide as [_|Hbad]; [reflexivity|contradiction].
 Qed.
 
-Local Lemma formula_msubst_store_result_basic_typing_ret_fvar_fresh
-    σ b y :
-  y ∉ dom (σ : StoreT) ->
-  formula_msubst_store σ
-    (expr_basic_typing_formula
-      (<[LVFree y := TBase b]> ∅) (tret (vfvar y)) (TBase b)) =
-  expr_basic_typing_formula
-    (<[LVFree y := TBase b]> ∅) (tret (vfvar y)) (TBase b).
-Proof.
-  intros Hyσ.
-  unfold formula_msubst_store, expr_basic_typing_formula,
-    expr_basic_typing_qual, qual_msubst_store, FFiberAtom.
-  cbn [formula_mlsubst].
-  f_equal.
-  - cbn [qual_mlsubst qual_vars].
-    rewrite dom_lstore_lift_free.
-    rewrite dom_insert_L, dom_empty_L.
-    cbn [qual_vars qual_lvars].
-    unfold lvars_of_atoms.
-    apply set_eq. intros v.
-    rewrite elem_of_difference.
-    rewrite elem_of_union, elem_of_singleton, elem_of_empty.
-    rewrite elem_of_map.
-    split.
-    + intros [[Hv|[]] Hnot].
-      subst v. left; reflexivity.
-    + intros Hv.
-      destruct Hv as [->|[]].
-      split; [left; reflexivity|].
-      intros Hbad.
-      destruct Hbad as [a [Ha_eq Ha_dom]].
-      inversion Ha_eq. subst a.
-      exact (Hyσ Ha_dom).
-  - f_equal.
-    apply qual_ext.
-    + cbn [qual_mlsubst qual_vars].
-      rewrite dom_lstore_lift_free.
-      rewrite dom_insert_L, dom_empty_L.
-      cbn [qual_vars qual_lvars].
-      unfold lvars_of_atoms.
-      apply set_eq. intros v.
-      rewrite elem_of_difference.
-      rewrite elem_of_union, elem_of_singleton, elem_of_empty.
-      rewrite elem_of_map.
-      split.
-      * intros [[Hv|[]] Hnot].
-        subst v. left; reflexivity.
-      * intros Hv.
-        destruct Hv as [->|[]].
-        split; [left; reflexivity|].
-        intros Hbad.
-        destruct Hbad as [a [Ha_eq Ha_dom]].
-        inversion Ha_eq. subst a.
-        exact (Hyσ Ha_dom).
-    + intros s1 s2 _.
-      cbn [qual_mlsubst qual_prop].
-      reflexivity.
-Qed.
-
 Lemma over_open_body_from_typed b φ z (m : WfWorldT) :
   m ⊨ FFibVars
       (qual_vars (qual_open_atom 0 z φ) ∖ {[LVFree z]})
@@ -375,7 +316,7 @@ Proof.
       * change (mo ⊨ formula_msubst_store σ
           (expr_basic_typing_formula
             (<[LVFree z:=TBase b]> ∅) (tret (vfvar z)) (TBase b))).
-        rewrite formula_msubst_store_result_basic_typing_ret_fvar_fresh.
+        rewrite formula_msubst_store_expr_basic_typing_ret_fvar_fresh.
         -- apply expr_basic_typing_formula_ret_fvar_singleton.
            pose proof (res_fiber_from_projection_world_dom m mfib
              (lvars_fv (qual_vars (qual_open_atom 0 z φ) ∖ {[LVFree z]}))
@@ -464,7 +405,7 @@ Proof.
       * change (mo ⊨ formula_msubst_store σ
           (expr_basic_typing_formula
             (<[LVFree z:=TBase b]> ∅) (tret (vfvar z)) (TBase b))).
-        rewrite formula_msubst_store_result_basic_typing_ret_fvar_fresh.
+        rewrite formula_msubst_store_expr_basic_typing_ret_fvar_fresh.
         -- apply expr_basic_typing_formula_ret_fvar_singleton.
            pose proof (res_fiber_from_projection_world_dom m mfib
              (lvars_fv (qual_vars (qual_open_atom 0 z φ) ∖ {[LVFree z]}))
