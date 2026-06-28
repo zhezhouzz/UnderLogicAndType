@@ -230,8 +230,8 @@ Lemma opened_world_dom_contains_slot
   y ∈ world_dom (my : WorldT).
 Proof.
   intros Hdom.
-  rewrite Hdom. apply elem_of_union_r. apply elem_of_singleton_2.
-  reflexivity.
+  exact (ContextAlgebra.ResourceInterfaceFacts.opened_world_dom_contains_slot
+    m my y Hdom).
 Qed.
 
 Lemma fvar_in_singleton_restrict_dom
@@ -242,11 +242,8 @@ Lemma fvar_in_singleton_restrict_dom
   x ∈ dom (storeA_restrict σ ({[x]} : aset) : gmap atom value).
 Proof.
   intros Hxm Hσ Hdom.
-  rewrite storeA_restrict_dom.
-  rewrite (wfworld_store_dom my σ Hσ), Hdom.
-  apply elem_of_intersection. split.
-  - apply elem_of_union_l. exact Hxm.
-  - apply elem_of_singleton. reflexivity.
+  exact (ContextAlgebra.ResourceInterfaceFacts.fvar_in_singleton_restrict_dom
+    m my σ x y Hxm Hσ Hdom).
 Qed.
 
 Lemma notin_union_singleton_of_notin_world
@@ -277,7 +274,7 @@ Lemma singleton_subset_world_dom (m : WfWorldT) z :
   z ∈ world_dom (m : WorldT) ->
   ({[z]} : aset) ⊆ world_dom (m : WorldT).
 Proof.
-  intros Hzm a Ha. apply elem_of_singleton in Ha. subst a. exact Hzm.
+  apply ContextAlgebra.ResourceInterfaceFacts.singleton_subset_world_dom.
 Qed.
 
 Lemma lty_env_insert_free_fresh
@@ -353,8 +350,7 @@ Lemma wfworld_eq_by_dom_stores (m n : WfWorldT) :
   (forall σ, (m : WorldT) σ <-> (n : WorldT) σ) ->
   m = n.
 Proof.
-  intros Hdom Hstores.
-  apply wfworld_ext. apply world_ext; assumption.
+  apply ContextAlgebra.ResourceInterfaceFacts.wfworld_eq_by_dom_stores.
 Qed.
 
 Ltac denotation_set_norm :=

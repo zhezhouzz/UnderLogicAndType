@@ -30,6 +30,15 @@ Lemma wfworld_store_dom (w : WfWorld) (σ : StoreT) :
   w σ → dom σ = world_dom (w : World).
 Proof. apply wfworldA_store_dom. Qed.
 
+Lemma wfworld_eq_by_dom_stores (m n : WfWorld) :
+  world_dom (m : World) = world_dom (n : World) ->
+  (forall σ, (m : World) σ <-> (n : World) σ) ->
+  m = n.
+Proof.
+  intros Hdom Hstores.
+  apply wfworld_ext. apply world_ext; assumption.
+Qed.
+
 Lemma raw_le_dom (m1 m2 : World) :
   raw_le m1 m2 →
   world_dom m1 ⊆ world_dom m2.
@@ -763,6 +772,38 @@ Proof. apply resA_restrict_restrict_eq. Qed.
 Lemma res_restrict_dom (w : WfWorld) (X : aset) :
   world_dom (res_restrict w X : World) = world_dom (w : World) ∩ X.
 Proof. reflexivity. Qed.
+
+Lemma opened_world_dom_contains_slot
+    (m my : WfWorld) y :
+  world_dom (my : World) = world_dom (m : World) ∪ {[y]} ->
+  y ∈ world_dom (my : World).
+Proof.
+  intros Hdom.
+  rewrite Hdom. apply elem_of_union_r. apply elem_of_singleton_2.
+  reflexivity.
+Qed.
+
+Lemma singleton_subset_world_dom (m : WfWorld) z :
+  z ∈ world_dom (m : World) ->
+  ({[z]} : aset) ⊆ world_dom (m : World).
+Proof.
+  intros Hzm a Ha. apply elem_of_singleton in Ha. subst a. exact Hzm.
+Qed.
+
+Lemma fvar_in_singleton_restrict_dom
+    (m my : WfWorld) (σ : StoreT) x y :
+  x ∈ world_dom (m : World) ->
+  (my : World) σ ->
+  world_dom (my : World) = world_dom (m : World) ∪ {[y]} ->
+  x ∈ dom (storeA_restrict σ ({[x]} : aset) : gmap atom V).
+Proof.
+  intros Hxm Hσ Hdom.
+  rewrite storeA_restrict_dom.
+  rewrite (wfworld_store_dom my σ Hσ), Hdom.
+  apply elem_of_intersection. split.
+  - apply elem_of_union_l. exact Hxm.
+  - apply elem_of_singleton. reflexivity.
+Qed.
 
 Lemma res_restrict_le (w : WfWorld) (X : aset) :
   res_restrict w X ⊑ w.
