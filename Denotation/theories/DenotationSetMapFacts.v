@@ -8,7 +8,7 @@
 
 From CoreLang Require Import Syntax InstantiationProps.
 From ContextStore Require Import Store.
-From ContextAlgebra Require Import ResourceExtension ResourceInterface.
+From ContextAlgebra Require Import ResourceExtension ResourceInterface ResourceInterfaceFacts.
 From ContextTypeLanguage Require Import Syntax LtyEnv.
 From ContextBasicDenotation Require Import StoreTyping.
 
@@ -214,14 +214,7 @@ Lemma res_extend_rel_store_dom
   (we : WorldT) σe ->
   dom (σe : StoreT) = extA_out F.
 Proof.
-  intros Hext Hσm HFrel Hσe.
-  pose proof (wfworld_store_dom we σe Hσe) as Hdomσe.
-  change (dom (σe : StoreT) = world_dom (we : WorldT)) in Hdomσe.
-  rewrite Hdomσe.
-  eapply extA_rel_dom; [|exact HFrel].
-  eapply extA_projection_dom.
-  - apply resA_extend_by_applicable in Hext. exact Hext.
-  - exact Hσm.
+  apply ContextAlgebra.ResourceInterfaceFacts.res_extend_rel_store_dom.
 Qed.
 
 Lemma opened_world_dom_contains_slot

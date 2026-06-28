@@ -1540,6 +1540,20 @@ Proof.
   exact (extA_app_out _ _ Happ).
 Qed.
 
+Lemma res_extend_rel_store_dom
+    (m mx : WfWorld) (F : fiber_extension)
+    (σm : StoreT) (we : WfWorld) (σe : StoreT) :
+  res_extend_by m F mx ->
+  (m : World) σm ->
+  extA_rel F (store_restrict σm (extA_in F)) we ->
+  (we : World) σe ->
+  dom (σe : StoreT) = extA_out F.
+Proof.
+  intros Hext Hσm HFrel Hσe.
+  eapply (extA_output_store_dom_from_base m F σm we σe); eauto.
+  exact (resA_extend_by_applicable _ _ _ Hext).
+Qed.
+
 Lemma res_restrict_singleton_store_eq
     (m : WfWorld) X (σX σ : StoreT) :
   res_restrict m X =
