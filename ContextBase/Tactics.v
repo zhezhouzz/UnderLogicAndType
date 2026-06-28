@@ -26,6 +26,53 @@ Proof.
     + subst z. split; [exact HxX | exact HxY].
 Qed.
 
+Lemma gset_union_singleton_empty_r {K : Type} `{Countable K}
+    (X : gset K) y :
+  X ∪ ({[y]} ∪ ∅) = X ∪ {[y]}.
+Proof. set_solver. Qed.
+
+Lemma gset_empty_union_singleton_l {K : Type} `{Countable K}
+    (y : K) :
+  ∅ ∪ {[y]} = ({[y]} : gset K).
+Proof. set_solver. Qed.
+
+Lemma gset_notin_union4_l {K : Type} `{Countable K}
+    (a : K) (A B C D : gset K) :
+  a ∉ A ∪ B ∪ C ∪ D →
+  a ∉ A.
+Proof. set_solver. Qed.
+
+Lemma gset_notin_union4_r1 {K : Type} `{Countable K}
+    (a : K) (A B C D : gset K) :
+  a ∉ A ∪ B ∪ C ∪ D →
+  a ∉ B.
+Proof. set_solver. Qed.
+
+Lemma gset_notin_union4_r2 {K : Type} `{Countable K}
+    (a : K) (A B C D : gset K) :
+  a ∉ A ∪ B ∪ C ∪ D →
+  a ∉ C.
+Proof. set_solver. Qed.
+
+Lemma gset_notin_union4_r3 {K : Type} `{Countable K}
+    (a : K) (A B C D : gset K) :
+  a ∉ A ∪ B ∪ C ∪ D →
+  a ∉ D.
+Proof. set_solver. Qed.
+
+Lemma gset_elem_union_singleton_not_eq_left {K : Type} `{Countable K}
+    (A : gset K) a y :
+  a ∈ A ∪ {[y]} →
+  a ≠ y →
+  a ∈ A.
+Proof. set_solver. Qed.
+
+Lemma gset_elem_open_world_inter_singleton {K : Type} `{Countable K}
+    x y (B : gset K) :
+  x ∈ B →
+  x ∈ (B ∪ {[y]}) ∩ ({[x]} : gset K).
+Proof. set_solver. Qed.
+
 Ltac fast_set_solver :=
   solve [try fast_done; repeat (set_unfold; subst; intuition)].
 

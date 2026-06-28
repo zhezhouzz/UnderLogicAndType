@@ -18,47 +18,42 @@ Notation WfWorldT := (WfWorld (V := value)) (only parsing).
 
 Lemma union_singleton_empty_r (X : aset) y :
   X ∪ ({[y]} ∪ ∅) = X ∪ {[y]}.
-Proof. set_solver. Qed.
+Proof. apply gset_union_singleton_empty_r. Qed.
 
 Lemma empty_union_singleton_l y :
   ∅ ∪ {[y]} = ({[y]} : aset).
-Proof. set_solver. Qed.
+Proof. apply gset_empty_union_singleton_l. Qed.
 
 Lemma notin_union4_l (a : atom) (A B C D : aset) :
   a ∉ A ∪ B ∪ C ∪ D ->
   a ∉ A.
-Proof. set_solver. Qed.
+Proof. apply gset_notin_union4_l. Qed.
 
 Lemma notin_union4_r1 (a : atom) (A B C D : aset) :
   a ∉ A ∪ B ∪ C ∪ D ->
   a ∉ B.
-Proof. set_solver. Qed.
+Proof. apply gset_notin_union4_r1. Qed.
 
 Lemma notin_union4_r2 (a : atom) (A B C D : aset) :
   a ∉ A ∪ B ∪ C ∪ D ->
   a ∉ C.
-Proof. set_solver. Qed.
+Proof. apply gset_notin_union4_r2. Qed.
 
 Lemma notin_union4_r3 (a : atom) (A B C D : aset) :
   a ∉ A ∪ B ∪ C ∪ D ->
   a ∉ D.
-Proof. set_solver. Qed.
+Proof. apply gset_notin_union4_r3. Qed.
 
 Lemma elem_union_singleton_not_eq_left (A : aset) a y :
   a ∈ A ∪ {[y]} ->
   a <> y ->
   a ∈ A.
-Proof. set_solver. Qed.
+Proof. apply gset_elem_union_singleton_not_eq_left. Qed.
 
 Lemma elem_open_world_inter_singleton x y (B : aset) :
   x ∈ B ->
   x ∈ (B ∪ {[y]}) ∩ ({[x]} : aset).
-Proof.
-  intros Hx.
-  apply elem_of_intersection. split.
-  - apply elem_of_union_l. exact Hx.
-  - apply elem_of_singleton. reflexivity.
-Qed.
+Proof. apply gset_elem_open_world_inter_singleton. Qed.
 
 Lemma store_restrict_union_singleton_ignore_r
     (σ : StoreT) x (v : value) X :
