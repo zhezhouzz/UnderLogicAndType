@@ -228,16 +228,50 @@ constructor is `FBWand d P Q`, written `P -∗[d] Q`, where the binder-depth
 parameter `d` is an offset.  In ordinary value-level uses, `d = 1`; nested
 result-first definitions may require the depth to be stated explicitly.
 
-### Typed top and typed result bodies
+### Qualifier embedding
 
-`qual_top_on D` is domain-indexed.  The standard `qual_top` notation observes
-the result binder.  An empty-support top qualifier would impose no result-slot
-constraint and would make underapproximate coverage vacuous.
+Refinement qualifiers are shallowly embedded as Coq propositions.  This lets
+the artifact use the full expressiveness of `Prop` for the rich predicates
+needed by type denotation, including basic well-typedness and totality
+properties, without being limited by a first-order qualifier syntax.
+Concretely, a qualifier is a support set of logical variables together with a
+Coq predicate over stores whose domain is exactly that support:
 
-The nonzero denotation for `CTOver b φ` and `CTUnder b φ` checks refinement
-inside the typed carrier for `b`: the result body combines `FAtom φ` with the
-result slot's basic typing formula.  Thus `CTUnder b qual_top` covers all
-values of base type `b`, not all syntactic values.
+```coq
+Record qualifier : Type := tqual {
+  qual_lvars : lvset;
+  qual_prop : LStoreOnT qual_lvars -> Prop;
+}.
+```
+
+This definition appears in `ContextQualifier/theories/Qualifier.v` (line 26).
+
+The explicit support also gives the artifact precise control over which
+variables a qualifier can observe.  For example, `top[x]` and `top[x,y]` are
+not interchangeable: the former ranges over all values of `x`, while the
+latter ranges over joint assignments to both `x` and `y`.  This distinction is
+usually invisible in logics that use only overapproximate semantics, but it is
+important for the precise over/under semantics used here.
+
+Because qualifiers themselves are untyped, a bare top qualifier would range
+over all syntactic values.  Thus `[v : Bool | top]` would otherwise also try to
+cover natural numbers.  The type denotation fixes this at the embedding point:
+the Over/Under result body conjoins the qualifier atom with a basic typing atom
+for the result slot.  The helper definitions are in
+`Denotation/theories/TypeDenote.v` (lines 80-87), and the expanded
+`CTOver`/`CTUnder` branches in `ty_denote_gas` show the same structure
+(lines 131-142):
+
+```coq
+Definition result_basic_typing_formula (b : base_ty) : FormulaT :=
+  FHasType[(∅ ▷ TBase b)%lvar ⊢ (ret # 0)%core ⋮ TBase b].
+
+Definition over_result_body (b : base_ty) (φ : type_qualifier) : FormulaT :=
+  (over (@atom φ ∧ result_basic_typing_formula b))%formula.
+
+Definition under_result_body (b : base_ty) (φ : type_qualifier) : FormulaT :=
+  (under (@atom φ ∧ result_basic_typing_formula b))%formula.
+```
 
 ### Result-first type denotation
 
