@@ -632,6 +632,22 @@ Proof.
   - eapply res_extend_by_restrict_base; exact Hext.
 Qed.
 
+Lemma res_models_forall_full_world_iff
+    (m : WfWorldT) (φ : FormulaT) :
+  formula_scoped_in_world m (FForall φ) ->
+  (m ⊨ FForall φ <->
+    exists L : aset,
+      forall y : atom, y ∉ L ->
+        forall my : WfWorldT,
+          world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+          res_restrict my (world_dom (m : WorldT)) = m ->
+          my ⊨ formula_open 0 y φ).
+Proof.
+  intros Hscope. split.
+  - apply res_models_forall_rev.
+  - apply res_models_forall_rev_intro. exact Hscope.
+Qed.
+
 Lemma res_models_forall_full_world_map
     (m : WfWorldT) (φ ψ : FormulaT) :
   (** This is the "full-world" view of [FForall].  The primitive semantics

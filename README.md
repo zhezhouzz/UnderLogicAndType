@@ -173,19 +173,20 @@ slot `y`; the opened body must hold on every such minimal extension.  The
 locally nameless details
 `exists L : aset, forall y : atom, y ∉ L ->` and
 `formula_open 0 y φ` are the usual freshness/opening noise: semantically, this
-matches the quantification described in the paper.  The main introduction
-principle used in proofs is:
+matches the quantification described in the paper.  The full-world
+characterization used by many later proofs is an iff:
 
 ```coq
-Lemma res_models_forall_rev_intro (m : WfWorldT) (φ : FormulaT) :
+Lemma res_models_forall_full_world_iff
+    (m : WfWorldT) (φ : FormulaT) :
   formula_scoped_in_world m (FForall φ) ->
-  (exists L : aset,
-    forall y : atom, y ∉ L ->
-      forall my : WfWorldT,
-        world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
-        res_restrict my (world_dom (m : WorldT)) = m ->
-        my ⊨ formula_open 0 y φ) ->
-  m ⊨ FForall φ.
+  (m ⊨ FForall φ <->
+    exists L : aset,
+      forall y : atom, y ∉ L ->
+        forall my : WfWorldT,
+          world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+          res_restrict my (world_dom (m : WorldT)) = m ->
+          my ⊨ formula_open 0 y φ).
 ```
 
 The notation
