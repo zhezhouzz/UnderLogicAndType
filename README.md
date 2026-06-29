@@ -92,10 +92,12 @@ ContextBase
 ```
 
 - `ContextBase`, `ContextStore`, and `ContextAlgebra` define atoms, logical
-  variables, stores, worlds/resources, restriction, products/sums, fibers, and
-  result extensions.
+  variables, stores, and resources.  A store is the artifact name for the
+  paper's environment: a finite map from variables to values.  Worlds,
+  resources, and capabilities refer to the same semantic objects in this
+  development.
 - `ContextLogic` defines formulas, satisfaction, bunched connectives,
-  fiber quantification, persistence, and fiberwise joinability facts.
+  fiber quantification, and persistence.
 - `CoreLang` defines the core term language, basic typing, small-step
   semantics, and operational result facts.
 - `ContextTypeLanguage` defines context types, contexts, erasure,
@@ -103,8 +105,8 @@ ContextBase
 - `ContextBasicDenotation` defines formula atoms for basic worlds, basic
   typing, term totality/results, qualifiers, and relevant environments.
 - `Denotation` defines type/context denotation, constants, result-first
-  Arrow/Wand support, result extension, let transport, and primitive-operation
-  denotation support.
+  Arrow/Wand support, let transport, and primitive-operation denotation
+  support.
 - `ContextTyping` defines primitive-operation contexts, typing rules, and the
   soundness proof.  The main soundness proof is split by typing-rule families,
   with separate files for lambdas, applications, match, recursion, and
