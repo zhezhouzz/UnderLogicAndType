@@ -40,7 +40,7 @@ make
 
 - The artifact implements the proof core used by the paper: nondeterministic
   operational semantics, nondeterministic generators `boolGen` and `natGen`,
-  graph-precise primitive-operation contracts, and type-level persistence.
+  precise primitive-operation contracts, and type-level persistence.
 - The checked core language contains the constructs needed by the metatheory:
   `Unit`, `Bool`, `Nat`, unary primitive operations, function application,
   `let`, and boolean-specific match.  Paper-level surface extensions such as
@@ -143,7 +143,7 @@ formula's support; `res_models_persist_iff` states this characterization, and
 ### Concrete primitive context
 
 The abstract soundness proof assumes only `wf_primop_ctx Φ`.  The concrete
-instance `concrete_Φ` is graph precise:
+instance `concrete_Φ` records precise input-output relations:
 
 ```coq
 eq0    : {: Nat  | qual_top } -> precise Bool (ν = (x =? 0))
@@ -153,10 +153,10 @@ boolGen: {: Unit | qual_top } -> precise Bool (ν ranges over bool results)
 natGen : {: Unit | qual_top } -> precise Nat  (ν ranges over nat results)
 ```
 
-In Rocq these result graphs are represented uniformly by
+In Rocq these input-output relations are represented uniformly by
 `primop_graph_qual op`.  Primitive-specific semantic reasoning is confined to
 `concrete_Φ_wf` and its supporting lemmas; the generic Fundamental theorem does
-not inspect concrete primitive graphs.
+not inspect concrete primitive-operation relations.
 
 ### Typed top and typed result bodies
 
