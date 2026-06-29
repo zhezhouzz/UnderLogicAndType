@@ -156,14 +156,19 @@ in Proof Details below.
 of the Binding Reference Operator from Definition 4.3.  It evaluates `P` on
 the fibers induced by the variables in `D`.
 
-The proof repeatedly uses the fact that formula satisfaction depends only on
-the free variables of the formula:
+The notation
 
 ```coq
-Lemma res_models_minimal_on (S : aset) (m : WfWorldT) (φ : FormulaT) :
-  formula_fv φ ⊆ S →
-  res_models m φ ↔ res_models (res_restrict m S) φ.
+m #> F ~~> mx
 ```
+
+means that `F` is a resource extension function applicable to `m`, and `mx` is
+the resource obtained by applying `F` to every store/environment in `m`.  A
+typical example is the result extension for `[[e -->* x]]`: it maps each store
+in the current capability to stores where the fresh variable `x` records a
+value that `e` can reduce to in that store.  Thus the current capability `m`
+is extended to `mx`, where `x` stores the possible results of `e` across the
+stores in `m`.
 
 `FForall P`, written `∀. P`, is implemented using explicit resource
 extensions.  Intuitively, for every fresh name `y`, the artifact considers
@@ -188,20 +193,6 @@ Lemma res_models_forall_full_world_iff
           res_restrict my (world_dom (m : WorldT)) = m ->
           my ⊨ formula_open 0 y φ).
 ```
-
-The notation
-
-```coq
-m #> F ~~> mx
-```
-
-means that `F` is a resource extension function applicable to `m`, and `mx` is
-the resource obtained by applying `F` to every store/environment in `m`.  A
-typical example is the result extension for `[[e -->* x]]`: it maps each store
-in the current capability to stores where the fresh variable `x` records a
-value that `e` can reduce to in that store.  Thus the current capability `m`
-is extended to `mx`, where `x` stores the possible results of `e` across the
-stores in `m`.
 
 `FPersist P`, written `□ P`, is implemented similarly by using the smallest
 singleton resource needed to model `P`.  The definition projects the current
@@ -342,6 +333,75 @@ The guard definition is in `Denotation/theories/TypeDenote.v` (line 7), and
 the fixpoint begins with `guard[Σg; τ; e] ∧ ...` in the same file (lines
 122-127).
 
+### Typing proof core lemmas
+
+Two denotation-transport lemmas carry much of the typing proof.
+
+The first one is the let-introduction transport lemma.  It states that, after
+extending a resource with the result graph of `e1` at a fresh slot `x`, the
+opened body `e2 ^^ x` and the actual `let` term satisfy the same type
+denotation at every gas level:
+
+```coq
+Lemma tlet_intro_denotation
+    gas (Σ : lty_env) τ e1 e2 x Fx m mx :
+  x ∉ fv_tm e2 ->
+  x ∉ fv_cty τ ->
+  expr_result_extension_witness e1 x Fx ->
+  res_extend_by m Fx mx ->
+  mx ⊨ ty_denote_gas 0 Σ τ (e2 ^^ x) ->
+  mx ⊨ ty_denote_gas 0 Σ τ (tlete e1 e2) ->
+  mx ⊨ ty_denote_gas gas Σ τ (e2 ^^ x) <->
+  mx ⊨ ty_denote_gas gas Σ τ (tlete e1 e2).
+```
+
+This theorem is in `Denotation/theories/TypeEquivTLet.v` (line 1469).  It is
+the core proof bridge for the `let` typing rules: soundness first constructs
+the result-extension world, proves the body there, and then uses this theorem
+to return to the source `let` term.
+
+The second one says that type denotation is invariant under term-result
+equivalence:
+
+```coq
+Definition typed_total_equiv_on
+    (Σ : lty_env) (τ : context_ty) (m : WfWorldT)
+    (e1 e2 : tm) : Prop :=
+  tm_equiv_on m e1 e2 /\
+  tm_total_equiv_on m e1 e2 /\
+  m ⊨ ty_denote_gas 0 Σ τ e1 /\
+  m ⊨ ty_denote_gas 0 Σ τ e2.
+
+Lemma ty_denote_gas_tm_equiv
+    gas Σ τ e1 e2 (m : WfWorldT) :
+  typed_total_equiv_on Σ τ m e1 e2 ->
+  m ⊨ ty_denote_gas gas Σ τ e1 ->
+  m ⊨ ty_denote_gas gas Σ τ e2.
+```
+
+The premise is defined in `Denotation/theories/TypeEquivTermBase.v` (line 68),
+and the transport theorem is in `Denotation/theories/TypeEquiv.v` (line 622).
+This lemma lets the fundamental proof change the shape of a term without
+changing its denotation.  For example, the match proof first relates a reachable
+branch to the whole boolean match term (`SoundnessMatch.v`, line 264), the
+lambda proof relates a beta-reduced body to an application of a lambda
+(`SoundnessLam.v`, line 781), and the fix proof relates an application of a fix
+value to the unfolded recursive body (`SoundnessFixBase.v`, line 675).
+
+In a deterministic language, this kind of term-equivalence transport can often
+derive the let-introduction transport: the result slot inserted by the
+extension is the unique result obtained by re-running the term.  In the
+nondeterministic language, that invariant breaks.  Let `m` be the singleton
+world containing the empty store, let `e1` be `boolGen unit`, and let
+`e2 = ret (vbvar 0)`.  If `mx` is the result-extension world
+`m #> [[e1 --* x]] ~~> mx`, then `e2 ^^ x` is `ret x`, so an output slot `y`
+is correlated with the already stored value of `x`.  But
+`let x = e1 in ret x` re-runs the nondeterministic generator in each store of
+`mx`; its output `y` may be either boolean independently of the old stored
+`x`.  Thus the two result graphs are not equivalent in general.  This is one
+of the places where the nondeterministic proof diverges from the deterministic
+invariants and requires a separate `tlet_intro_denotation` theorem.
+
 ### Core proof technical infrastructure
 
 Result extension is the bridge from operational result sets to type
@@ -349,9 +409,7 @@ denotation.  The main lemmas in this area are:
 
 - `ty_denote_gas_result_ext`: transports denotation along a result extension;
 - `ty_denote_gas_result_alias_at`: replaces a term by a fresh result slot when
-  the result graph is available;
-- `tlet_intro_denotation`: connects a let body opened with a result slot to the
-  corresponding `let` term.
+  the result graph is available.
 
 The proof also uses fiberwise aggregation facts, especially
 `fiberwise_joinable_on_*`, to combine fiber-local obligations back into whole
