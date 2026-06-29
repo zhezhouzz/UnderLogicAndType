@@ -235,20 +235,3 @@ main lemmas in this area are:
 The proof also uses fiberwise aggregation facts, especially
 `fiberwise_joinable_on_*`, to combine fiber-local obligations back into whole
 resource worlds for the formula fragments that support such aggregation.
-
-### Reading guide
-
-For the central definitions and theorems, start with:
-
-1. `ContextLogic/theories/FormulaSemantics.v`
-2. `ContextBasicDenotation/theories/TermOpen.v`
-3. `Denotation/theories/TypeDenote.v`
-4. `Denotation/theories/Context.v`
-5. `ContextTyping/theories/Typing.v`
-6. `ContextTyping/theories/Soundness.v`
-
-For function cases, read `Denotation/theories/ResultFirstOpen.v` before the
-Arrow/Wand proof files.  For persistence, read
-`ContextLogic/theories/FormulaConnectivesHigher.v`, the `TypePersist*.v` files,
-`ContextTyping/theories/Typing.v`, and
-`ContextTyping/theories/SoundnessPersist.v`.
