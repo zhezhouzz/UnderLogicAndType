@@ -61,6 +61,18 @@ make
       let m = op_minus1 n in
       e2
   ```
+- Function-application typing rules in the artifact require the argument to be
+  a fresh variable rather than an arbitrary value.  This is only a proof-facing
+  normal form: an application `v1 v2` can be rewritten as
+  `let x = ret v2 in v1 x` for a fresh `x`.  The restriction gives all
+  application proofs the same argument shape and keeps the resource-splitting
+  and result-extension arguments uniform.
+- The paper presents match typing with a more general control-flow index `i`.
+  The artifact splits the Boolean match rule into three constructors: only the
+  first branch is reachable, only the second branch is reachable, or both
+  branches are reachable.  There is no constructor for the case where neither
+  branch is reachable, because every term accepted by the context type system
+  is required to be total.
 - The type system contains union types in addition to the constructs used in
   the paper examples.
 - The logic does not include an existential formula constructor, because the
