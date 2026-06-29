@@ -38,14 +38,17 @@ make
 
 ## Design Choices and Differences from the Paper
 
-- The artifact implements the proof core used by the paper: nondeterministic
-  operational semantics, nondeterministic generators `boolGen` and `natGen`,
-  precise primitive-operation contracts, and type-level persistence.
-- The checked core language contains the constructs needed by the metatheory:
-  `Unit`, `Bool`, `Nat`, unary primitive operations, function application,
-  `let`, and boolean-specific match.  Paper-level surface extensions such as
-  list/tree syntax, additional operators, and general n-ary primitive-operator
-  syntax are not included in `main`.
+- The paper first introduces a restricted deterministic language and then
+  presents its nondeterministic extension.  This artifact implements the full
+  nondeterministic language and context type system used by the metatheory:
+  nondeterministic operational semantics, nondeterministic generators
+  `boolGen` and `natGen`, precise primitive-operation contracts, and
+  type-level persistence.
+- The checked core language contains the constructs needed by that core
+  metatheory: `Unit`, `Bool`, `Nat`, unary primitive operations, function
+  application, `let`, and boolean-specific match.  Paper-level surface
+  extensions such as list/tree syntax, additional operators, and general n-ary
+  primitive-operator syntax are not included in `main`.
 - The type system contains union types in addition to the constructs used in
   the paper examples.
 - The logic does not include an existential formula constructor, because the
