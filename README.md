@@ -44,11 +44,23 @@ make
   nondeterministic operational semantics, nondeterministic generators
   `boolGen` and `natGen`, precise primitive-operation contracts, and
   type-level persistence.
-- The checked core language contains the constructs needed by that core
-  metatheory: `Unit`, `Bool`, `Nat`, unary primitive operations, function
-  application, `let`, and boolean-specific match.  Paper-level surface
-  extensions such as list/tree syntax, additional operators, and general n-ary
-  primitive-operator syntax are not included in `main`.
+- The checked core language is limited to `Unit`, `Bool`, and `Nat`; it does
+  not include lists or trees.  These are straightforward datatype extensions
+  of the core.  The primitive operators include the usual unary operations
+  such as `plus1`, `minus1`, and `eq0`, together with random generators such
+  as `boolGen` and `natGen`.
+- For simplicity, pattern matching only matches on Boolean discriminees.
+  Pattern matching on natural numbers can be implemented by first testing
+  whether the scrutinee is zero:
+
+  ```text
+  let cond = op_eq0 n in
+  match cond with
+  | true -> e1
+  | false ->
+      let m = op_minus1 n in
+      e2
+  ```
 - The type system contains union types in addition to the constructs used in
   the paper examples.
 - The logic does not include an existential formula constructor, because the
