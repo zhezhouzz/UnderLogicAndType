@@ -143,13 +143,22 @@ ContextBase
 | Closed-program denotational soundness | Soundness theorem | `denotational_soundness` in `ContextTyping/theories/Soundness.v` (line 1079) | closed programs have a result world satisfying `TyDenote[...]` |
 | Concrete soundness wrappers | Concrete theorem instances | `concrete_Fundamental` and `concrete_denotational_soundness` in `ContextTyping/theories/Soundness.v` (lines 1152 and 1159) | concrete versions instantiate `Φ := concrete_Φ` |
 
-Two logic definitions are more precise in the artifact than in the prose
-presentation.  The universal formula is implemented as a locally nameless
-binder, with opening lemmas connecting it to the expected quantified behavior.
-The persistent modality is implemented by singleton projection over the
-formula's support; `res_models_persist_iff` states this characterization, and
-`persistent_formula_equiv_persist`, `persistent_star_self`, and
-`persistent_star_and` prove the algebraic laws used in the paper.
+The artifact defines universal quantification and persistence in forms that
+are slightly different from the paper presentation because these definitions
+are more convenient for the mechanized proof.  For `∀. P`, the locally
+nameless definition is related to the expected quantified behavior by
+`res_models_forall_iff`, `res_models_forall_rev`, and
+`res_models_forall_rev_intro`.  For `□ P`, the implementation uses singleton
+projection over the formula support; `res_models_persist_iff` states this
+characterization, and `persistent_formula_equiv_persist`,
+`persistent_star_self`, and `persistent_star_and` prove the algebraic laws used
+in the paper.
+
+The artifact's magic wand also has a more explicit locally nameless shape:
+`P -∗[d] Q` records how many bound variables in `P` and `Q` must be kept in
+scope when the wand is opened.  This makes the definition look more detailed
+than the paper rule, but it has the same semantic role.  Proof Details gives
+the informal explanation of this binder-depth parameter.
 
 ## Proof Details
 
@@ -181,6 +190,14 @@ The nonzero denotation for `CTOver b φ` and `CTUnder b φ` checks refinement
 inside the typed carrier for `b`: the result body combines `FAtom φ` with the
 result slot's basic typing formula.  Thus `CTUnder b qual_top` covers all
 values of base type `b`, not all syntactic values.
+
+### Binder-aware wand
+
+Because the artifact uses locally nameless binders, opening a formula under a
+wand must account for the bound variables that remain in scope on both sides
+of the wand.  The parameter `d` in `P -∗[d] Q` records this binder depth.  In
+ordinary value-level uses, `d = 1`; nested result-first definitions may require
+the depth to be stated explicitly.
 
 ### Result-first type denotation
 
