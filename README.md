@@ -155,28 +155,27 @@ in Proof Details below.
 of the Binding Reference Operator from Definition 4.3.  It evaluates `P` on
 the fibers induced by the variables in `D`.
 
+The proof repeatedly uses the fact that formula satisfaction depends only on
+the free variables of the formula:
+
+```coq
+Lemma res_models_minimal_on (S : aset) (m : WfWorldT) (φ : FormulaT) :
+  formula_fv φ ⊆ S →
+  res_models m φ ↔ res_models (res_restrict m S) φ.
+```
+
 `FForall P`, written `∀. P`, is implemented using explicit resource
 extensions.  Intuitively, for every fresh name `y`, the artifact considers
 every minimal extension of the current resource that provides exactly the
 variables needed to interpret the opened body and outputs the fresh result
-slot `y`; the opened body must hold on every such minimal extension.  This is
-more precise for proof engineering than the prose definition based directly on
-the refinement partial order, but the two proof principles are equivalent for
-the uses in the artifact.  The bridge is captured by:
+slot `y`; the opened body must hold on every such minimal extension.  The
+locally nameless details
+`exists L : aset, forall y : atom, y ∉ L ->` and
+`formula_open 0 y φ` are the usual freshness/opening noise: semantically, this
+matches the quantification described in the paper.  The main introduction
+principle used in proofs is:
 
 ```coq
-Lemma res_models_forall_iff (m : WfWorldT) (φ : FormulaT) :
-  formula_scoped_in_world m (FForall φ) →
-  (m ⊨ FForall φ ↔
-    ∃ L : aset,
-      ∀ y : atom, y ∉ L →
-      ∀ F : fiber_extension,
-        ext_in F = formula_fv φ →
-        ext_out F = {[y]} →
-        ∀ my : WfWorldT,
-          res_extend_by m F my →
-          my ⊨ formula_open 0 y φ).
-
 Lemma res_models_forall_rev_intro (m : WfWorldT) (φ : FormulaT) :
   formula_scoped_in_world m (FForall φ) ->
   (exists L : aset,
@@ -188,20 +187,20 @@ Lemma res_models_forall_rev_intro (m : WfWorldT) (φ : FormulaT) :
   m ⊨ FForall φ.
 ```
 
-`FPersist P`, written `□ P`, is implemented similarly in a proof-oriented
-minimal form.  Instead of defining persistence directly by refinement-order
-closure, the artifact projects the current resource to the support of `P` and
-requires this projection to be a singleton resource satisfying `P`.  The
-characterization theorem is:
+`FPersist P`, written `□ P`, is implemented similarly by using the smallest
+singleton resource needed to model `P`.  The definition projects the current
+resource to the support of `P` and requires this projection to be a singleton
+resource satisfying `P`.  By `res_models_minimal_on`, this is equivalent to
+the paper-style characterization: `r |= □P` iff there is a singleton resource
+`{σ}` such that `{σ} ⊑ r` and `{σ} |= P`.
 
 ```coq
-Lemma res_models_persist_iff (m : WfWorldT) (φ : FormulaT) :
+Lemma res_models_persist_order_iff (m : WfWorldT) (φ : FormulaT) :
   m ⊨ FPersist φ <->
   exists σ : Store (V := V),
-    dom (σ : Store (V := V)) = formula_fv φ /\
-    res_restrict m (formula_fv φ) =
-      (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) /\
-    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) ⊨ φ.
+    let σw :=
+      (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) in
+    σw ⊑ m /\ σw ⊨ φ.
 ```
 
 The algebraic behavior used in the paper is then recovered by:

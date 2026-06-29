@@ -906,6 +906,51 @@ Proof.
     + exact Hsingle.
 Qed.
 
+Lemma res_models_persist_order_iff (m : WfWorldT) (φ : FormulaT) :
+  m ⊨ FPersist φ <->
+  exists σ : Store (V := V),
+    let σw :=
+      (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) in
+    σw ⊑ m /\ σw ⊨ φ.
+Proof.
+  split.
+  - intros Hpersist.
+    apply res_models_persist_iff in Hpersist
+      as [σ [_ [Hrestrict Hsingle]]].
+    exists σ. cbn. split.
+    + rewrite <- Hrestrict. apply res_restrict_le.
+    + exact Hsingle.
+  - intros [σ Hσ].
+    destruct Hσ as [Hle Hsingle].
+    pose proof (res_models_scoped
+      (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT)
+      φ Hsingle) as Hscope_single.
+    pose proof (res_models_restrict_fv
+      (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT)
+      φ Hsingle) as Hsingle_restrict.
+    rewrite res_restrict_singleton_world in Hsingle_restrict.
+    eapply res_models_persist_intro
+      with (σ := store_restrict σ (formula_fv φ)).
+    + change (dom (store_restrict σ (formula_fv φ) : Store (V := V)) =
+        formula_fv φ).
+      pose proof (storeA_restrict_dom (K := atom) σ (formula_fv φ))
+        as Hdom_restrict.
+      change (dom (storeA_restrict σ (formula_fv φ)) =
+        formula_fv φ).
+      rewrite Hdom_restrict.
+      cbn [formula_scoped_in_world] in Hscope_single.
+      change (world_dom
+        ((exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT)
+          : WorldT)) with (dom (σ : Store (V := V))) in Hscope_single.
+      set_solver.
+    + rewrite <- (res_restrict_singleton_world σ (formula_fv φ)).
+      symmetry.
+      eapply res_restrict_le_eq.
+      * exact Hle.
+      * exact Hscope_single.
+    + exact Hsingle_restrict.
+Qed.
+
 Lemma persistent_formula_equiv_persist (φ : FormulaT) :
   persistent_formula φ ->
   φ ⊣⊢ FPersist φ.
