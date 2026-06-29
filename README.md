@@ -187,6 +187,20 @@ Lemma res_models_forall_rev_intro (m : WfWorldT) (φ : FormulaT) :
   m ⊨ FForall φ.
 ```
 
+The notation
+
+```coq
+m #> F ~~> mx
+```
+
+means that `F` is a resource extension function applicable to `m`, and `mx` is
+the resource obtained by applying `F` to every store/environment in `m`.  A
+typical example is the result extension for `[[e -->* x]]`: it maps each store
+in the current capability to stores where the fresh variable `x` records a
+value that `e` can reduce to in that store.  Thus the current capability `m`
+is extended to `mx`, where `x` stores the possible results of `e` across the
+stores in `m`.
+
 `FPersist P`, written `□ P`, is implemented similarly by using the smallest
 singleton resource needed to model `P`.  The definition projects the current
 resource to the support of `P` and requires this projection to be a singleton
@@ -273,32 +287,10 @@ Definition under_result_body (b : base_ty) (φ : type_qualifier) : FormulaT :=
   (under (@atom φ ∧ result_basic_typing_formula b))%formula.
 ```
 
-### Result-first type denotation
-
-Every nonzero type denotation begins with a guard:
-
-```coq
-guard[rel[Σ | τ] e; τ; e] ∧ ...
-```
-
-Result-sensitive types then bind the result of the scrutinized term first.
-`CTSum`, `CTArrow`, `CTWand`, and `CTPersist` all follow this result-first
-shape.  The helper definitions `arrow_value_denote_gas_with` and
-`wand_value_denote_gas_with` are retained for proof normalization, but the
-Arrow/Wand branches in `ty_denote_gas` are expanded so that the definition
-shows the actual denotation.
-
 ### Core proof technical infrastructure
 
-The notation
-
-```coq
-m #> F ~~> mx
-```
-
-means that `mx` extends `m` by the result/fiber extension `F`.  Result
-extension is the bridge from operational result sets to type denotation.  The
-main lemmas in this area are:
+Result extension is the bridge from operational result sets to type
+denotation.  The main lemmas in this area are:
 
 - `ty_denote_gas_result_ext`: transports denotation along a result extension;
 - `ty_denote_gas_result_alias_at`: replaces a term by a fresh result slot when
