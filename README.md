@@ -228,24 +228,6 @@ constructor is `FBWand d P Q`, written `P -∗[d] Q`, where the binder-depth
 parameter `d` is an offset.  In ordinary value-level uses, `d = 1`; nested
 result-first definitions may require the depth to be stated explicitly.
 
-### Concrete primitive context
-
-The abstract soundness proof assumes only `wf_primop_ctx Φ`.  The concrete
-instance `concrete_Φ` records precise input-output relations:
-
-```coq
-eq0    : {: Nat  | qual_top } -> precise Bool (ν = (x =? 0))
-plus1  : {: Nat  | qual_top } -> precise Nat  (ν = S x)
-minus1 : {: Nat  | qual_top } -> precise Nat  (ν = pred x)
-boolGen: {: Unit | qual_top } -> precise Bool (ν ranges over bool results)
-natGen : {: Unit | qual_top } -> precise Nat  (ν ranges over nat results)
-```
-
-In Rocq these input-output relations are represented uniformly by
-`primop_graph_qual op`.  Primitive-specific semantic reasoning is confined to
-`concrete_Φ_wf` and its supporting lemmas; the generic Fundamental theorem does
-not inspect concrete primitive-operation relations.
-
 ### Typed top and typed result bodies
 
 `qual_top_on D` is domain-indexed.  The standard `qual_top` notation observes
