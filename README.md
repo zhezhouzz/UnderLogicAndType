@@ -114,38 +114,34 @@ ContextBase
 
 ## Paper-to-artifact Correspondence
 
-| Paper concept | Artifact counterpart | Location / note |
-| --- | --- | --- |
-| Core syntax and operational semantics | `tm`, `value`, `step`, result relations | `CoreLang/theories/Syntax.v`, `SmallStep.v`, `OperationalResults.v` |
-| Basic typing | `has_basic_type` and regularity lemmas | `CoreLang/theories/BasicTyping.v`, `BasicTypingProps.v` |
-| Qualifiers | `tqual D (Store -> Prop)` | `ContextQualifier/theories/Qualifier.v`; shallow Coq embedding with explicit support |
-| Context types | `context_ty` | `ContextTypeLanguage/theories/Syntax.v` |
-| Over / Under types | `{: b | φ }`, `[: b | φ ]` | Notations for `CTOver b φ`, `CTUnder b φ` |
-| Precise refinement type | `precise_ty b φ` | Intersection of over and under refinements |
-| Type intersection / union / sum | `τ1 ⊓ τ2`, `τ1 ⊔ τ2`, `τ1 ⊕ τ2` | Union is present in the artifact although not used in the paper examples |
-| Function / separating function | `τx → τ`, `τx -∗ τ` | Context-type Arrow/Wand |
-| Persistent type | `□ τ` | `CTPersist τ` |
-| Contexts | `Emp`, `x ∷ τ`, `Γ1 ,, Γ2`, `Γ1 ∗ Γ2`, `Γ1 ⊕ Γ2` | `ContextTypeLanguage/theories/Syntax.v` |
-| Main typing judgment | `Γ ⊢ᶜ [Φ; Σ] e ⋮ τ` | `has_context_type Φ Σ Γ e τ` in `ContextTyping/theories/Typing.v` |
-| Typing well-formedness | `Γ ⊢wf[Σ] e ⋮ τ` | `context_typing_wf Σ Γ e τ` |
-| Semantic type subsumption | `Γ ⊢ᶜ τ1 ≤[Σ] τ2` | `sub_type_under Σ Γ τ1 τ2` |
-| Semantic context subsumption | `Γ1 ≤ᶜ[Σ; X] Γ2` | `ctx_sub_under Σ X Γ1 Γ2` |
-| Formula syntax | `FormulaT` constructors | `ContextLogic/theories/FormulaSyntax.v` |
-| Satisfaction | `m ⊨ P` | `res_models` in `ContextLogic/theories/FormulaSemantics.v` |
-| Entailment / equivalence | `P ⊫ Q`, `P ⊣⊢ Q` | Semantic entailment and equivalence |
-| Fiber / binding-reference connective | `fib D |> P` | `FFibVars D P`; set-indexed mechanized form of the paper connective |
-| Universal formula | `∀. P` | `FForall P`; locally nameless binder |
-| Persistent formula | `□ P` | `FPersist P` |
-| Formula wand | `P -∗[d] Q` | `FBWand d P Q`; `d` is the locally nameless binder-depth parameter used by the mechanized definition |
-| Type denotation | `⟦ty τ⟧[Σ, gas] e`, `⟦ty τ⟧[Δ] e`, `TyDenote[Δ; τ; e]` | `Denotation/theories/TypeDenote.v` |
-| Context denotation | `⟦ctx⟧[Σ] Γ` | `ctx_denote_under Σ Γ` |
-| Result graph / step-to-result formula | `FResult[D ⊢ e ⇓ x]` | `expr_result_formula_at D e x` |
-| Basic typing formula | `FHasType[Σ ⊢ e ⋮ T]` | `expr_basic_typing_formula Σ e T` |
-| Primitive operation context | `primop_ctx`, `wf_primop_ctx Φ` | `ContextTyping/theories/PrimOpContext.v` |
-| Concrete primitive context | `concrete_Φ`, `concrete_Φ_wf` | `ContextTyping/theories/PrimOpConcreteContext.v` |
-| Fundamental theorem | `Fundamental` | `ContextTyping/theories/Soundness.v` |
-| Closed-program denotational soundness | `denotational_soundness` | `ContextTyping/theories/Soundness.v` |
-| Concrete wrappers | `concrete_Fundamental`, `concrete_denotational_soundness` | `ContextTyping/theories/SoundnessConcrete.v` |
+| Definition/Theorems | Paper | Definition | Notation |
+| --- | --- | --- | --- |
+| Term syntax | Core language syntax figures | Mutually recursive values (`value`) and expressions (`tm`) in `CoreLang/theories/Syntax.v` (lines 75 and 82) | `ret v`, `let: e1 in e2`, `v1 · v2`, `if v then et else ef` |
+| Base types and primitive operations | Core language syntax figures | Basic types (`base_ty`) in `CoreLang/theories/Syntax.v` (line 14); primitive operations (`prim_op`) in `CoreLang/theories/Syntax.v` (line 45) | `Unit`, `Bool`, `Nat`, `op_eq0`, `op_plus1`, `op_minus1`, `op_boolGen`, `op_natGen` |
+| Operational semantics | Operational semantics figures | Small-step relation (`step`) in `CoreLang/theories/SmallStep.v` (line 98) | `step e e'` |
+| Basic typing | Core typing premises | Basic typing judgments (`value_has_type`, `tm_has_type`) in `CoreLang/theories/BasicTyping.v` (lines 31 and 49) | `Γ ⊢ᵥ v ⋮ T`, `Γ ⊢ₑ e ⋮ T`; basic type notation includes `T1 →ₜ T2` |
+| Qualifiers | Refinement propositions | Semantic qualifiers (`tqual D P`) in `ContextQualifier/theories/Qualifier.v`; equality qualifier (`mk_q_eq`) in `ContextTypeLanguage/theories/Syntax.v` (line 390) | Shallow Coq propositions with explicit support |
+| Context type syntax | Type syntax figures | Context types (`context_ty`) in `ContextTypeLanguage/theories/Syntax.v` (line 31) | `{: b | φ }`, `[: b | φ ]`, `τ1 ⊓ τ2`, `τ1 ⊔ τ2`, `τ1 ⊕ τ2`, `τx → τ`, `τx -∗ τ`, `□ τ` |
+| Context syntax | Context syntax figures | Contexts (`ctx`) in `ContextTypeLanguage/theories/Syntax.v` (line 41) | `Emp`, `x ∷ τ`, `Γ1 ,, Γ2`, `Γ1 ∗ Γ2`, `Γ1 ⊕ Γ2` |
+| Formula syntax | Logic figures | Formula syntax (`Formula`) in `ContextLogic/theories/FormulaSyntaxCore.v` (line 20) | `P ∧ Q`, `P ∨ Q`, `P → Q`, `P ∗ Q`, `P -∗[d] Q`, `P ⊕ Q`, `∀. P`, `over P`, `under P`, `□ P`, `fib D |> P` |
+| Formula satisfaction | Logic semantics | Satisfaction (`res_models`) in `ContextLogic/theories/FormulaSemantics.v` (line 891) | `m ⊨ P` |
+| Entailment and equivalence | Logical entailment/equivalence | Entailment (`entails`) in `ContextLogic/theories/FormulaSemantics.v` (line 910); formula equivalence (`formula_equiv`) in `ContextLogic/theories/FormulaConnectivesHigher.v` (line 825) | `P ⊫ Q`, `P ⊣⊢ Q` |
+| Fiber connective | Binding-reference/fiber connective | Fiber formula (`FFibVars`) in `ContextLogic/theories/FormulaSyntaxCore.v` (line 20) | `fib D |> P` |
+| Binder-aware wand | Magic wand in the logic | Bounded wand constructor (`FBWand d P Q`) in `ContextLogic/theories/FormulaSyntaxCore.v` (line 20) | `P -∗[d] Q`; `d` records the locally nameless binder-depth shift |
+| Persistent formula | Persistent modality | Persistent formula constructor (`FPersist`) in `ContextLogic/theories/FormulaSyntaxCore.v` (line 20); characterization theorem `res_models_persist_iff` in the logic/connectives files | `□ P` |
+| Type denotation | Type interpretation | Gas-indexed type denotation (`ty_denote_gas`) in `Denotation/theories/TypeDenote.v` (line 122); saturated denotation (`ty_denote`) in `Denotation/theories/TypeDenote.v` (line 187) | `⟦ty τ⟧[Σ, gas] e`, `⟦ty τ⟧[Δ] e`, `TyDenote[Δ; τ; e]` |
+| Context denotation | Context interpretation | Context denotation (`ctx_denote_under`) in `Denotation/theories/Context.v` (line 17) | `⟦ctx⟧[Σ] Γ` |
+| Result graph formula | Step-to-result formula | Result formula (`expr_result_formula_at`) and notation in `ContextBasicDenotation/theories/TermOpen.v` (line 1086) | `FResult[D ⊢ e ⇓ x]` |
+| Basic typing formula | Basic typing atom | Basic typing formula (`expr_basic_typing_formula`) and notation in `ContextBasicDenotation/theories/BasicTypingFormula.v` (line 1136) | `FHasType[Σ ⊢ e ⋮ T]` |
+| Typing judgment | Typing rules | Context typing judgment (`has_context_type`) in `ContextTyping/theories/Typing.v` (line 103) | `Γ ⊢ᶜ [Φ; Σ] e ⋮ τ` |
+| Typing well-formedness | Typing side conditions | Well-formedness (`context_typing_wf`) in `ContextTyping/theories/Typing.v` (line 66) | `Γ ⊢wf[Σ] e ⋮ τ` |
+| Semantic type subsumption | Subtyping/subsumption rule | Semantic subtype (`sub_type_under`) in `ContextTyping/theories/Typing.v` (line 44) | `Γ ⊢ᶜ τ1 ≤[Σ] τ2` |
+| Semantic context subsumption | Context subsumption rule | Semantic context subtype (`ctx_sub_under`) in `ContextTyping/theories/Typing.v` (line 54) | `Γ1 ≤ᶜ[Σ; X] Γ2` |
+| Primitive-operation context | Primitive-operation typing interface | Primitive signature (`primop_sig`) and context (`primop_ctx`) in `ContextTyping/theories/PrimOpContext.v` (lines 17 and 30); well-formedness (`wf_primop_ctx`) in `ContextTyping/theories/PrimOpContext.v` (line 56) | `wf_primop_ctx Φ` |
+| Concrete primitive context | Concrete primitive instance | Concrete context (`concrete_Φ`) in `ContextTyping/theories/PrimOpConcreteContext.v` (line 171); well-formedness theorem (`concrete_Φ_wf`) in `ContextTyping/theories/PrimOpConcreteContext.v` (line 1297) | `concrete_Φ` |
+| Fundamental theorem | Main theorem | `Fundamental` in `ContextTyping/theories/Soundness.v` (line 977) | `Γ ⊢ᶜ [Φ; Σ] e ⋮ τ -> ⟦ctx⟧[Σ] Γ ⊫ ...` |
+| Closed-program denotational soundness | Soundness theorem | `denotational_soundness` in `ContextTyping/theories/Soundness.v` (line 1079) | closed programs have a result world satisfying `TyDenote[...]` |
+| Concrete soundness wrappers | Concrete theorem instances | `concrete_Fundamental` and `concrete_denotational_soundness` in `ContextTyping/theories/Soundness.v` (lines 1152 and 1159) | concrete versions instantiate `Φ := concrete_Φ` |
 
 Two logic definitions are more precise in the artifact than in the prose
 presentation.  The universal formula is implemented as a locally nameless
