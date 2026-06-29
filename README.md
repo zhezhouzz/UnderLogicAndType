@@ -72,8 +72,8 @@ make
   paper's surface notation.
 - Refinement propositions are shallowly embedded Coq propositions.  A
   qualifier is a semantic predicate together with an explicit support set, not
-  a first-order syntax tree.  This makes the support needed by fiber semantics
-  explicit in the artifact.
+  a first-order syntax tree.  See Proof Details for the artifact-level
+  treatment of qualifier support.
 
 ## Proof File Structures
 
