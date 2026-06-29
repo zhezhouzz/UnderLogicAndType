@@ -149,29 +149,85 @@ in Proof Details below.
 
 ## Proof Details
 
-### Formula connectives with proof-oriented definitions
+### Logic formulas
 
-`FFibVars D P`, written `fib D |> P`, is the artifact's fiber connective.
-It packages the fiber/projection operation used by the paper's binding-aware
-semantics.
+`FFibVars D P`, written `fib D |> P`, is the artifact's multi-variable form
+of the Binding Reference Operator from Definition 4.3.  It evaluates `P` on
+the fibers induced by the variables in `D`.
 
-`FForall P`, written `∀. P`, is implemented as a locally nameless binder.
-The theorems `res_models_forall_iff`, `res_models_forall_rev`, and
-`res_models_forall_rev_intro` connect this implementation to the expected
-quantified behavior.
+`FForall P`, written `∀. P`, is implemented using explicit resource
+extensions.  Intuitively, for every fresh name `y`, the artifact considers
+every minimal extension of the current resource that provides exactly the
+variables needed to interpret the opened body and outputs the fresh result
+slot `y`; the opened body must hold on every such minimal extension.  This is
+more precise for proof engineering than the prose definition based directly on
+the refinement partial order, but the two proof principles are equivalent for
+the uses in the artifact.  The bridge is captured by:
 
-`FPersist P`, written `□ P`, is implemented by singleton projection over the
-formula's support.  The theorem `res_models_persist_iff` states this
-characterization, while `persistent_formula_equiv_persist`,
-`persistent_star_self`, and `persistent_star_and` prove the persistence laws
-used in the paper.
+```coq
+Lemma res_models_forall_iff (m : WfWorldT) (φ : FormulaT) :
+  formula_scoped_in_world m (FForall φ) →
+  (m ⊨ FForall φ ↔
+    ∃ L : aset,
+      ∀ y : atom, y ∉ L →
+      ∀ F : fiber_extension,
+        ext_in F = formula_fv φ →
+        ext_out F = {[y]} →
+        ∀ my : WfWorldT,
+          res_extend_by m F my →
+          my ⊨ formula_open 0 y φ).
 
-The artifact's magic wand also has a more explicit locally nameless shape:
-`P -∗[d] Q` records how many bound variables in `P` and `Q` must be kept in
-scope when the wand is opened.  This makes the definition look more detailed
-than the paper rule, but it has the same semantic role.  In ordinary
-value-level uses, `d = 1`; nested result-first definitions may require the
-depth to be stated explicitly.
+Lemma res_models_forall_rev_intro (m : WfWorldT) (φ : FormulaT) :
+  formula_scoped_in_world m (FForall φ) ->
+  (exists L : aset,
+    forall y : atom, y ∉ L ->
+      forall my : WfWorldT,
+        world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+        res_restrict my (world_dom (m : WorldT)) = m ->
+        my ⊨ formula_open 0 y φ) ->
+  m ⊨ FForall φ.
+```
+
+`FPersist P`, written `□ P`, is implemented similarly in a proof-oriented
+minimal form.  Instead of defining persistence directly by refinement-order
+closure, the artifact projects the current resource to the support of `P` and
+requires this projection to be a singleton resource satisfying `P`.  The
+characterization theorem is:
+
+```coq
+Lemma res_models_persist_iff (m : WfWorldT) (φ : FormulaT) :
+  m ⊨ FPersist φ <->
+  exists σ : Store (V := V),
+    dom (σ : Store (V := V)) = formula_fv φ /\
+    res_restrict m (formula_fv φ) =
+      (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) /\
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) ⊨ φ.
+```
+
+The algebraic behavior used in the paper is then recovered by:
+
+```coq
+Lemma persistent_formula_equiv_persist (φ : FormulaT) :
+  persistent_formula φ ->
+  φ ⊣⊢ FPersist φ.
+
+Lemma persistent_star_self (φ : FormulaT) :
+  persistent_formula φ ->
+  FStar φ φ ⊣⊢ φ.
+
+Lemma persistent_star_and (φ ψ : FormulaT) :
+  persistent_formula φ ->
+  FStar φ ψ ⊣⊢ FAnd φ ψ.
+```
+
+The magic wand also has a more explicit locally nameless shape.  In the paper
+notation `P -* Q`, the consequent `Q` may mention variables introduced by the
+antecedent `P`; this is direct with named variables.  In locally nameless
+syntax, both `P` and `Q` may contain bound variables, so the artifact records
+how many binders from `P` remain in scope when opening the wand body.  Thus the
+constructor is `FBWand d P Q`, written `P -∗[d] Q`, where the binder-depth
+parameter `d` is an offset.  In ordinary value-level uses, `d = 1`; nested
+result-first definitions may require the depth to be stated explicitly.
 
 ### Concrete primitive context
 
