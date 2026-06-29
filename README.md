@@ -235,6 +235,15 @@ constructor is `FBWand d P Q`, written `P -∗[d] Q`, where the binder-depth
 parameter `d` is an offset.  In ordinary value-level uses, `d = 1`; nested
 result-first definitions may require the depth to be stated explicitly.
 
+The proof repeatedly uses the fact that formula satisfaction depends only on
+the free variables of the formula:
+
+```coq
+Lemma res_models_minimal_on (S : aset) (m : WfWorldT) (φ : FormulaT) :
+  formula_fv φ ⊆ S →
+  res_models m φ ↔ res_models (res_restrict m S) φ.
+```
+
 ### Qualifier embedding
 
 Refinement qualifiers are shallowly embedded as Coq propositions.  This lets
@@ -391,26 +400,42 @@ value to the unfolded recursive body (`SoundnessFixBase.v`, line 675).
 In a deterministic language, this kind of term-equivalence transport can often
 derive the let-introduction transport: the result slot inserted by the
 extension is the unique result obtained by re-running the term.  In the
-nondeterministic language, that invariant breaks.  Let `m` be the singleton
-world containing the empty store, let `e1` be `boolGen unit`, and let
-`e2 = ret (vbvar 0)`.  If `mx` is the result-extension world
-`m #> [[e1 --* x]] ~~> mx`, then `e2 ^^ x` is `ret x`, so an output slot `y`
-is correlated with the already stored value of `x`.  But
-`let x = e1 in ret x` re-runs the nondeterministic generator in each store of
-`mx`; its output `y` may be either boolean independently of the old stored
-`x`.  Thus the two result graphs are not equivalent in general.  This is one
-of the places where the nondeterministic proof diverges from the deterministic
-invariants and requires a separate `tlet_intro_denotation` theorem.
+nondeterministic language, that invariant breaks.  Concretely, let `m` be the
+singleton world `{ σ0 }`, where `σ0` is the empty store.  Let
+`e1 = boolGen unit` and `e2 = ret (vbvar 0)`.  The result extension
+`m #> [[e1 --* x]] ~~> mx` can produce the world
 
-### Core proof technical infrastructure
+```text
+mx = {
+  σF = { x ↦ false },
+  σT = { x ↦ true  }
+}.
+```
 
-Result extension is the bridge from operational result sets to type
-denotation.  The main lemmas in this area are:
+Now `e2 ^^ x` is `ret x`.  Its result graph to a fresh output slot `y` preserves
+the value already stored at `x`, so it produces exactly the diagonal stores
 
-- `ty_denote_gas_result_ext`: transports denotation along a result extension;
-- `ty_denote_gas_result_alias_at`: replaces a term by a fresh result slot when
-  the result graph is available.
+```text
+{
+  { x ↦ false, y ↦ false },
+  { x ↦ true,  y ↦ true  }
+}.
+```
 
-The proof also uses fiberwise aggregation facts, especially
-`fiberwise_joinable_on_*`, to combine fiber-local obligations back into whole
-resource worlds for the formula fragments that support such aggregation.
+By contrast, `let x = e1 in ret x` re-runs `boolGen unit` in each store of
+`mx`.  Starting from either `{ x ↦ false }` or `{ x ↦ true }`, the inner
+generator can return either boolean, so its result graph to `y` produces
+
+```text
+{
+  { x ↦ false, y ↦ false },
+  { x ↦ false, y ↦ true  },
+  { x ↦ true,  y ↦ false },
+  { x ↦ true,  y ↦ true  }
+}.
+```
+
+The two result graphs are therefore not equivalent even on the observable
+variables `{x, y}`.  This is one of the places where the nondeterministic proof
+diverges from the deterministic invariants and requires a separate
+`tlet_intro_denotation` theorem.

@@ -69,8 +69,9 @@ Definition base_ty_of_const (c : constant) : base_ty :=
                          binders directly.
       [tlete e1 e2]    : bvar 0 in e2 = the let-bound variable
       [tmatch v et ef] : boolean case split; both branches bind no variables.
-                         Natural-number matching should be added as a separate
-                         term former if/when it is needed. *)
+                         Natural-number case analysis is encoded in the
+                         artifact with [op_eq0], [op_minus1], and boolean
+                         matching. *)
 
 Inductive value : Type :=
   | vconst (c : constant)

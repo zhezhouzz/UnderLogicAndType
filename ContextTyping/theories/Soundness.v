@@ -2,13 +2,11 @@
 
     Fundamental theorem entry point for the current context-type denotation.
 
-    This file restores the proof-facing goal shape from the old ChoiceTyping
-    development while keeping the new direct denotation route.  The TLet branch
-    chooses the result-extension witness locally and calls
-    [tlet_intro_denotation] directly; the remaining
-    higher-order and branching cases stop at explicit direct bridge lemmas so
-    their future proofs can unfold directly to [ty_denote_gas] instead of
-    rebuilding the old helper stack. *)
+    The proof is organized around direct denotation bridges for the constructs
+    that manipulate result worlds.  The TLet branch chooses the
+    result-extension witness locally and calls [tlet_intro_denotation];
+    higher-order and branching cases use dedicated transport lemmas for
+    applications, matches, fixed points, and persistent values. *)
 
 From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps
   SmallStep StrongNormalization.
