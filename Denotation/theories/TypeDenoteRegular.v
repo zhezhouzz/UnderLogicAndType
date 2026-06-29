@@ -1800,6 +1800,14 @@ Proof.
   - support_lvars_norm. better_set_solver.
 Qed.
 
+Lemma ty_denote_gas_minimal_on gas Σ τ e (m : WfWorldT) :
+  m ⊨ ty_denote_gas gas Σ τ e <->
+  res_restrict m (fv_tm e ∪ fv_cty τ) ⊨ ty_denote_gas gas Σ τ e.
+Proof.
+  apply res_models_minimal_on.
+  apply ty_denote_gas_fv_subset.
+Qed.
+
 Lemma fv_tm_ty_denote_gas_subset_formula gas Σ τ e :
   fv_tm e ⊆ formula_fv (ty_denote_gas gas Σ τ e).
 Proof.

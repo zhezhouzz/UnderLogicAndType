@@ -287,6 +287,59 @@ Definition under_result_body (b : base_ty) (φ : type_qualifier) : FormulaT :=
   (under (@atom φ ∧ result_basic_typing_formula b))%formula.
 ```
 
+### Type denotation
+
+The formula layer proves that satisfaction is determined by the projection of
+the resource to the free variables of the formula:
+
+```coq
+Lemma res_models_minimal_on (S : aset) (m : WfWorldT) (φ : FormulaT) :
+  formula_fv φ ⊆ S →
+  res_models m φ ↔ res_models (res_restrict m S) φ.
+```
+
+This theorem appears in `ContextLogic/theories/FormulaSemantics.v` (line
+937).  The type denotation is designed so that the same idea is available for
+the logical relation.  At the beginning of the `ty_denote_gas` fixpoint, the
+environment is clipped to the variables relevant to the term `e` and type
+`τ`:
+
+```coq
+Fixpoint ty_denote_gas
+    (gas : nat) (Σ : lty_env) (τ : context_ty) (e : tm)
+    {struct gas} : FormulaT :=
+  let Σg := relevant_env Σ τ e in
+  (guard[Σg; τ; e] ∧ ...)%formula.
+```
+
+The clipping loses no semantic information.  It makes the type-denotation
+support theorem precise: whether `m` satisfies `[[τ]] e` depends only on the
+projection of `m` to the free variables of `τ` and `e`.
+
+```coq
+Lemma ty_denote_gas_minimal_on gas Σ τ e (m : WfWorldT) :
+  m ⊨ ty_denote_gas gas Σ τ e <->
+  res_restrict m (fv_tm e ∪ fv_cty τ) ⊨ ty_denote_gas gas Σ τ e.
+```
+
+This theorem is in `Denotation/theories/TypeDenoteRegular.v` (line 1803).
+
+As in the paper, type denotation always includes the ordinary well-formedness,
+well-typedness, and totality obligations.  These are encoded in the guard, and
+the guard is conjoined at the start of every `ty_denote_gas` unfolding:
+
+```coq
+Definition ty_guard_formula
+    (Σ : lty_env) (τ : context_ty) (e : tm) : FormulaT :=
+  (FWfTy[Σ; τ] ∧
+    (FWorld[Σ] ∧
+      (FHasType[Σ ⊢ e ⋮ (⌊τ⌋)%cty] ∧ FTotal[e])))%formula.
+```
+
+The guard definition is in `Denotation/theories/TypeDenote.v` (line 7), and
+the fixpoint begins with `guard[Σg; τ; e] ∧ ...` in the same file (lines
+122-127).
+
 ### Core proof technical infrastructure
 
 Result extension is the bridge from operational result sets to type
